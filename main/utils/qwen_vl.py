@@ -45,9 +45,12 @@ def init_token_embeddings(model, tokenizer, init_from_token: str | None = None, 
 def load_qwen25vl(model_name_or_path: str, torch_dtype=None, device_map="auto", trust_remote_code=True):
     from transformers import AutoTokenizer, AutoProcessor
     try:
-        from transformers import AutoModelForVision2Seq as AutoModelClass
+        from transformers import AutoModelForImageTextToText as AutoModelClass
     except Exception:
-        from transformers import AutoModelForCausalLM as AutoModelClass
+        try:
+            from transformers import AutoModelForVision2Seq as AutoModelClass
+        except Exception:
+            from transformers import AutoModelForCausalLM as AutoModelClass
 
     tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=trust_remote_code)
     processor = AutoProcessor.from_pretrained(model_name_or_path, trust_remote_code=trust_remote_code)

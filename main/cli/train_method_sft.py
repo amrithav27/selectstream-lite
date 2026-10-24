@@ -10,7 +10,8 @@ from tqdm import tqdm
 
 from main.cli.common import build_vismem_config, load_yaml
 from main.data.collate import load_image
-from main.data.jsonl_dataset import JsonlVLDataset, Sample
+from main.data.jsonl_dataset import Sample
+from main.data.merged_dataset import load_dataset
 from main.model.model import VisMemModel
 from main.trainer.method_sft import method_sft_loss
 from main.utils.logging import get_logger
@@ -137,6 +138,7 @@ def _prepare_streaming_sample(
         start_time=start_time,
         end_time=end_time,
         compose_mode=clip_layout,
+        merged_clips=meta.get("merged_clips"),
     )
     if not sampled:
         raise ValueError(
@@ -239,7 +241,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/selectstream_qwen25vl7b_lvm_sft.yaml")
     ap.add_argument("--model_name_or_path", default=None)
-    ap.add_argument("--train_jsonl", required=True)
+    ap.add_argument("--train_jsonl", required=True, help="Training rows: a JSONL file, or a merged_train.json (needs --clip_dir).")
+    ap.add_argument("--clip_dir", default=None, help="Folder with <clip_uid>.mp4 files; required for merged_*.json inputs.")
     ap.add_argument("--init_from", default=None, help="Checkpoint folder containing main.pt to continue training.")
     ap.add_argument("--output_dir", required=True)
     ap.add_argument("--epochs", type=int, default=1)
@@ -255,6 +258,7 @@ def main():
     ap.add_argument("--stream_max_frames", type=int, default=None, help="Optional cap on sampled frames per streaming sample.")
     ap.add_argument("--stream_update_unit", default="frame", choices=["clip", "frame"], help="Streaming update granularity. 'frame' updates SAW/LVM on every sampled frame.")
     ap.add_argument("--history_prompt", default="", help="Prompt used when feeding history chunks into memory.")
+    ap.add_argument("--val_jsonl", default=None, help="Optional validation JSONL or merged_val.json; mean losses are logged after every epoch.")
     ap.add_argument("--freeze_lvm_writer", action="store_true", help="Freeze LVM writer modules in this run.")
     ap.add_argument("--freeze_graph_reasoner", action="store_true", help="Freeze DMG/GAR modules in this run.")
     args = ap.parse_args()
@@ -337,10 +341,67 @@ def main():
     grad_accum = max(1, args.grad_accum if args.grad_accum is not None else int(train_cfg.get("grad_accum", 4)))
     opt = optim.AdamW(trainable, lr=lr)
 
-    ds = JsonlVLDataset(args.train_jsonl)
+    ds = load_dataset(args.train_jsonl, args.clip_dir)
+    val_ds = load_dataset(args.val_jsonl, args.clip_dir) if args.val_jsonl else None
     ensure_dir(args.output_dir)
 
+    loss_keys = ("loss_total", "loss_ans", "loss_ret", "loss_spar", "hit_id_at_k", "hit_time_at_k")
+    log_path = os.path.join(args.output_dir, "loss_log.csv")
+    with open(log_path, "w") as f:
+        f.write("split,epoch,row,id," + ",".join(loss_keys) + "\n")
+
+    def _loss_for(sample):
+        prepared = _prepare_sample(
+            sample=sample,
+            model=model,
+            state_dtype=dtype,
+            default_sample_fps=args.default_sample_fps,
+            default_history_prompt=args.history_prompt,
+            default_stream_max_frames=args.stream_max_frames,
+            default_stream_update_unit=args.stream_update_unit,
+        )
+        inputs = model.prepare_inputs([prepared["image"]], [prepared["prompt"]])
+        return method_sft_loss(
+            base_model=model.base_model,
+            selectstream_model=model,
+            inputs=inputs,
+            target_text=prepared["answer"],
+            meta=prepared["meta"],
+            memory_state=prepared["memory_state"],
+            step_stride=prepared["step_stride"],
+            chunk_time_spans=prepared["chunk_time_span"],
+            beta_ret=beta_ret,
+            gamma_spar=gamma_spar,
+            ret_id_weight=ret_id_weight,
+            ret_time_weight=ret_time_weight,
+            time_tolerance=time_tolerance,
+            evidence_topk=evidence_topk,
+        )
+
+    def _log(split, epoch, row, sample_id, stats):
+        with open(log_path, "a") as f:
+            f.write(f"{split},{epoch},{row},{sample_id}," + ",".join(f"{float(stats[k].cpu()):.5f}" for k in loss_keys) + "\n")
+
+    def _validate(epoch):
+        model.eval()
+        sums = {k: 0.0 for k in loss_keys}
+        n = 0
+        with torch.no_grad():
+            for j in range(len(val_ds)):
+                sample = val_ds[j]
+                if sample.answer is None:
+                    continue
+                _, stats = _loss_for(sample)
+                _log("val", epoch, j, sample.id, stats)
+                for k in loss_keys:
+                    sums[k] += float(stats[k].cpu())
+                n += 1
+        model.train()
+        logger.info("val epoch %d (%d rows): %s", epoch, n, {k: round(v / max(n, 1), 4) for k, v in sums.items()})
+
     model.train()
+    if val_ds is not None:
+        _validate(-1)
     for epoch in range(args.epochs):
         pbar = tqdm(range(len(ds)), desc=f"Method-SFT epoch {epoch}")
         opt.zero_grad()
@@ -386,6 +447,7 @@ def main():
             )
 
             (loss / grad_accum).backward()
+            _log("train", epoch, i, sample.id, stats)
             accum_steps += 1
             if accum_steps % grad_accum == 0:
                 opt.step()
@@ -426,8 +488,12 @@ def main():
 
         ckpt = os.path.join(args.output_dir, f"epoch{epoch}")
         ensure_dir(ckpt)
-        torch.save({"vismem_state": model.state_dict(), "config": cfg_dict}, os.path.join(ckpt, "main.pt"))
+        # The frozen backbone is reloaded from `model_name_or_path`; keep only the trained SelectStream modules.
+        vismem_state = {k: v for k, v in model.state_dict().items() if not k.startswith("base_model.")}
+        torch.save({"vismem_state": vismem_state, "config": cfg_dict}, os.path.join(ckpt, "main.pt"))
         tokenizer.save_pretrained(ckpt)
+        if val_ds is not None:
+            _validate(epoch)
 
     logger.info("Method-SFT done.")
 
