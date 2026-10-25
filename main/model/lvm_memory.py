@@ -232,6 +232,22 @@ class LVMMemoryFormer(nn.Module):
         self.segment_encoder = nn.TransformerEncoder(seg_encoder_layer, num_layers=self.segment_encoder_layers)
         self.segment_query = nn.Parameter(torch.randn(1, 1, hidden_size) * 0.02)
         self.segment_ln = nn.LayerNorm(hidden_size)
+	## Changes:
+        self.importance_head = nn.Sequential(
+            nn.LayerNorm(hidden_size),
+            nn.Linear(hidden_size, gate_hidden),
+            nn.GELU(),
+            nn.Linear(gate_hidden, 1),
+        )
+
+    ## Changes
+    def score_importance(self, z: torch.Tensor) -> torch.Tensor:
+        """
+        z: [..., hidden_size]
+        Returns unnormalized importance logits: [...]
+        """
+        return self.importance_head(z).squeeze(-1)
+
 
     def _segment_relative_pos(self, length: int, device: torch.device, dtype: torch.dtype) -> torch.Tensor:
         if length <= 0:
@@ -1376,6 +1392,8 @@ class LVMMemoryFormer(nn.Module):
             )
 
             active_idx = active.nonzero(as_tuple=False).squeeze(-1)
+	    ## Changes
+            active_importance_scores = self.score_importance(slots[active_idx])
             graph_edge_index, graph_edge_type, graph_edge_weight = self._export_active_graph(
                 temporal_graph=temporal_graph,
                 similarity_graph=similarity_graph,
@@ -1389,6 +1407,8 @@ class LVMMemoryFormer(nn.Module):
                     "active_time_starts": time_start[active_idx],
                     "active_time_ends": time_end[active_idx],
                     "active_surprise": avg_surprise[active_idx],
+		    ## Changes
+		    "active_importance_scores": active_importance_scores,
                     "active_merge_count": merge_count[active_idx],
                     "selected_indices": picked,
                     "selected_slots": mem_tokens[: picked.size(0)] if picked.numel() > 0 else mem_tokens[:0],

@@ -280,180 +280,8 @@ def method_sft_loss(
     # Prompt pass over [X_prompt; X_cur] with the current observation visible to the frozen
     # backbone. Its KV cache is reused so the answer pass matches inference exactly.
     need_attn = selectstream_model.needs_saw_attention(mem_type="short")
-    vision = base_model.model.visual
-    
-    with torch.no_grad():
-        pixel_values = inputs["pixel_values"]
-        grid_thw = inputs["image_grid_thw"]
-    
-        # Current precision
-        vision_out_fp16 = vision(pixel_values, grid_thw=grid_thw)
-        if hasattr(vision_out_fp16, "last_hidden_state"):
-            vision_out_fp16 = vision_out_fp16.last_hidden_state
-        elif isinstance(vision_out_fp16, (tuple, list)):
-            vision_out_fp16 = vision_out_fp16[0]
-    
-        print("FP16 finite:", torch.isfinite(vision_out_fp16).all().item())
-        print("FP16 infs:", torch.isinf(vision_out_fp16).sum().item())
-    
-        # Test the same input with the vision encoder in FP32
-        vision_fp32 = vision.float()
-        vision_out_fp32 = vision_fp32(
-            pixel_values.float(),
-            grid_thw=grid_thw,
-        )
-        if hasattr(vision_out_fp32, "last_hidden_state"):
-            vision_out_fp32 = vision_out_fp32.last_hidden_state
-        elif isinstance(vision_out_fp32, (tuple, list)):
-            vision_out_fp32 = vision_out_fp32[0]
-    
-        print("FP32 finite:", torch.isfinite(vision_out_fp32).all().item())
-        print("FP32 NaNs:", torch.isnan(vision_out_fp32).sum().item())
-        print("FP32 infs:", torch.isinf(vision_out_fp32).sum().item())
-        print("Vision dtype:", base_model.model.visual.dtype)
-        print("Vision device:", next(base_model.model.visual.parameters()).device)
-        print("Input pixel dtype:", inputs["pixel_values"].dtype)
-        print("Language embedding dtype:", base_model.model.get_input_embeddings().weight.dtype)
     with torch.no_grad():
         out_prompt = base_model(**inputs, use_cache=True, output_hidden_states=True, output_attentions=need_attn)
-        h = out_prompt.hidden_states[0]
-        model = base_model
-        inputs = {k: v for k, v in inputs.items()}
-        
-        def check(name, x):
-            if not torch.is_tensor(x):
-                print(f"{name}: not a tensor")
-                return
-        
-            x = x.detach()
-            finite = torch.isfinite(x)
-            max_abs = (
-                x[finite].float().abs().max().item()
-                if finite.any().item()
-                else float("nan")
-            )
-            print(
-                f"{name}: shape={tuple(x.shape)}, dtype={x.dtype}, "
-                f"finite={finite.all().item()}, "
-                f"nan={torch.isnan(x).sum().item()}, "
-                f"inf={torch.isinf(x).sum().item()}, "
-                f"max_abs={max_abs}"
-            )
-        
-        
-        print("\n========== COMPLETE NaN DIAGNOSTIC ==========")
-        print("Model dtype:", next(model.parameters()).dtype)
-        print("Attention:", getattr(model.config, "_attn_implementation", "unknown"))
-        
-        # 1. Check text embeddings
-        embed_layer = model.get_input_embeddings()
-        text_embeds = embed_layer(inputs["input_ids"])
-        check("Text embeddings", text_embeds)
-        
-        # 2. Check vision encoder output
-        vision = getattr(model, "visual", None)
-        if vision is None:
-            vision = getattr(getattr(model, "model", None), "visual", None)
-        
-        vision_out = None
-        if vision is not None and "pixel_values" in inputs:
-            try:
-                with torch.no_grad():
-                    vision_out = vision(
-                        inputs["pixel_values"],
-                        grid_thw=inputs.get("image_grid_thw"),
-                    )
-                if hasattr(vision_out, "last_hidden_state"):
-                    vision_out = vision_out.last_hidden_state
-                elif isinstance(vision_out, (tuple, list)):
-                    vision_out = vision_out[0]
-                check("Vision encoder output", vision_out)
-            except Exception as e:
-                print("Vision encoder direct check failed:", repr(e))
-        else:
-            print("Vision module not found using standard Qwen2.5-VL paths")
-        
-        # 3. Capture the actual inputs passed to the first decoder layer
-        decoder_layers = getattr(
-            getattr(model, "model", None), "layers", None
-        )
-        if decoder_layers is None:
-            decoder_layers = getattr(
-                getattr(getattr(model, "model", None), "language_model", None),
-                "layers", None
-            )
-        
-        captured = {}
-        
-        def first_layer_pre_hook(module, args, kwargs):
-            hidden = kwargs.get("hidden_states")
-            if hidden is None and args and torch.is_tensor(args[0]):
-                hidden = args[0]
-            captured["input"] = hidden.detach() if torch.is_tensor(hidden) else None
-        
-        def first_layer_hook(module, args, kwargs, output):
-            hidden = output[0] if isinstance(output, (tuple, list)) else output
-            captured["output"] = hidden.detach() if torch.is_tensor(hidden) else None
-        
-        handles = []
-        if decoder_layers is not None:
-            handles.append(
-                decoder_layers[0].register_forward_pre_hook(
-                    first_layer_pre_hook, with_kwargs=True
-                )
-            )
-            handles.append(
-                decoder_layers[0].register_forward_hook(
-                    first_layer_hook, with_kwargs=True
-                )
-            )
-            print("First decoder layer:", type(decoder_layers[0]).__name__)
-        else:
-            print("Could not locate decoder layers using standard Qwen paths")
-        
-        # 4. Run exactly one forward pass
-        try:
-            with torch.no_grad():
-                out = model(
-                    **inputs,
-                    use_cache=False,
-                    output_hidden_states=True,
-                    output_attentions=False,
-                    return_dict=True,
-                )
-        
-            check("Decoder hidden_states[0]", out.hidden_states[0])
-            check("Final hidden state", out.hidden_states[-1])
-            check("Prompt logits", out.logits)
-        
-            if captured.get("input") is not None:
-                check("First layer actual input", captured["input"])
-            if captured.get("output") is not None:
-                check("First layer output", captured["output"])
-        
-            # Identify bad positions in the decoder input
-            h = out.hidden_states[0]
-            bad = (~torch.isfinite(h)).any(dim=-1)
-            positions = bad[0].nonzero(as_tuple=False).flatten().tolist()
-            ids = inputs["input_ids"][0]
-        
-            print("Bad decoder-input positions:", positions)
-            for pos in positions:
-                lo, hi = max(0, pos - 2), min(ids.numel(), pos + 3)
-                print(
-                    f"Position {pos}: token_id={ids[pos].item()}, "
-                    f"NaNs={torch.isnan(h[0, pos]).sum().item()}, "
-                    f"nearby_ids={ids[lo:hi].tolist()}"
-                )
-        
-        except Exception as e:
-            print("Forward failed:", repr(e))
-        
-        finally:
-            for handle in handles:
-                handle.remove()
-        
-        print("========== END DIAGNOSTIC ==========")
     input_ids = inputs["input_ids"]
     chunk_attention = None
     if need_attn:
@@ -493,17 +321,13 @@ def method_sft_loss(
         inputs_embeds=ans_embeds,
         attention_mask=attn,
     )
-    
     # The logit predicting y_j sits one position earlier; y_0 is predicted from the last
     # evidence token, or from the last prompt token when no evidence is available.
     all_logits = torch.cat([out_prompt.logits[:, -1:, :].to(dtype=out.logits.dtype), out.logits], dim=1)
     num_ev = evidence_tokens.size(1)
     logits = all_logits[:, num_ev : num_ev + tgt_ids.size(1), :]
     loss_ans = F.cross_entropy(logits.reshape(-1, logits.size(-1)).float(), tgt_ids.reshape(-1))
-    
-    ## Changes:
-    print("Valid answer labels:", (tgt_ids != -100).sum().item())
-    print("Logits finite:", torch.isfinite(logits).all().item())
+
     gt_ids = _extract_evidence_ids(meta)
     gt_intervals = _extract_evidence_time_intervals(meta)
 

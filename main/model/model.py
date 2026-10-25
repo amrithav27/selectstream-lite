@@ -255,6 +255,7 @@ class VisMemModel(nn.Module):
             return hidden_states[-1]
         return hidden_states[0]
 
+
     def continue_forward(
         self,
         past_key_values,
@@ -263,17 +264,22 @@ class VisMemModel(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
         **kwargs,
     ):
-        """Append tokens after a cached prefix. Explicit cache positions keep Qwen-VL M-RoPE
-        continuing from the prefix (via its rope deltas) instead of restarting at position 0."""
         x = input_ids if input_ids is not None else inputs_embeds
         past_len = past_key_values.get_seq_length()
-        cache_position = torch.arange(past_len, past_len + x.size(1), device=x.device)
+        seq_len = x.size(1)
+        device = x.device
+    
+        # Position IDs for only the newly appended tokens.
+        position_ids = torch.arange(
+            past_len, past_len + seq_len, device=device
+        ).view(1, 1, -1).expand(3, x.size(0), -1)
+    
         return self.base_model(
             input_ids=input_ids,
             inputs_embeds=inputs_embeds,
             past_key_values=past_key_values,
             attention_mask=attention_mask,
-            cache_position=cache_position,
+            position_ids=position_ids,
             use_cache=True,
             **kwargs,
         )
@@ -543,14 +549,39 @@ class VisMemModel(nn.Module):
             prompts = [""] * len(images)
         inputs = self.prepare_inputs(images, prompts)
 
+        ## need_attn = self.needs_saw_attention(mem_type=mem_type)
+        ## with torch.no_grad():
+        ##    out = self.base_model(**inputs, output_hidden_states=True, output_attentions=need_attn)
+        ## input_ids = inputs.get("input_ids", None)
+## Changes
         need_attn = self.needs_saw_attention(mem_type=mem_type)
-        with torch.no_grad():
-            out = self.base_model(**inputs, output_hidden_states=True, output_attentions=need_attn)
+
+        captured = {}
+
+        def capture_input(module, args):
+            captured["hidden"] = args[0]
+
+        first_layer = self.base_model.get_submodule("model.language_model.layers.0")
+        hook = first_layer.register_forward_pre_hook(capture_input)
+
+        try:
+            with torch.no_grad():
+                out = self.base_model(
+                    **inputs,
+                    output_hidden_states=False,
+                    output_attentions=need_attn,
+                )
+        finally:
+            hook.remove()
+
         input_ids = inputs.get("input_ids", None)
+
         if input_ids is None:
             raise ValueError("Processor did not return input_ids; check your Qwen2.5-VL processor.")
 
-        visual_states = self._extract_visual_states(self.visual_feature_states(out.hidden_states), input_ids)
+        visual_states = self._extract_visual_states(
+	    captured["hidden"], input_ids
+	)
         chunk_attention = self._extract_chunk_attention(
             getattr(out, "attentions", None),
             input_ids,
@@ -727,6 +758,10 @@ class VisMemModel(nn.Module):
                         "last_merge_pair": state.get("last_merge_pair", torch.full((2,), -1, device=hidden_states.device, dtype=torch.long)),
                         "subgraph_size": torch.tensor(float(state["selected_indices"].numel()), device=hidden_states.device),
                         "sparsity_loss": torch.tensor(0.0, device=hidden_states.device, dtype=hidden_states.dtype),
+			"importance_scores": state.get(
+			    "active_importance_scores",
+			    torch.empty(0, device=hidden_states.device, dtype=hidden_states.dtype),
+			),
                     }
                 )
                 if next_memory_state:

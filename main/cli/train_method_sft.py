@@ -16,7 +16,6 @@ from main.trainer.method_sft import method_sft_loss
 from main.utils.logging import get_logger
 from main.utils.misc import ensure_dir, set_seed, to_torch_dtype
 from main.utils.qwen_vl import load_qwen25vl
-from main.utils.loss_tracker import LossTracker
 from main.utils.video import load_video_stream_units
 
 logger = get_logger("main.train_method_sft")
@@ -407,7 +406,7 @@ def main():
 
     ds = JsonlVLDataset(args.train_jsonl)
     ensure_dir(args.output_dir)
-    loss_tracker = LossTracker(output_dir=args.output_dir)
+
     model.train()
     for epoch in range(args.epochs):
         pbar = tqdm(range(len(ds)), desc=f"Method-SFT epoch {epoch}")
@@ -460,13 +459,6 @@ def main():
             if accum_steps % grad_accum == 0:
                 opt.step()
                 opt.zero_grad()
-            ## Changes:
-            loss_tracker.log_video_loss(
-                epoch=epoch,
-                video_idx=i,
-                video_id=getattr(sample, "id", str(i)),
-                stats=stats,
-            )
 
             postfix = {
                 "L": float(stats["loss_total"].cpu()),
@@ -477,8 +469,6 @@ def main():
                 "spar": float(stats["loss_spar"].cpu()),
                 "hid": float(stats["hit_id_at_k"].cpu()),
                 "ht": float(stats["hit_time_at_k"].cpu()),
-                ## Changes:
-                "imp": float(stats["loss_importance"].cpu()) if "loss_importance" in stats else 0.0,
                 "mode": prepared["mode"],
             }
             if "subgraph_size" in stats:
@@ -503,8 +493,7 @@ def main():
         if accum_steps % grad_accum != 0:
             opt.step()
             opt.zero_grad()
-        ## Changes:
-        loss_tracker.plot_epoch_losses(epoch=epoch)
+
         ckpt = os.path.join(args.output_dir, f"epoch{epoch}")
         ensure_dir(ckpt)
         torch.save({"vismem_state": model.state_dict(), "config": cfg_dict}, os.path.join(ckpt, "main.pt"))
