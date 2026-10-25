@@ -10,7 +10,8 @@ from tqdm import tqdm
 
 from main.cli.common import build_vismem_config, load_yaml
 from main.data.collate import load_image
-from main.data.jsonl_dataset import JsonlVLDataset, Sample
+from main.data.jsonl_dataset import Sample
+from main.data.merged_dataset import load_dataset
 from main.model.model import VisMemModel
 from main.trainer.method_sft import method_sft_loss
 from main.utils.checkpoint import (
@@ -23,69 +24,13 @@ from main.utils.checkpoint import (
     sync_to_drive,
     truncate_log,
 )
+from main.utils.drive_clips import ensure_video_available as _ensure_video_available
 from main.utils.logging import get_logger
 from main.utils.misc import ensure_dir, set_seed, to_torch_dtype
 from main.utils.qwen_vl import load_qwen25vl
 from main.utils.video import load_video_stream_units
 
 logger = get_logger("main.train_method_sft")
-
-## Changes:
-import os
-import shutil
-import urllib.request
-from pathlib import Path
-
-## Changes:
-def _ensure_video_available(sample):
-    """Download a missing video into the cache, only when first needed."""
-    video_path = Path(sample.video)
-
-    if video_path.is_file() and video_path.stat().st_size > 0:
-        return str(video_path)
-
-    meta = sample.meta or {}
-    drive_id = meta.get("drive_file_id")
-
-    if not drive_id:
-        raise FileNotFoundError(
-            f"Video missing at {video_path}, and no drive_file_id in sample metadata."
-        )
-
-    video_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = video_path.with_suffix(video_path.suffix + ".part")
-
-    url = f"https://drive.google.com/uc?export=download&id={drive_id}"
-    request = urllib.request.Request(
-        url, headers={"User-Agent": "Mozilla/5.0"}
-    )
-
-    try:
-        with urllib.request.urlopen(request, timeout=120) as response:
-            with open(tmp_path, "wb") as out:
-                shutil.copyfileobj(response, out)
-
-        if not tmp_path.is_file() or tmp_path.stat().st_size == 0:
-            raise RuntimeError(f"Empty download for Drive file {drive_id}")
-
-        # Reject an HTML error/confirmation page instead of caching it as a video.
-        with open(tmp_path, "rb") as f:
-            header = f.read(64)
-        if b"ftyp" not in header:
-            raise RuntimeError(
-                f"Download for {drive_id} does not look like an MP4. "
-                "Google Drive may have returned an error page."
-            )
-
-        os.replace(tmp_path, video_path)
-        print(f"Cached video: {video_path}")
-
-    finally:
-        if tmp_path.exists():
-            tmp_path.unlink()
-
-    return str(video_path)
-
 
 def _maybe_float(value: Any) -> Optional[float]:
     try:
@@ -194,8 +139,7 @@ def _prepare_streaming_sample(
 
     history_prompt = str(meta.get("history_prompt", default_history_prompt))
     sampled = load_video_stream_units(
-	## Changes:
-        video_path = _ensure_video_available(sample),
+        video_path=_ensure_video_available(sample),
         sample_fps=sample_fps,
         unit=stream_update_unit,
         clip_duration=chunk_duration,
@@ -204,6 +148,7 @@ def _prepare_streaming_sample(
         start_time=start_time,
         end_time=end_time,
         compose_mode=clip_layout,
+        merged_clips=meta.get("merged_clips"),
     )
     if not sampled:
         raise ValueError(
@@ -306,7 +251,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/selectstream_qwen25vl7b_lvm_sft.yaml")
     ap.add_argument("--model_name_or_path", default=None)
-    ap.add_argument("--train_jsonl", required=True)
+    ap.add_argument("--train_jsonl", required=True, help="Training rows: a JSONL file, or a merged_train.json (needs --clip_dir).")
+    ap.add_argument("--clip_dir", default=None,
+                    help="Folder with <clip_uid>.mp4 files (e.g. on the mounted Drive); required for merged_*.json. Missing clips are downloaded here from their Drive id.")
+    ap.add_argument("--history_sec", type=float, default=None,
+                    help="merged_*.json only: replay just the last N seconds before each question (default: the whole stream).")
     ap.add_argument("--init_from", default=None, help="Checkpoint folder containing main.pt to continue training.")
     ap.add_argument("--output_dir", required=True)
     ap.add_argument("--epochs", type=int, default=1)
@@ -337,6 +286,7 @@ def main():
                     help="Folder on the mounted Google Drive (e.g. /content/drive/MyDrive/selectstream/run1). Checkpoints are copied here.")
     ap.add_argument("--drive_every", type=int, default=None,
                     help="Copy to --drive_dir every N optimizer steps (rounded to the checkpoint interval). Default: every checkpoint. 0 = only at epoch end / --max_steps.")
+    ap.add_argument("--val_jsonl", default=None, help="Optional validation JSONL or merged_val.json; mean losses are logged after every epoch.")
     ap.add_argument("--freeze_lvm_writer", action="store_true", help="Freeze LVM writer modules in this run.")
     ap.add_argument("--freeze_graph_reasoner", action="store_true", help="Freeze DMG/GAR modules in this run.")
     args = ap.parse_args()
@@ -425,7 +375,8 @@ def main():
     	else float(train_cfg.get("alpha_importance", 0.1))
     )
 
-    ds = JsonlVLDataset(args.train_jsonl)
+    ds = load_dataset(args.train_jsonl, args.clip_dir, history_sec=args.history_sec)
+    val_ds = load_dataset(args.val_jsonl, args.clip_dir, history_sec=args.history_sec) if args.val_jsonl else None
     ensure_dir(args.output_dir)
 
     fingerprint = dataset_fingerprint(ds)
@@ -479,10 +430,56 @@ def main():
         with open(log_path, "w") as f:
             f.write("split,epoch,row,id," + ",".join(loss_keys) + "\n")
 
-    def _log(epoch, row, sample_id, stats):
+    def _loss_for(sample):
+        prepared = _prepare_sample(
+            sample=sample,
+            model=model,
+            state_dtype=dtype,
+            default_sample_fps=args.default_sample_fps,
+            default_history_prompt=args.history_prompt,
+            default_stream_max_frames=args.stream_max_frames,
+            default_stream_update_unit=args.stream_update_unit,
+        )
+        inputs = model.prepare_inputs([prepared["image"]], [prepared["prompt"]])
+        return method_sft_loss(
+            base_model=model.base_model,
+            selectstream_model=model,
+            inputs=inputs,
+            target_text=prepared["answer"],
+            meta=prepared["meta"],
+            memory_state=prepared["memory_state"],
+            step_stride=prepared["step_stride"],
+            chunk_time_spans=prepared["chunk_time_span"],
+            beta_ret=beta_ret,
+            gamma_spar=gamma_spar,
+            ret_id_weight=ret_id_weight,
+            ret_time_weight=ret_time_weight,
+            time_tolerance=time_tolerance,
+            evidence_topk=evidence_topk,
+            alpha_importance=alpha_importance,
+        )
+
+    def _log(split, epoch, row, sample_id, stats):
         with open(log_path, "a") as f:
-            f.write(f"train,{epoch},{row},{sample_id}," + ",".join(f"{float(stats[k].cpu()):.5f}" for k in loss_keys) + "\n")
+            f.write(f"{split},{epoch},{row},{sample_id}," + ",".join(f"{float(stats[k].cpu()):.5f}" for k in loss_keys) + "\n")
         log_lines["n"] += 1
+
+    def _validate(epoch):
+        model.eval()
+        sums = {k: 0.0 for k in loss_keys}
+        n = 0
+        with torch.no_grad():
+            for j in range(len(val_ds)):
+                sample = val_ds[j]
+                if sample.answer is None:
+                    continue
+                _, stats = _loss_for(sample)
+                _log("val", epoch, j, sample.id, stats)
+                for k in loss_keys:
+                    sums[k] += float(stats[k].cpu())
+                n += 1
+        model.train()
+        logger.info("val epoch %d (%d rows): %s", epoch, n, {k: round(v / max(n, 1), 4) for k, v in sums.items()})
 
     def _save_resume(epoch, next_row, force_drive=False):
         path = save_resume_checkpoint(
@@ -500,6 +497,8 @@ def main():
             return
 
     model.train()
+    if val_ds is not None and resume_state is None:
+        _validate(-1)
     for epoch in range(start_epoch, args.epochs):
         row0 = start_row if epoch == start_epoch else 0
         pbar = tqdm(range(row0, len(ds)), desc=f"Method-SFT epoch {epoch}")
@@ -548,7 +547,7 @@ def main():
             )
 
             (loss / grad_accum).backward()
-            _log(epoch, i, sample.id, stats)
+            _log("train", epoch, i, sample.id, stats)
             accum_steps += 1
             if accum_steps % grad_accum == 0:
                 opt.step()
@@ -603,6 +602,8 @@ def main():
         vismem_state = {k: v for k, v in model.state_dict().items() if not k.startswith("base_model.")}
         torch.save({"vismem_state": vismem_state, "config": cfg_dict}, os.path.join(ckpt, "main.pt"))
         tokenizer.save_pretrained(ckpt)
+        if val_ds is not None:
+            _validate(epoch)
         _save_resume(epoch + 1, 0, force_drive=True)
         if args.drive_dir:
             try:

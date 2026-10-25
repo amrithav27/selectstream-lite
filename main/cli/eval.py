@@ -9,7 +9,7 @@ from main.utils.logging import get_logger
 from main.utils.misc import to_torch_dtype
 from main.utils.qwen_vl import load_qwen25vl
 from main.model.model import VisMemModel
-from main.data.jsonl_dataset import JsonlVLDataset
+from main.data.merged_dataset import load_dataset
 from main.data.collate import collate_samples
 from main.trainer.rewards import exact_match_reward, substring_reward
 from main.trainer.method_sft import (
@@ -20,6 +20,7 @@ from main.trainer.method_sft import (
 )
 from main.cli.common import load_yaml, build_vismem_config
 from main.utils.streaming import run_streaming_query
+from main.utils.drive_clips import ensure_video_available
 from main.utils.video import load_video_stream_units
 
 logger = get_logger("main.eval")
@@ -29,7 +30,9 @@ def main():
     ap.add_argument("--config", default="configs/selectstream_qwen25vl7b_baseline.yaml")
     ap.add_argument("--model_name_or_path", default=None)
     ap.add_argument("--ckpt", default=None, help="folder with main.pt")
-    ap.add_argument("--jsonl", required=True)
+    ap.add_argument("--jsonl", required=True, help="Rows: a JSONL file, or a merged_val.json (needs --clip_dir).")
+    ap.add_argument("--clip_dir", default=None, help="Folder with <clip_uid>.mp4 files; required for merged_*.json inputs. Missing clips are downloaded from their Drive id.")
+    ap.add_argument("--history_sec", type=float, default=None, help="merged_*.json only: replay just the last N seconds before each question.")
     ap.add_argument("--max_new_tokens", type=int, default=256)
     ap.add_argument("--enable_vismem", action="store_true")
     ap.add_argument("--method_infer", action="store_true", help="Use method-style query->graph retrieval inference.")
@@ -58,7 +61,7 @@ def main():
         vismem.load_state_dict(state["vismem_state"], strict=False)
     vismem.eval()
 
-    ds = JsonlVLDataset(args.jsonl)
+    ds = load_dataset(args.jsonl, args.clip_dir, history_sec=args.history_sec)
     preds, refs = [], []
     hit_id_scores = []
     hit_time_scores = []
@@ -76,12 +79,13 @@ def main():
         if args.method_infer and sample.is_streaming:
             # Causal protocol: only the prefix observed up to the question time is used.
             units = load_video_stream_units(
-                video_path=sample.video,
+                video_path=ensure_video_available(sample),
                 sample_fps=sample_fps,
                 unit=str((meta or {}).get("stream_update_unit", args.stream_update_unit)),
                 max_units=sample.max_frames or args.stream_max_frames,
                 start_time=sample.start_time or 0.0,
                 end_time=sample.question_time if sample.question_time is not None else sample.end_time,
+                merged_clips=(meta or {}).get("merged_clips"),
             )
             if not units:
                 logger.warning("No stream units sampled for id=%s; skipping.", sample.id)

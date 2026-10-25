@@ -223,6 +223,40 @@ def load_video_sampled_clips(
     return clips
 
 
+def load_merged_stream_frames(
+    clips: Sequence[dict],
+    sample_fps: float,
+    max_frames: Optional[int] = None,
+    start_time: float = 0.0,
+    end_time: Optional[float] = None,
+) -> List[Tuple[Image.Image, float]]:
+    """Frames of several clips played back to back. Each clip is {"path", "offset", "duration"}; `offset` is the
+    summed duration of the clips before it. Timestamps, `start_time` and `end_time` are on the stream clock, so a
+    frame at second t of a clip gets t + offset. Frames at or past a clip's nominal duration are dropped to keep the
+    stream clock increasing across clips."""
+    out: List[Tuple[Image.Image, float]] = []
+    for c in sorted(clips, key=lambda c: float(c["offset"])):
+        offset, duration = float(c["offset"]), float(c["duration"])
+        # A clip that starts exactly at end_time would add its first frame as the last unit, i.e. footage
+        # that belongs after the question; stop before it unless it is the only clip read so far.
+        if end_time is not None and (end_time < offset or (end_time <= offset and out)):
+            break
+        if start_time >= offset + duration:
+            continue
+        remaining = None if max_frames is None else max_frames - len(out)
+        if remaining is not None and remaining <= 0:
+            break
+        local_start = max(0.0, start_time - offset)
+        local_end = None if end_time is None else min(end_time - offset, duration)
+        for img, ts in load_video_sampled_frames(
+            c["path"], sample_fps=sample_fps, max_frames=remaining, start_time=local_start, end_time=local_end
+        ):
+            if ts >= duration:
+                continue
+            out.append((img, ts + offset))
+    return out
+
+
 def load_video_stream_units(
     video_path: str,
     sample_fps: float = 0.5,
@@ -233,8 +267,16 @@ def load_video_stream_units(
     start_time: float = 0.0,
     end_time: Optional[float] = None,
     compose_mode: str = "grid",
+    merged_clips: Optional[Sequence[dict]] = None,
 ) -> List[Tuple[Image.Image, Tuple[float, float]]]:
     unit = str(unit).strip().lower()
+    if merged_clips:
+        if unit != "frame":
+            raise ValueError("Merged streams support stream unit 'frame' only.")
+        frames_with_ts = load_merged_stream_frames(
+            merged_clips, sample_fps=sample_fps, max_frames=max_units, start_time=start_time, end_time=end_time
+        )
+        return [(img, (ts, ts)) for img, ts in frames_with_ts]
     if unit == "frame":
         frames_with_ts = load_video_sampled_frames(
             video_path=video_path,
