@@ -13,6 +13,16 @@ from main.data.collate import load_image
 from main.data.jsonl_dataset import JsonlVLDataset, Sample
 from main.model.model import VisMemModel
 from main.trainer.method_sft import method_sft_loss
+from main.utils.checkpoint import (
+    copy_dir_to_drive,
+    dataset_fingerprint,
+    find_latest,
+    load_resume_checkpoint,
+    restore_from_drive,
+    save_resume_checkpoint,
+    sync_to_drive,
+    truncate_log,
+)
 from main.utils.logging import get_logger
 from main.utils.misc import ensure_dir, set_seed, to_torch_dtype
 from main.utils.qwen_vl import load_qwen25vl
@@ -316,6 +326,17 @@ def main():
     ap.add_argument("--stream_max_frames", type=int, default=None, help="Optional cap on sampled frames per streaming sample.")
     ap.add_argument("--stream_update_unit", default="frame", choices=["clip", "frame"], help="Streaming update granularity. 'frame' updates SAW/LVM on every sampled frame.")
     ap.add_argument("--history_prompt", default="", help="Prompt used when feeding history chunks into memory.")
+    ap.add_argument("--save_every", type=int, default=None,
+                    help="Write a resume checkpoint every N optimizer steps. Default: about 10 per epoch. 0 = only at the end of each epoch.")
+    ap.add_argument("--keep_last", type=int, default=2, help="Resume checkpoints to keep on disk (each holds model + optimizer state).")
+    ap.add_argument("--resume", default=None,
+                    help="'auto' = continue from the newest checkpoint in <output_dir>/ckpt (or --drive_dir if newer); start fresh if none. Or a path to a step directory.")
+    ap.add_argument("--max_steps", type=int, default=None,
+                    help="Stop after this many optimizer steps in total, after writing a resume checkpoint (for time-boxed sessions).")
+    ap.add_argument("--drive_dir", default=None,
+                    help="Folder on the mounted Google Drive (e.g. /content/drive/MyDrive/selectstream/run1). Checkpoints are copied here.")
+    ap.add_argument("--drive_every", type=int, default=None,
+                    help="Copy to --drive_dir every N optimizer steps (rounded to the checkpoint interval). Default: every checkpoint. 0 = only at epoch end / --max_steps.")
     ap.add_argument("--freeze_lvm_writer", action="store_true", help="Freeze LVM writer modules in this run.")
     ap.add_argument("--freeze_graph_reasoner", action="store_true", help="Freeze DMG/GAR modules in this run.")
     args = ap.parse_args()
@@ -407,9 +428,81 @@ def main():
     ds = JsonlVLDataset(args.train_jsonl)
     ensure_dir(args.output_dir)
 
+    fingerprint = dataset_fingerprint(ds)
+    n_answered = sum(1 for j in range(len(ds)) if ds[j].answer is not None)
+    if args.max_samples is not None:
+        n_answered = min(n_answered, args.max_samples)
+    steps_per_epoch = max(1, -(-n_answered // grad_accum))
+    save_every = args.save_every if args.save_every is not None else max(1, steps_per_epoch // 10)
+    logger.info("Rows with an answer: %d, optimizer steps per epoch: %d, checkpoint every %s steps, Drive copy %s.",
+                n_answered, steps_per_epoch, save_every if save_every else "epoch end only",
+                args.drive_dir if args.drive_dir else "off")
+
+    def _to_drive(path, force=False):
+        """Mirror a checkpoint to Drive; a flaky mount must not kill the run, so errors are only logged."""
+        if not args.drive_dir:
+            return
+        if not force and args.drive_every is not None and (args.drive_every == 0 or global_step % args.drive_every != 0):
+            return
+        try:
+            logger.info("Copied %s to Drive: %s", os.path.basename(path), sync_to_drive(path, args.output_dir, args.drive_dir, args.keep_last))
+        except Exception as e:  # noqa: BLE001
+            logger.warning("Drive copy failed (%s); the local checkpoint is kept.", e)
+
+    resume_state = None
+    if args.resume:
+        resume_path = None
+        if args.resume == "auto":
+            if args.drive_dir:
+                try:
+                    resume_path = restore_from_drive(args.output_dir, args.drive_dir)
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("Could not read Drive checkpoints (%s); using local ones.", e)
+            resume_path = resume_path or find_latest(args.output_dir)
+        else:
+            resume_path = args.resume
+        if resume_path:
+            resume_state = load_resume_checkpoint(resume_path, model, opt, fingerprint=fingerprint, grad_accum=grad_accum)
+            logger.info("Resumed from %s: epoch %d, next row %d, optimizer step %d (unexpected keys: %d).",
+                        resume_path, resume_state["epoch"], resume_state["next_row"], resume_state["global_step"],
+                        resume_state["unexpected"])
+        else:
+            logger.info("--resume auto: no checkpoint found, starting from scratch.")
+
+    loss_keys = ("loss_total", "loss_ans", "loss_ret", "loss_spar", "loss_importance", "hit_id_at_k", "hit_time_at_k")
+    log_path = os.path.join(args.output_dir, "loss_log.csv")
+    log_lines = {"n": 1}  # lines in loss_log.csv, header included
+    if resume_state is not None and os.path.exists(log_path):
+        truncate_log(log_path, resume_state["log_lines"])
+        log_lines["n"] = resume_state["log_lines"]
+    else:
+        with open(log_path, "w") as f:
+            f.write("split,epoch,row,id," + ",".join(loss_keys) + "\n")
+
+    def _log(epoch, row, sample_id, stats):
+        with open(log_path, "a") as f:
+            f.write(f"train,{epoch},{row},{sample_id}," + ",".join(f"{float(stats[k].cpu()):.5f}" for k in loss_keys) + "\n")
+        log_lines["n"] += 1
+
+    def _save_resume(epoch, next_row, force_drive=False):
+        path = save_resume_checkpoint(
+            args.output_dir, model, opt, global_step=global_step, epoch=epoch, next_row=next_row,
+            fingerprint=fingerprint, grad_accum=grad_accum, log_lines=log_lines["n"], keep_last=args.keep_last,
+        )
+        logger.info("Saved resume checkpoint %s (epoch %d, next row %d).", path, epoch, next_row)
+        _to_drive(path, force=force_drive)
+
+    start_epoch, start_row, global_step = 0, 0, 0
+    if resume_state is not None:
+        start_epoch, start_row, global_step = resume_state["epoch"], resume_state["next_row"], resume_state["global_step"]
+        if start_epoch >= args.epochs:
+            logger.info("Checkpoint is already past the last epoch (%d); nothing to train.", args.epochs)
+            return
+
     model.train()
-    for epoch in range(args.epochs):
-        pbar = tqdm(range(len(ds)), desc=f"Method-SFT epoch {epoch}")
+    for epoch in range(start_epoch, args.epochs):
+        row0 = start_row if epoch == start_epoch else 0
+        pbar = tqdm(range(row0, len(ds)), desc=f"Method-SFT epoch {epoch}")
         opt.zero_grad()
         accum_steps = 0
         for i in pbar:
@@ -455,10 +548,19 @@ def main():
             )
 
             (loss / grad_accum).backward()
+            _log(epoch, i, sample.id, stats)
             accum_steps += 1
             if accum_steps % grad_accum == 0:
                 opt.step()
                 opt.zero_grad()
+                global_step += 1
+                # Right after a step no gradient is half accumulated, so the next row is a clean restart point.
+                hit_limit = args.max_steps is not None and global_step >= args.max_steps
+                if hit_limit or (save_every and global_step % save_every == 0):
+                    _save_resume(epoch, i + 1, force_drive=hit_limit)
+                if hit_limit:
+                    logger.info("Reached --max_steps=%d; stopping. Continue with --resume auto.", args.max_steps)
+                    return
 
             postfix = {
                 "L": float(stats["loss_total"].cpu()),
@@ -493,11 +595,20 @@ def main():
         if accum_steps % grad_accum != 0:
             opt.step()
             opt.zero_grad()
+            global_step += 1
 
         ckpt = os.path.join(args.output_dir, f"epoch{epoch}")
         ensure_dir(ckpt)
-        torch.save({"vismem_state": model.state_dict(), "config": cfg_dict}, os.path.join(ckpt, "main.pt"))
+        # The frozen backbone is reloaded from `model_name_or_path`; keep only the trained SelectStream modules.
+        vismem_state = {k: v for k, v in model.state_dict().items() if not k.startswith("base_model.")}
+        torch.save({"vismem_state": vismem_state, "config": cfg_dict}, os.path.join(ckpt, "main.pt"))
         tokenizer.save_pretrained(ckpt)
+        _save_resume(epoch + 1, 0, force_drive=True)
+        if args.drive_dir:
+            try:
+                copy_dir_to_drive(ckpt, args.drive_dir)
+            except Exception as e:  # noqa: BLE001
+                logger.warning("Drive copy of %s failed (%s).", ckpt, e)
 
     logger.info("Method-SFT done.")
 

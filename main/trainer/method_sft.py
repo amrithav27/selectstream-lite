@@ -163,26 +163,44 @@ def _multi_positive_retrieval_loss(node_scores: torch.Tensor, target: torch.Tens
     log_probs = F.log_softmax(node_scores, dim=0)
     return -torch.logsumexp(log_probs[positive], dim=0)
 
-## Changes:
+def _overlap_fraction(
+    spans: torch.Tensor,
+    intervals: List[Tuple[float, float]],
+    tolerance: float,
+) -> Optional[torch.Tensor]:
+    """Share of each node span [start, end] that lies inside an evidence window (point nodes: 0 or 1)."""
+    if spans.numel() == 0 or spans.dim() != 2 or spans.size(-1) != 2 or len(intervals) == 0:
+        return None
+    tol = max(0.0, float(tolerance))
+    start = spans[:, 0].float()
+    end = spans[:, 1].float() + 1.0  # a frame stamped t covers [t, t + 1) at the 1 fps sampling rate
+    length = (end - start).clamp_min(0.0)
+    frac = torch.zeros_like(start)
+    for s, e in intervals:
+        lo = min(float(s), float(e)) - tol
+        hi = max(float(s), float(e)) + tol
+        if hi - lo < 1.0:  # point or sub-second window: widen to one sampled frame
+            mid = 0.5 * (lo + hi)
+            lo, hi = mid - 0.5, mid + 0.5
+        inter = (torch.clamp(end, max=hi) - torch.clamp(start, min=lo)).clamp_min(0.0)
+        inside = ((start >= lo) & (start <= hi)).float()
+        frac = torch.maximum(frac, torch.where(length > 0, inter / length.clamp_min(1e-6), inside))
+    return frac.clamp(0.0, 1.0)
+
+
 def importance_loss(scores: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-    if scores.numel() == 0 or target.numel() != scores.numel():
+    """Pairwise ranking loss: nodes with more evidence overlap must score above nodes with less."""
+    if scores.numel() < 2 or target.numel() != scores.numel():
         return scores.new_zeros(())
-
-    target = target.to(device=scores.device, dtype=scores.dtype)
-
-    if not bool((target > 0).any().item()):
+    scores = scores.float()
+    target = target.to(device=scores.device, dtype=torch.float32)
+    gap = target.unsqueeze(1) - target.unsqueeze(0)
+    pair = gap > 0
+    if not bool(pair.any().item()):
         return scores.new_zeros(())
+    margin = scores.unsqueeze(1) - scores.unsqueeze(0)
+    return (F.softplus(-margin)[pair] * gap[pair]).sum() / gap[pair].sum()
 
-    # Balance positive and negative nodes.
-    num_pos = target.sum()
-    num_neg = target.numel() - num_pos
-
-    pos_weight = (num_neg / num_pos.clamp_min(1.0)).clamp(min=1.0)
-    return F.binary_cross_entropy_with_logits(
-        scores,
-        target,
-        pos_weight=pos_weight,
-    )
 
 def _hit_at_k(ids: torch.Tensor, scores: torch.Tensor, gt_ids: List[int], topk: int) -> float:
     if ids.numel() == 0 or scores.numel() == 0 or len(gt_ids) == 0:
@@ -333,7 +351,7 @@ def method_sft_loss(
 
     loss_ret_id = torch.tensor(0.0, device=device, dtype=loss_ans.dtype)
     loss_ret_time = torch.tensor(0.0, device=device, dtype=loss_ans.dtype)
-    loss_importance = out_prompt.hidden_states[-1].new_zeros(())
+    loss_importance = torch.tensor(0.0, device=device, dtype=loss_ans.dtype)
     hit_id = torch.tensor(0.0, device=device, dtype=loss_ans.dtype)
     hit_time = torch.tensor(0.0, device=device, dtype=loss_ans.dtype)
     loss_ret = torch.tensor(0.0, device=device, dtype=loss_ans.dtype)
@@ -345,22 +363,14 @@ def method_sft_loss(
         node_indices = aux.get("node_indices", torch.empty(0, device=device, dtype=torch.long))
         node_times = aux.get("node_time_spans", aux.get("node_times", torch.empty(0, device=device, dtype=loss_ans.dtype)))
         importance_scores = aux.get("importance_scores")
-	## Changes:
         if importance_scores is not None and importance_scores.numel() > 0:
-            importance_target = _build_time_target(
-                node_times,
+            importance_target = _overlap_fraction(
+                aux.get("importance_time_spans", aux.get("node_time_spans", node_times)),
                 gt_intervals,
                 time_tolerance,
             )
-
-            if (
-                importance_target is not None
-                and importance_target.numel() == importance_scores.numel()
-            ):
-                loss_importance = importance_loss(
-                    importance_scores,
-                    importance_target,
-                )
+            if importance_target is not None:
+                loss_importance = importance_loss(importance_scores, importance_target).to(loss_ans.dtype)
 
         id_target = _build_id_target(node_indices, gt_ids)
         time_target = _build_time_target(node_times, gt_intervals, time_tolerance)
@@ -392,8 +402,7 @@ def method_sft_loss(
         spar = aux.get("sparsity_loss", None)
         if isinstance(spar, torch.Tensor):
             loss_spar = spar.to(device=device, dtype=loss_ans.dtype)
-    ## Changes:
-    total = loss_ans + beta_ret * loss_ret + gamma_spar * loss_spar +  alpha_importance * loss_importance
+    total = loss_ans + beta_ret * loss_ret + gamma_spar * loss_spar + alpha_importance * loss_importance
     stats = {
         "loss_total": total.detach(),
         "loss_ans": loss_ans.detach(),

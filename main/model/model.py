@@ -758,10 +758,7 @@ class VisMemModel(nn.Module):
                         "last_merge_pair": state.get("last_merge_pair", torch.full((2,), -1, device=hidden_states.device, dtype=torch.long)),
                         "subgraph_size": torch.tensor(float(state["selected_indices"].numel()), device=hidden_states.device),
                         "sparsity_loss": torch.tensor(0.0, device=hidden_states.device, dtype=hidden_states.dtype),
-			"importance_scores": state.get(
-			    "active_importance_scores",
-			    torch.empty(0, device=hidden_states.device, dtype=hidden_states.dtype),
-			),
+                        "importance_scores": state["active_importance_scores"],
                     }
                 )
                 if next_memory_state:
@@ -779,6 +776,11 @@ class VisMemModel(nn.Module):
                 edge_index=state.get("graph_edge_index", None),
                 edge_type=state.get("graph_edge_type", None),
                 edge_weight=state.get("graph_edge_weight", None),
+            )
+            # Importance of every active node (not just the retrieved subgraph) for the importance loss.
+            reason_out["importance_scores"] = state["active_importance_scores"]
+            reason_out["importance_time_spans"] = torch.stack(
+                [state["active_time_starts"], state["active_time_ends"]], dim=-1
             )
             reason_out["merge_count"] = state.get("merge_count", torch.tensor(0.0, device=hidden_states.device, dtype=hidden_states.dtype))
             reason_out["merge_penalty_similarity"] = state.get("merge_penalty_similarity", torch.tensor(0.0, device=hidden_states.device, dtype=hidden_states.dtype))

@@ -232,7 +232,7 @@ class LVMMemoryFormer(nn.Module):
         self.segment_encoder = nn.TransformerEncoder(seg_encoder_layer, num_layers=self.segment_encoder_layers)
         self.segment_query = nn.Parameter(torch.randn(1, 1, hidden_size) * 0.02)
         self.segment_ln = nn.LayerNorm(hidden_size)
-	## Changes:
+        # Learned importance (replaces surprise as the per-node priority; see `_write_one`).
         self.importance_head = nn.Sequential(
             nn.LayerNorm(hidden_size),
             nn.Linear(hidden_size, gate_hidden),
@@ -240,12 +240,8 @@ class LVMMemoryFormer(nn.Module):
             nn.Linear(gate_hidden, 1),
         )
 
-    ## Changes
     def score_importance(self, z: torch.Tensor) -> torch.Tensor:
-        """
-        z: [..., hidden_size]
-        Returns unnormalized importance logits: [...]
-        """
+        """z: [..., hidden_size] -> importance logits [...]."""
         return self.importance_head(z).squeeze(-1)
 
 
@@ -681,7 +677,7 @@ class LVMMemoryFormer(nn.Module):
             time_start[keep_idx] = min(keep_start, free_start)
             time_end[keep_idx] = max(keep_end, free_end)
             age[keep_idx] = max(age[keep_idx], age[free_idx])
-            avg_surprise[keep_idx] = (keep_weight * avg_surprise[keep_idx] + free_weight * avg_surprise[free_idx]) / (keep_weight + free_weight)
+            avg_surprise[keep_idx] = torch.maximum(avg_surprise[keep_idx].clone(), avg_surprise[free_idx].clone())
             read_count[keep_idx] = read_count[keep_idx] + read_count[free_idx]
             write_count[keep_idx] = write_count[keep_idx] + write_count[free_idx]
             merge_count[keep_idx] = merge_count[keep_idx] + merge_count[free_idx] + 1.0
@@ -929,8 +925,12 @@ class LVMMemoryFormer(nn.Module):
             time_end[target_idx] = seg_end
             merge_count[target_idx] = 0.0
         write_count[target_idx] = write_count[target_idx] + 1.0
-        wc = write_count[target_idx]
-        avg_surprise[target_idx] = avg_surprise[target_idx] + (surprise - avg_surprise[target_idx]) / wc
+        wc = write_count[target_idx].detach().clone()
+        # The per-node priority signal is the learned importance of the segment, not its surprise.
+        # Surprise still drives segmentation, the write gate and temporal edges. The score is computed
+        # from the segment alone, before any merge, so training and test conditions match.
+        importance = torch.sigmoid(self.score_importance(z).float()).to(avg_surprise.dtype)
+        avg_surprise[target_idx] = avg_surprise[target_idx] + (importance - avg_surprise[target_idx]) / wc
         temporal_graph, similarity_graph, last_graph_slot = self._update_memory_graph(
             slots=slots,
             active=active,
@@ -1392,8 +1392,9 @@ class LVMMemoryFormer(nn.Module):
             )
 
             active_idx = active.nonzero(as_tuple=False).squeeze(-1)
-	    ## Changes
-            active_importance_scores = self.score_importance(slots[active_idx])
+            # avg_surprise holds the learned importance probability; export it as logits for the ranking loss.
+            active_importance = avg_surprise[active_idx].float().clamp(1e-4, 1.0 - 1e-4)
+            active_importance_scores = torch.log(active_importance) - torch.log1p(-active_importance)
             graph_edge_index, graph_edge_type, graph_edge_weight = self._export_active_graph(
                 temporal_graph=temporal_graph,
                 similarity_graph=similarity_graph,
@@ -1407,8 +1408,7 @@ class LVMMemoryFormer(nn.Module):
                     "active_time_starts": time_start[active_idx],
                     "active_time_ends": time_end[active_idx],
                     "active_surprise": avg_surprise[active_idx],
-		    ## Changes
-		    "active_importance_scores": active_importance_scores,
+                    "active_importance_scores": active_importance_scores,
                     "active_merge_count": merge_count[active_idx],
                     "selected_indices": picked,
                     "selected_slots": mem_tokens[: picked.size(0)] if picked.numel() > 0 else mem_tokens[:0],
