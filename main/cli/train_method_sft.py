@@ -16,9 +16,66 @@ from main.trainer.method_sft import method_sft_loss
 from main.utils.logging import get_logger
 from main.utils.misc import ensure_dir, set_seed, to_torch_dtype
 from main.utils.qwen_vl import load_qwen25vl
+from main.utils.loss_tracker import LossTracker
 from main.utils.video import load_video_stream_units
 
 logger = get_logger("main.train_method_sft")
+
+## Changes:
+import os
+import shutil
+import urllib.request
+from pathlib import Path
+
+## Changes:
+def _ensure_video_available(sample):
+    """Download a missing video into the cache, only when first needed."""
+    video_path = Path(sample.video)
+
+    if video_path.is_file() and video_path.stat().st_size > 0:
+        return str(video_path)
+
+    meta = sample.meta or {}
+    drive_id = meta.get("drive_file_id")
+
+    if not drive_id:
+        raise FileNotFoundError(
+            f"Video missing at {video_path}, and no drive_file_id in sample metadata."
+        )
+
+    video_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = video_path.with_suffix(video_path.suffix + ".part")
+
+    url = f"https://drive.google.com/uc?export=download&id={drive_id}"
+    request = urllib.request.Request(
+        url, headers={"User-Agent": "Mozilla/5.0"}
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            with open(tmp_path, "wb") as out:
+                shutil.copyfileobj(response, out)
+
+        if not tmp_path.is_file() or tmp_path.stat().st_size == 0:
+            raise RuntimeError(f"Empty download for Drive file {drive_id}")
+
+        # Reject an HTML error/confirmation page instead of caching it as a video.
+        with open(tmp_path, "rb") as f:
+            header = f.read(64)
+        if b"ftyp" not in header:
+            raise RuntimeError(
+                f"Download for {drive_id} does not look like an MP4. "
+                "Google Drive may have returned an error page."
+            )
+
+        os.replace(tmp_path, video_path)
+        print(f"Cached video: {video_path}")
+
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink()
+
+    return str(video_path)
 
 
 def _maybe_float(value: Any) -> Optional[float]:
@@ -128,7 +185,8 @@ def _prepare_streaming_sample(
 
     history_prompt = str(meta.get("history_prompt", default_history_prompt))
     sampled = load_video_stream_units(
-        video_path=sample.video,
+	## Changes:
+        video_path = _ensure_video_available(sample),
         sample_fps=sample_fps,
         unit=stream_update_unit,
         clip_duration=chunk_duration,
@@ -243,10 +301,14 @@ def main():
     ap.add_argument("--init_from", default=None, help="Checkpoint folder containing main.pt to continue training.")
     ap.add_argument("--output_dir", required=True)
     ap.add_argument("--epochs", type=int, default=1)
+## Changes:
+    ap.add_argument("--max_samples", type=int, default=None)
     ap.add_argument("--lr", type=float, default=None)
     ap.add_argument("--grad_accum", type=int, default=None)
     ap.add_argument("--beta_ret", type=float, default=None)
     ap.add_argument("--gamma_spar", type=float, default=None)
+    ## Changes:
+    ap.add_argument("--alpha_importance", type=float, default=None)
     ap.add_argument("--ret_id_weight", type=float, default=None)
     ap.add_argument("--ret_time_weight", type=float, default=None)
     ap.add_argument("--time_tolerance", type=float, default=None)
@@ -336,10 +398,16 @@ def main():
     evidence_topk = args.evidence_topk if args.evidence_topk is not None else int(train_cfg.get("evidence_topk", 8))
     grad_accum = max(1, args.grad_accum if args.grad_accum is not None else int(train_cfg.get("grad_accum", 4)))
     opt = optim.AdamW(trainable, lr=lr)
+    ## Changes:
+    alpha_importance = (
+    	args.alpha_importance
+    	if args.alpha_importance is not None
+    	else float(train_cfg.get("alpha_importance", 0.1))
+    )
 
     ds = JsonlVLDataset(args.train_jsonl)
     ensure_dir(args.output_dir)
-
+    loss_tracker = LossTracker(output_dir=args.output_dir)
     model.train()
     for epoch in range(args.epochs):
         pbar = tqdm(range(len(ds)), desc=f"Method-SFT epoch {epoch}")
@@ -383,6 +451,8 @@ def main():
                 ret_time_weight=ret_time_weight,
                 time_tolerance=time_tolerance,
                 evidence_topk=evidence_topk,
+		## Changes:
+		alpha_importance=alpha_importance,
             )
 
             (loss / grad_accum).backward()
@@ -390,6 +460,13 @@ def main():
             if accum_steps % grad_accum == 0:
                 opt.step()
                 opt.zero_grad()
+            ## Changes:
+            loss_tracker.log_video_loss(
+                epoch=epoch,
+                video_idx=i,
+                video_id=getattr(sample, "id", str(i)),
+                stats=stats,
+            )
 
             postfix = {
                 "L": float(stats["loss_total"].cpu()),
@@ -400,6 +477,8 @@ def main():
                 "spar": float(stats["loss_spar"].cpu()),
                 "hid": float(stats["hit_id_at_k"].cpu()),
                 "ht": float(stats["hit_time_at_k"].cpu()),
+                ## Changes:
+                "imp": float(stats["loss_importance"].cpu()) if "loss_importance" in stats else 0.0,
                 "mode": prepared["mode"],
             }
             if "subgraph_size" in stats:
@@ -419,11 +498,13 @@ def main():
                 postfix["hist"] = int(prepared["history_frames"])
                 postfix["qt"] = round(float(prepared["query_time"]), 1)
             pbar.set_postfix(postfix)
-
+            if args.max_samples is not None and i +1 >= args.max_samples:
+                break
         if accum_steps % grad_accum != 0:
             opt.step()
             opt.zero_grad()
-
+        ## Changes:
+        loss_tracker.plot_epoch_losses(epoch=epoch)
         ckpt = os.path.join(args.output_dir, f"epoch{epoch}")
         ensure_dir(ckpt)
         torch.save({"vismem_state": model.state_dict(), "config": cfg_dict}, os.path.join(ckpt, "main.pt"))
