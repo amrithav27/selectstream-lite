@@ -69,6 +69,13 @@ def build_vismem_config(cfg_dict: Dict[str, Any]) -> VisMemConfig:
         method_spar_subgraph_weight=float(v.get("method_spar_subgraph_weight", 1.0)),
         method_spar_redundancy_weight=float(v.get("method_spar_redundancy_weight", 1.0)),
         method_redundancy_margin=float(v.get("method_redundancy_margin", 0.0)),
+        lvm_write_signal=str(v.get("lvm_write_signal", "surprise")),
+        lvm_fixed_segment_len=int(v.get("lvm_fixed_segment_len", 16)),
+        lvm_use_importance_scorer=bool(v.get("lvm_use_importance_scorer", False)),
+        lvm_scorer_proj_dim=int(v.get("lvm_scorer_proj_dim", 16)),
+        lvm_build_long_former=bool(v.get("lvm_build_long_former", True)),
+        trainable_dtype=v.get("trainable_dtype", None),
+        trainable_device=v.get("trainable_device", None),
         query_builder=QueryBuilderConfig(
             num_layers=int(qb.get("num_layers",2)),
             num_heads=int(qb.get("num_heads",8)),

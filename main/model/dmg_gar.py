@@ -296,7 +296,9 @@ class DynamicMemoryGraphReasoner(nn.Module):
         edge_index: torch.Tensor | None = None,
         edge_type: torch.Tensor | None = None,
         edge_weight: torch.Tensor | None = None,
+        evidence_k: int | None = None,
     ) -> Dict[str, torch.Tensor]:
+        # evidence_k overrides M for this call (Q2 decomposed retrieval reads M/k per sub-question).
         if node_feats.numel() == 0:
             empty_slots = node_feats.new_zeros(0, self.hidden_size)
             empty_spans = torch.empty(0, 2, dtype=node_feats.dtype, device=node_feats.device)
@@ -310,6 +312,9 @@ class DynamicMemoryGraphReasoner(nn.Module):
                 "node_time_spans": empty_spans,
                 "node_merge_count": torch.empty(0, dtype=node_feats.dtype, device=node_feats.device),
                 "node_span_lengths": torch.empty(0, dtype=node_feats.dtype, device=node_feats.device),
+                "all_node_scores": torch.empty(0, dtype=node_feats.dtype, device=node_feats.device),
+                "all_node_indices": torch.empty(0, dtype=torch.long, device=node_feats.device),
+                "all_node_time_spans": empty_spans,
                 "subgraph_size": torch.tensor(0.0, device=node_feats.device),
                 "sparsity_subgraph_loss": torch.tensor(0.0, device=node_feats.device),
                 "sparsity_redundancy_loss": torch.tensor(0.0, device=node_feats.device),
@@ -378,7 +383,7 @@ class DynamicMemoryGraphReasoner(nn.Module):
         refined_norm = F.normalize(refined, dim=-1)
         sub_span_len = span_len[selected]
         refined_score = (refined_norm @ q) + score_bias[selected].to(dtype=refined.dtype)
-        m = min(self.evidence_tokens, refined.size(0))
+        m = min(self.evidence_tokens if evidence_k is None else int(evidence_k), refined.size(0))
         ev_pos = torch.topk(refined_score, k=m, largest=True).indices
 
         # Eq. (10): e_m = LN(W_e h_m). Only the retrieved nodes are exposed (no padding tokens).
@@ -407,6 +412,11 @@ class DynamicMemoryGraphReasoner(nn.Module):
             "node_time_spans": node_time_spans,
             "node_merge_count": sub.node_merge_count,
             "node_span_lengths": sub_span_len,
+            # Coarse Eq. 6 score over every committed node: L_ret over all nodes (docs/plan.md §2.3),
+            # so a positive missed by seeding still gets gradient.
+            "all_node_scores": raw_score,
+            "all_node_indices": node_indices,
+            "all_node_time_spans": torch.stack([graph.node_time_start, graph.node_time_end], dim=-1),
             "subgraph_size": torch.tensor(float(selected.size(0)), device=node_feats.device),
             "sparsity_subgraph_loss": sparsity_subgraph_loss,
             "sparsity_redundancy_loss": sparsity_redundancy_loss,

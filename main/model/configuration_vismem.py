@@ -89,3 +89,14 @@ class VisMemConfig:
     method_spar_subgraph_weight: float = 1.0
     method_spar_redundancy_weight: float = 1.0
     method_redundancy_margin: float = 0.0
+
+    # Q1 write signal (docs/plan.md §3): surprise | learned | oracle | fixed
+    lvm_write_signal: str = "surprise"
+    lvm_fixed_segment_len: int = 16
+    lvm_use_importance_scorer: bool = False
+    lvm_scorer_proj_dim: int = 16
+    lvm_build_long_former: bool = True   # the SelectStream path only uses the short former
+
+    # Trainable modules' dtype/device. None keeps the old behaviour (backbone dtype, backbone's first device).
+    trainable_dtype: Optional[str] = None
+    trainable_device: Optional[str] = None

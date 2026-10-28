@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import List, Optional, Sequence, Tuple
+from typing import Iterator, List, Optional, Sequence, Tuple
 
 from PIL import Image, ImageOps
 
@@ -221,6 +221,71 @@ def load_video_sampled_clips(
                 break
         clip_start += step
     return clips
+
+
+def iter_video_frames(
+    video_path: str,
+    sample_fps: float = 1.0,
+    max_side: Optional[int] = None,
+) -> Iterator[Tuple[Image.Image, float]]:
+    """Yield (frame, timestamp_sec) at `sample_fps`, decoding sequentially and resizing on the fly.
+
+    Only one decoded frame is held at a time; loading a whole 1,200 s clip at full resolution would
+    not fit in RAM. The frame kept for second k is the first decoded frame at or after k / sample_fps.
+    """
+    import cv2
+
+    if sample_fps <= 0:
+        raise ValueError(f"`sample_fps` must be > 0, got {sample_fps}.")
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise ValueError(f"Failed to open video: {video_path}")
+    try:
+        fps = float(cap.get(cv2.CAP_PROP_FPS) or 0.0)
+        if fps <= 0:
+            raise ValueError(f"Could not infer video fps from {video_path}.")
+        idx = 0
+        next_t = 0.0
+        while cap.grab():
+            t = idx / fps
+            if t + 0.5 / fps >= next_t:
+                ok, frame = cap.retrieve()
+                if not ok:
+                    break
+                img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+                if max_side is not None and max(img.size) > max_side:
+                    scale = max_side / float(max(img.size))
+                    img = img.resize((max(1, round(img.width * scale)), max(1, round(img.height * scale))), Image.Resampling.BILINEAR)
+                yield img, t
+                next_t += 1.0 / sample_fps
+            idx += 1
+    finally:
+        cap.release()
+
+
+def iter_stream_frames(
+    pieces,
+    sample_fps: float = 1.0,
+    max_side: Optional[int] = None,
+) -> Iterator[Tuple[Image.Image, float]]:
+    """Yield (frame, video_time) for a video's clips played back to back (main.data.ego4d_qa.StreamItem).
+
+    Frame k of a clip is stamped start + k / fps (the nominal times in StreamItem.frame_times); a frame
+    whose time was already shown by an earlier, overlapping clip is skipped. At most
+    ceil(duration * fps) frames are taken per clip, so decoded and nominal frame lists agree.
+    """
+    import math
+
+    last = -math.inf
+    for p in pieces:
+        n = int(math.ceil(p.duration * sample_fps - 1e-6))
+        for k, (img, _) in enumerate(iter_video_frames(p.path, sample_fps=sample_fps, max_side=max_side)):
+            if k >= n:
+                break
+            t = p.video_start + k / sample_fps
+            if t > last + 0.5 / sample_fps:
+                last = t
+                yield img, t
 
 
 def load_video_stream_units(

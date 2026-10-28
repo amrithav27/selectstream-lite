@@ -376,3 +376,149 @@ def method_sft_loss(
         if isinstance(spar_red, torch.Tensor):
             stats["loss_spar_redundancy"] = spar_red.detach()
     return total, stats
+
+
+# ---- Ego4D NLQ / QaEgo4D streaming objective (docs/plan.md §2.3) ------------------------------
+
+
+def retrieval_metrics(
+    aux: Dict[str, torch.Tensor],
+    committed_spans: torch.Tensor,
+    window: Tuple[float, float],
+    time_tolerance: float,
+    frame_duration: float = 1.0,
+) -> Dict[str, float]:
+    """Per-query evidence metrics. Recall@M / T-Overlap follow Eqs. 56-57 on the M evidence nodes;
+    survival asks whether any committed node overlaps the window at t_q, i.e. whether the write
+    side kept the evidence at all (a property of the graph, not of retrieval)."""
+    ev_spans = aux.get("evidence_time_spans", torch.empty(0, 2))
+    t_overlap = _temporal_overlap(ev_spans.detach().float().cpu(), [window], frame_duration)
+    # Merged nodes span the union of their parts, so overlap-based scores rise as spans widen.
+    # precision = retrieved seconds inside the window / retrieved seconds (each frame +- half a period).
+    half = 0.5 * frame_duration
+    sp = ev_spans.detach().float().cpu().reshape(-1, 2)
+    lo, hi = sp.min(dim=1).values - half, sp.max(dim=1).values + half
+    inside = (torch.minimum(hi, torch.tensor(window[1] + half)) - torch.maximum(lo, torch.tensor(window[0] - half))).clamp(min=0)
+    total = (hi - lo).sum()
+    survival = _build_time_target(committed_spans.detach().float().cpu(), [window], time_tolerance)
+    # Best-node IoU: survival that a wide merged span cannot inflate (spans and window widened by half a frame).
+    cs = committed_spans.detach().float().cpu().reshape(-1, 2)
+    best_iou = None
+    if cs.numel():
+        ws, we = window[0] - half, window[1] + half
+        c_lo, c_hi = cs.min(dim=1).values - half, cs.max(dim=1).values + half
+        inter = (torch.minimum(c_hi, torch.tensor(we)) - torch.maximum(c_lo, torch.tensor(ws))).clamp(min=0)
+        union = (c_hi - c_lo) + (we - ws) - inter
+        best_iou = float((inter / union.clamp(min=1e-6)).max())
+    return {
+        "best_iou": best_iou,
+        "recall_at_m": float(t_overlap > 0.0),
+        "t_overlap": float(t_overlap),
+        "evidence_survival": float(survival is not None and bool(survival.any())),
+        "num_committed": float(committed_spans.size(0)),
+        "num_evidence": float(ev_spans.size(0)),
+        "evidence_span_s": float((hi - lo).mean()) if sp.numel() else None,
+        "evidence_precision": float(inside.sum() / total) if sp.numel() and float(total) > 0 else None,
+    }
+
+
+def selectstream_query_loss(
+    model,
+    image,
+    prompt: str,
+    answer: Optional[str],
+    window: Tuple[float, float],
+    memory_state,
+    beta_ret: float,
+    gamma_spar: float,
+    time_tolerance: float,
+    t_now: Optional[float] = None,
+) -> tuple[torch.Tensor, Dict[str, float]]:
+    """One query read at its t_q: L = L_ans + beta * L_ret + gamma * L_spar (Eq. 14).
+
+    t_now = t_q (stream seconds): the read also sees the open segment as a provisional node, so a
+    query asked while its evidence is not yet committed can still retrieve it.
+
+    L_ans: teacher-forced CE on answer + <|im_end|> after [X_prompt; X_cur; e_1..e_M] (Eq. 11);
+    skipped when the query has no answer (NLQ-only rows).
+    L_ret: Eq. 36 with positives from Eq. 55, averaged over (a) the coarse Eq. 6 score on all
+    committed nodes and (b) the refined score on the routed subgraph, whichever have a positive.
+    The read never writes to memory; it only bumps read counts (mark_read).
+    """
+    base = model.base_model
+    dev = model.trainable_device
+    inputs = model.prepare_inputs([image], [prompt])
+    with torch.no_grad():
+        out_prompt = base(**inputs, use_cache=True, output_hidden_states=True)
+    input_ids = inputs["input_ids"]
+    attn = inputs.get("attention_mask", None)
+    if attn is None:
+        attn = torch.ones_like(input_ids)
+    view = model.lvm_short_former.state_view(memory_state[0], include_open=t_now is not None, t_now=t_now)
+    committed_spans = torch.stack([view["active_time_starts"], view["active_time_ends"]], dim=-1)
+    evidence, aux = model.read_evidence(out_prompt.hidden_states[-1], input_ids, attn, memory_state, mark_read=True, t_now=t_now)
+
+    zero = torch.zeros((), device=dev, dtype=torch.float32)
+    loss_ans = zero
+    if answer:
+        emb = base.get_input_embeddings()
+        tgt = model.answer_target_ids(answer).to(emb.weight.device)
+        tgt_emb = emb(tgt)
+        ev = evidence.to(device=tgt_emb.device, dtype=tgt_emb.dtype)
+        full_attn = torch.cat([attn, attn.new_ones(1, ev.size(1) + tgt.size(1))], dim=1)
+        out = model.continue_forward(
+            out_prompt.past_key_values,
+            inputs_embeds=torch.cat([ev, tgt_emb], dim=1),
+            attention_mask=full_attn,
+        )
+        # The logit for y_k sits one position earlier; y_0 is predicted from the last evidence token
+        # (or the last prompt token when memory returned nothing).
+        all_logits = torch.cat([out_prompt.logits[:, -1:, :].to(out.logits), out.logits], dim=1)
+        n_ev = ev.size(1)
+        logits = all_logits[:, n_ev : n_ev + tgt.size(1), :]
+        loss_ans = F.cross_entropy(
+            logits.reshape(-1, logits.size(-1)).float(),
+            tgt.reshape(-1).to(logits.device),
+        ).to(dev)
+
+    ret_terms = []
+    loss_ret_coarse = zero
+    loss_ret_refined = zero
+    if aux:
+        for scores_key, spans_key in (("all_node_scores", "all_node_time_spans"), ("node_scores", "node_time_spans")):
+            target = _build_time_target(aux[spans_key], [window], time_tolerance)
+            if target is not None and bool(target.any()):
+                term = _multi_positive_retrieval_loss(aux[scores_key].float(), target)
+                ret_terms.append(term)
+                if scores_key == "all_node_scores":
+                    loss_ret_coarse = term
+                else:
+                    loss_ret_refined = term
+    loss_ret = torch.stack(ret_terms).mean() if ret_terms else zero
+    loss_spar = aux.get("sparsity_loss", zero).float() if aux else zero
+
+    total = loss_ans + beta_ret * loss_ret + gamma_spar * loss_spar
+    stats = {
+        "loss_total": float(total.detach()),
+        "loss_ans": float(loss_ans.detach()),
+        "loss_ret": float(loss_ret.detach()),
+        "loss_ret_coarse": float(loss_ret_coarse.detach()),
+        "loss_ret_refined": float(loss_ret_refined.detach()),
+        "loss_spar": float(loss_spar.detach()),
+        "has_answer": float(bool(answer)),
+    }
+    stats.update(retrieval_metrics(aux, committed_spans, window, time_tolerance))
+    stats["evidence_location"] = evidence_location(view, window)
+    return total, stats
+
+
+def evidence_location(view: Dict[str, torch.Tensor], window: Tuple[float, float]) -> str:
+    """Where the answer window sits at t_q: all in the open segment, all in committed nodes, or split."""
+    if not view.get("has_open_node", False):
+        return "committed"
+    open_start = float(view["active_time_starts"][-1])
+    if window[0] >= open_start:
+        return "open"
+    if window[1] >= open_start:
+        return "split"
+    return "committed"

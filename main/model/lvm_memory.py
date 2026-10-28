@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from main.model.importance_scorer import ImportanceScorer
+
 
 @dataclass
 class LVMWriteSummary:
@@ -22,33 +24,48 @@ class LVMWriteSummary:
     usage_ratio: float
 
 
+WRITE_SIGNALS = ("surprise", "learned", "oracle", "fixed")
+
+
 @dataclass
 class SAWStreamState:
     prev_feat: torch.Tensor
     prev_attn: torch.Tensor
     prev_ema: torch.Tensor
+    # Running state of the write signal w_t (Q1): equals the surprise EMA in the "surprise" arm.
+    # `recent_ema`, `energy` and the boundary rule (Eq. 3) all act on w_t.
+    prev_w_ema: torch.Tensor
     recent_ema: torch.Tensor
     seg_sum: torch.Tensor
     seg_feats: torch.Tensor
     seg_surprise_sum: torch.Tensor
+    seg_w_sum: torch.Tensor
     seg_count: torch.Tensor
     seg_start_step: torch.Tensor
     energy: torch.Tensor
     has_prev: torch.Tensor
+    # Per memory slot: mean frozen feature g of the frames it holds, and how many frames. The
+    # update-vs-new rule compares in this space (fixed during training), not z against slots h.
+    node_g_mean: Optional[torch.Tensor] = None
+    node_g_count: Optional[torch.Tensor] = None
 
     def to(self, device: torch.device, dtype: torch.dtype) -> "SAWStreamState":
         return SAWStreamState(
             prev_feat=self.prev_feat.to(device=device, dtype=dtype),
             prev_attn=self.prev_attn.to(device=device, dtype=dtype),
             prev_ema=self.prev_ema.to(device=device, dtype=dtype),
+            prev_w_ema=self.prev_w_ema.to(device=device, dtype=dtype),
             recent_ema=self.recent_ema.to(device=device, dtype=dtype),
             seg_sum=self.seg_sum.to(device=device, dtype=dtype),
             seg_feats=self.seg_feats.to(device=device, dtype=dtype),
             seg_surprise_sum=self.seg_surprise_sum.to(device=device, dtype=dtype),
+            seg_w_sum=self.seg_w_sum.to(device=device, dtype=dtype),
             seg_count=self.seg_count.to(device=device),
             seg_start_step=self.seg_start_step.to(device=device, dtype=dtype),
             energy=self.energy.to(device=device, dtype=dtype),
             has_prev=self.has_prev.to(device=device),
+            node_g_mean=self.node_g_mean.to(device=device, dtype=dtype) if self.node_g_mean is not None else None,
+            node_g_count=self.node_g_count.to(device=device, dtype=dtype) if self.node_g_count is not None else None,
         )
 
 
@@ -60,6 +77,7 @@ class LVMMemoryState:
     time_start: torch.Tensor
     time_end: torch.Tensor
     avg_surprise: torch.Tensor
+    avg_importance: torch.Tensor
     read_count: torch.Tensor
     write_count: torch.Tensor
     merge_count: torch.Tensor
@@ -77,6 +95,7 @@ class LVMMemoryState:
             time_start=self.time_start.to(device=device, dtype=dtype),
             time_end=self.time_end.to(device=device, dtype=dtype),
             avg_surprise=self.avg_surprise.to(device=device, dtype=dtype),
+            avg_importance=self.avg_importance.to(device=device, dtype=dtype),
             read_count=self.read_count.to(device=device, dtype=dtype),
             write_count=self.write_count.to(device=device, dtype=dtype),
             merge_count=self.merge_count.to(device=device, dtype=dtype),
@@ -131,8 +150,18 @@ class LVMMemoryFormer(nn.Module):
         saw_use_attn_proxy: bool = True,
         graph_temporal_weight_c: float = 1.0,
         graph_sim_topk: int = 4,
+        write_signal: str = "surprise",
+        fixed_segment_len: int = 16,
+        use_importance_scorer: bool = False,
+        scorer_proj_dim: int = 16,
     ):
         super().__init__()
+        if write_signal not in WRITE_SIGNALS:
+            raise ValueError(f"`write_signal` must be one of {WRITE_SIGNALS}, got {write_signal!r}.")
+        if write_signal == "learned" and not use_importance_scorer:
+            raise ValueError("write_signal='learned' needs use_importance_scorer=True.")
+        if not (1 <= fixed_segment_len <= saw_l_max):
+            raise ValueError(f"`fixed_segment_len` must be in [1, saw_l_max], got {fixed_segment_len}.")
         if num_slots <= 0:
             raise ValueError(f"`num_slots` must be > 0, got {num_slots}.")
         if mem_len <= 0:
@@ -198,6 +227,9 @@ class LVMMemoryFormer(nn.Module):
         self.saw_use_attn_proxy = bool(saw_use_attn_proxy)
         self.graph_temporal_weight_c = float(graph_temporal_weight_c)
         self.graph_sim_topk = int(graph_sim_topk)
+        self.write_signal = write_signal
+        self.fixed_segment_len = int(fixed_segment_len)
+        self.importance_scorer = ImportanceScorer(hidden_size, proj_dim=scorer_proj_dim) if use_importance_scorer else None
         self.last_summary: Optional[LVMWriteSummary] = None
         self.last_states: Optional[list[Dict[str, torch.Tensor]]] = None
 
@@ -268,14 +300,18 @@ class LVMMemoryFormer(nn.Module):
             prev_feat=torch.zeros(self.hidden_size, device=device, dtype=dtype),
             prev_attn=torch.zeros(self.saw_attn_groups, device=device, dtype=dtype),
             prev_ema=torch.zeros((), device=device, dtype=dtype),
+            prev_w_ema=torch.zeros((), device=device, dtype=dtype),
             recent_ema=torch.empty(0, device=device, dtype=dtype),
             seg_sum=torch.zeros(self.hidden_size, device=device, dtype=dtype),
             seg_feats=torch.empty(0, self.hidden_size, device=device, dtype=dtype),
             seg_surprise_sum=torch.zeros((), device=device, dtype=dtype),
+            seg_w_sum=torch.zeros((), device=device, dtype=dtype),
             seg_count=torch.zeros((), device=device, dtype=torch.long),
             seg_start_step=torch.full((), -1.0, device=device, dtype=dtype),
             energy=torch.zeros((), device=device, dtype=dtype),
             has_prev=torch.zeros((), device=device, dtype=torch.bool),
+            node_g_mean=torch.zeros(self.capacity, self.hidden_size, device=device, dtype=dtype),
+            node_g_count=torch.zeros(self.capacity, device=device, dtype=dtype),
         )
 
     @property
@@ -297,6 +333,7 @@ class LVMMemoryFormer(nn.Module):
             time_start=torch.full((cap,), -1.0, device=device, dtype=dtype),
             time_end=torch.full((cap,), -1.0, device=device, dtype=dtype),
             avg_surprise=torch.zeros(cap, device=device, dtype=dtype),
+            avg_importance=torch.zeros(cap, device=device, dtype=dtype),
             read_count=torch.zeros(cap, device=device, dtype=dtype),
             write_count=torch.zeros(cap, device=device, dtype=dtype),
             merge_count=torch.zeros(cap, device=device, dtype=dtype),
@@ -417,10 +454,11 @@ class LVMMemoryFormer(nn.Module):
         chunk_feat: torch.Tensor,
         chunk_attn: torch.Tensor,
         saw_state: SAWStreamState,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Eq. 2. Returns (s_feat, s_attn, s, s_ema)."""
         if not bool(saw_state.has_prev.item()):
             zero = chunk_feat.new_zeros(())
-            return zero, zero
+            return zero, zero, zero, zero
 
         s_feat = 1.0 - F.cosine_similarity(
             chunk_feat.unsqueeze(0),
@@ -429,12 +467,13 @@ class LVMMemoryFormer(nn.Module):
         ).squeeze(0)
         if self.saw_use_attn_proxy:
             s_attn = self._js_divergence(chunk_attn, saw_state.prev_attn)
+            s = self.saw_lambda_attn * s_attn + (1.0 - self.saw_lambda_attn) * s_feat
         else:
+            # No attention term: s_t = s_feat, not (1 - lambda) * s_feat.
             s_attn = chunk_feat.new_zeros(())
-
-        s = self.saw_lambda_attn * s_attn + (1.0 - self.saw_lambda_attn) * s_feat
+            s = s_feat
         s_ema = self.saw_ema_decay * saw_state.prev_ema + (1.0 - self.saw_ema_decay) * s
-        return s, s_ema
+        return s_feat, s_attn, s, s_ema
 
     def _build_segments_fixed(self, H: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         # Fixed-length fallback segmentation.
@@ -551,6 +590,7 @@ class LVMMemoryFormer(nn.Module):
         temporal_graph: torch.Tensor,
         similarity_graph: torch.Tensor,
         last_graph_slot: torch.Tensor,
+        avg_importance: torch.Tensor,
     ) -> tuple[
         torch.Tensor,
         torch.Tensor,
@@ -567,6 +607,7 @@ class LVMMemoryFormer(nn.Module):
         bool,
         torch.Tensor,
         torch.Tensor,
+        torch.Tensor,
     ]:
         # Called once a new node has pushed |M| to N + 1 (Algorithm 1, lines 13-15):
         # merge the pair with minimum penalty pi_uv and release one slot.
@@ -581,7 +622,8 @@ class LVMMemoryFormer(nn.Module):
             upper = torch.triu(torch.ones_like(sim, dtype=torch.bool), diagonal=1)
 
             # Each statistic is divided by its maximum over the active nodes (Appendix B.2).
-            surprise_norm = avg_surprise[active_idx]
+            # p_sup (Eq. 16) reads the arm's write signal; it equals avg_surprise in the surprise arm.
+            surprise_norm = avg_importance[active_idx]
             if float(surprise_norm.max().item()) > 0:
                 surprise_norm = surprise_norm / surprise_norm.max().clamp(min=1e-6)
 
@@ -645,6 +687,7 @@ class LVMMemoryFormer(nn.Module):
         time_start = time_start.clone()
         time_end = time_end.clone()
         avg_surprise = avg_surprise.clone()
+        avg_importance = avg_importance.clone()
         read_count = read_count.clone()
         write_count = write_count.clone()
         merge_count = merge_count.clone()
@@ -666,6 +709,7 @@ class LVMMemoryFormer(nn.Module):
             time_end[keep_idx] = max(keep_end, free_end)
             age[keep_idx] = max(age[keep_idx], age[free_idx])
             avg_surprise[keep_idx] = (keep_weight * avg_surprise[keep_idx] + free_weight * avg_surprise[free_idx]) / (keep_weight + free_weight)
+            avg_importance[keep_idx] = (keep_weight * avg_importance[keep_idx] + free_weight * avg_importance[free_idx]) / (keep_weight + free_weight)
             read_count[keep_idx] = read_count[keep_idx] + read_count[free_idx]
             write_count[keep_idx] = write_count[keep_idx] + write_count[free_idx]
             merge_count[keep_idx] = merge_count[keep_idx] + merge_count[free_idx] + 1.0
@@ -700,6 +744,7 @@ class LVMMemoryFormer(nn.Module):
         time_start[free_idx] = -1.0
         time_end[free_idx] = -1.0
         avg_surprise[free_idx] = 0.0
+        avg_importance[free_idx] = 0.0
         read_count[free_idx] = 0.0
         write_count[free_idx] = 0.0
         merge_count[free_idx] = 0.0
@@ -737,6 +782,7 @@ class LVMMemoryFormer(nn.Module):
             merged,
             merge_metrics,
             merge_pair,
+            avg_importance,
         )
 
     def _clear_graph_slot(
@@ -857,9 +903,29 @@ class LVMMemoryFormer(nn.Module):
         step: float,
         segment_start: Optional[float] = None,
         segment_end: Optional[float] = None,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, str, int, torch.Tensor, torch.Tensor]:
+        avg_importance: Optional[torch.Tensor] = None,
+        write_value: Optional[torch.Tensor] = None,
+        match_query: Optional[torch.Tensor] = None,
+        match_bank: Optional[torch.Tensor] = None,
+    ) -> tuple:
+        """One segment write (Eq. 4) + edges + consolidation (Eq. 5).
+
+        match_query / match_bank: the space the update-vs-new rule compares in (segment mean g vs each
+        node's mean g). Without them the rule compares z with the slots h, which live in different
+        spaces (pilot 2: cosine ~ 0, so no update could ever happen).
+
+        `surprise` (segment mean of sbar) feeds the node's avg_surprise and its temporal edges, which
+        the read path uses. `write_value` (segment mean of the arm's write signal w) drives the
+        update-vs-create rule, the gate input and avg_importance (merge penalty). They are equal in
+        the surprise arm. Returns the 16-tuple of `forward` state followed by avg_importance.
+        """
+        if avg_importance is None:
+            avg_importance = avg_surprise
+        if write_value is None:
+            write_value = surprise
         active_idx = active.nonzero(as_tuple=False).squeeze(-1)
         action = "new"
+        self._last_write = {"best_sim": None, "write_value": float(write_value), "action": "new"}
         seg_start = float(step if segment_start is None else segment_start)
         seg_end = float(step if segment_end is None else segment_end)
         if seg_end < seg_start:
@@ -867,15 +933,21 @@ class LVMMemoryFormer(nn.Module):
 
         target_idx = -1
         if active_idx.numel() > 0:
-            sims = F.cosine_similarity(z.unsqueeze(0), slots[active_idx], dim=-1)
+            if match_query is not None and match_bank is not None:
+                sims = F.cosine_similarity(match_query.unsqueeze(0).to(match_bank.dtype), match_bank[active_idx], dim=-1)
+            else:
+                sims = F.cosine_similarity(z.unsqueeze(0), slots[active_idx], dim=-1)
             best_local = torch.argmax(sims)
             best_sim = sims[best_local]
-            if bool((best_sim > self.tau_r) and (surprise < self.tau_s)):
+            self._last_write["best_sim"] = float(best_sim)
+            if bool((best_sim > self.tau_r) and (write_value < self.tau_s)):
                 target_idx = int(active_idx[best_local].item())
                 action = "update"
+                self._last_write["action"] = "update"
         if action == "new":
             # |M| <= N before the write, so the N + 1 slot buffer always has a free slot.
             target_idx = int((~active).nonzero(as_tuple=False)[0].item())
+        self._last_write["target"] = int(target_idx)
 
         if age[target_idx] < 0:
             delta_t = z.new_tensor(0.0)
@@ -886,7 +958,7 @@ class LVMMemoryFormer(nn.Module):
 
         # Eq. (4): gated write.
         h_old = slots[target_idx]
-        gate_in = torch.cat([z, h_old, surprise.view(1), delta_t.view(1)], dim=0)
+        gate_in = torch.cat([z, h_old, write_value.to(dtype=z.dtype).view(1), delta_t.view(1)], dim=0)
         alpha = torch.sigmoid(self.gate_mlp(gate_in)).squeeze(0)
         h_write = self.write_mlp(torch.cat([z, h_old], dim=0))
         h_new = (1.0 - alpha) * h_old + alpha * h_write
@@ -901,6 +973,7 @@ class LVMMemoryFormer(nn.Module):
         write_count = write_count.clone()
         merge_count = merge_count.clone()
         avg_surprise = avg_surprise.clone()
+        avg_importance = avg_importance.clone()
 
         slots[target_idx] = h_new
         active[target_idx] = True
@@ -915,6 +988,7 @@ class LVMMemoryFormer(nn.Module):
         write_count[target_idx] = write_count[target_idx] + 1.0
         wc = write_count[target_idx]
         avg_surprise[target_idx] = avg_surprise[target_idx] + (surprise - avg_surprise[target_idx]) / wc
+        avg_importance[target_idx] = avg_importance[target_idx] + (write_value.to(dtype=avg_importance.dtype) - avg_importance[target_idx]) / wc
         temporal_graph, similarity_graph, last_graph_slot = self._update_memory_graph(
             slots=slots,
             active=active,
@@ -947,6 +1021,7 @@ class LVMMemoryFormer(nn.Module):
                 merged,
                 merge_metrics,
                 merge_pair,
+                avg_importance,
             ) = self._consolidate(
                 slots=slots,
                 active=active,
@@ -960,6 +1035,7 @@ class LVMMemoryFormer(nn.Module):
                 temporal_graph=temporal_graph,
                 similarity_graph=similarity_graph,
                 last_graph_slot=last_graph_slot,
+                avg_importance=avg_importance,
             )
             num_merge = 1 if merged else 0
 
@@ -980,7 +1056,64 @@ class LVMMemoryFormer(nn.Module):
             num_merge,
             merge_metrics,
             merge_pair,
+            avg_importance,
         )
+
+    @staticmethod
+    def _update_node_g(node_g_mean, node_g_count, target, action, seg_sum, seg_count, merge_pair):
+        """Frame-weighted mean of g per node: set on new, accumulate on update, combine on merge."""
+        g_mean, g_count = node_g_mean.detach().clone(), node_g_count.detach().clone()
+        n = seg_count.to(dtype=g_count.dtype)
+        seg_mean = (seg_sum.detach() / n.clamp(min=1.0)).to(g_mean.dtype)
+        if action == "new":
+            g_mean[target], g_count[target] = seg_mean, n
+        else:
+            c = g_count[target]
+            g_mean[target] = (c * g_mean[target] + n * seg_mean) / (c + n).clamp(min=1.0)
+            g_count[target] = c + n
+        keep, free = int(merge_pair[0].item()), int(merge_pair[1].item())
+        if keep >= 0 and free >= 0:
+            ck, cf = g_count[keep], g_count[free]
+            g_mean[keep] = (ck * g_mean[keep] + cf * g_mean[free]) / (ck + cf).clamp(min=1.0)
+            g_count[keep], g_count[free] = ck + cf, 0.0
+            g_mean[free] = 0.0
+        return g_mean, g_count
+
+    def _write_signal_step(
+        self,
+        saw_state: SAWStreamState,
+        s_feat: torch.Tensor,
+        s_attn: torch.Tensor,
+        s_ema: torch.Tensor,
+        chunk_feat: torch.Tensor,
+        frame_signal: Optional[torch.Tensor],
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Write signal w_t for this frame (Q1) and the scorer logit (always computed when a scorer exists).
+
+        surprise: w_t = sbar_t (Eq. 2), so the paper is reproduced exactly.
+        learned:  w_t = EMA_rho(sigmoid(scorer(phi_t))), scorer output detached.
+        oracle:   w_t = EMA_rho(y_t), y_t passed in as `frame_signal`.
+        fixed:    w_t = 0; cuts come from `fixed_segment_len` only.
+        """
+        logit = None
+        if self.importance_scorer is not None:
+            # No cut-dependent feature: w_t must depend on the frames only, so thresholds can be
+            # calibrated by replaying Eq. 3 offline on a recorded w_t sequence.
+            scalars = torch.stack([s_feat, s_ema]).to(dtype=chunk_feat.dtype)
+            logit = self.importance_scorer(scalars, chunk_feat)
+
+        if self.write_signal == "surprise":
+            return s_ema, logit
+        if self.write_signal == "fixed":
+            return s_ema.new_zeros(()), logit
+        if self.write_signal == "learned":
+            raw = torch.sigmoid(logit.detach()).to(dtype=s_ema.dtype)
+        else:
+            if frame_signal is None:
+                raise ValueError("write_signal='oracle' needs `frame_signal` (y_t) for every frame.")
+            raw = frame_signal.detach().to(device=s_ema.device, dtype=s_ema.dtype).reshape(())
+        w = self.saw_ema_decay * saw_state.prev_w_ema + (1.0 - self.saw_ema_decay) * raw
+        return w, logit
 
     def _update_temporal_saw(
         self,
@@ -993,6 +1126,7 @@ class LVMMemoryFormer(nn.Module):
         time_start: torch.Tensor,
         time_end: torch.Tensor,
         avg_surprise: torch.Tensor,
+        avg_importance: torch.Tensor,
         read_count: torch.Tensor,
         write_count: torch.Tensor,
         merge_count: torch.Tensor,
@@ -1002,55 +1136,48 @@ class LVMMemoryFormer(nn.Module):
         chunk_start: float,
         step: float,
         flush_saw: bool,
-    ) -> tuple[
-        SAWStreamState,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        int,
-        int,
-        int,
-        int,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
-        chunk_feat = H.mean(dim=0)
+        frame_signal: Optional[torch.Tensor] = None,
+    ) -> tuple:
+        """One frame of Algorithm 1. Returns (next_saw_state, 13 memory tensors incl. avg_importance,
+        num_segments, num_new, num_update, num_merge, merge_metrics, merge_pair, frame_info)."""
+        chunk_feat = H.mean(dim=0)  # g_t = mean-pool of Phi_v(x_t)
         if chunk_attn is None:
-            chunk_attn = self._chunk_attention_proxy(H)
-        _, s_ema = self._compute_chunk_surprise(chunk_feat=chunk_feat, chunk_attn=chunk_attn, saw_state=saw_state)
+            # Proxy off (default): no attention term at all, s_t = s_feat (docs/pilot.md §7).
+            chunk_attn = self._chunk_attention_proxy(H) if self.saw_use_attn_proxy else H.new_zeros(self.saw_attn_groups)
+        s_feat, s_attn, _, s_ema = self._compute_chunk_surprise(chunk_feat=chunk_feat, chunk_attn=chunk_attn, saw_state=saw_state)
+        w, logit = self._write_signal_step(saw_state, s_feat, s_attn, s_ema, chunk_feat, frame_signal)
 
-        recent_ema = torch.cat([saw_state.recent_ema, s_ema.reshape(1)], dim=0)
+        recent_ema = torch.cat([saw_state.recent_ema, w.detach().reshape(1)], dim=0)
         if recent_ema.numel() > self.saw_recent_window:
             recent_ema = recent_ema[-self.saw_recent_window :]
 
         seg_sum = saw_state.seg_sum + chunk_feat
         seg_feats = torch.cat([saw_state.seg_feats, chunk_feat.unsqueeze(0)], dim=0)
         seg_surprise_sum = saw_state.seg_surprise_sum + s_ema
+        seg_w_sum = saw_state.seg_w_sum + w
         seg_count = saw_state.seg_count + 1
         seg_start_step = saw_state.seg_start_step
         if int(saw_state.seg_count.item()) == 0:
             seg_start_step = chunk_feat.new_tensor(float(chunk_start))
-        energy = saw_state.energy + s_ema
+        energy = saw_state.energy + w
+        node_g_mean = saw_state.node_g_mean
+        node_g_count = saw_state.node_g_count
+        if node_g_mean is None:  # state from before this field existed
+            node_g_mean = chunk_feat.new_zeros(self.capacity, self.hidden_size)
+            node_g_count = chunk_feat.new_zeros(self.capacity)
 
+        # Eq. 3 on the write signal w_t (identical to the paper when w_t = sbar_t).
         seg_len = int(seg_count.item())
-        theta_high = (
-            torch.quantile(recent_ema.float(), self.saw_quantile).to(dtype=s_ema.dtype)
-            if recent_ema.numel() > 0
-            else s_ema.new_zeros(())
-        )
-        cond_jump = bool((s_ema > theta_high).item())
-        cond_energy = bool((energy > self.saw_energy_budget).item())
-        cond_force = seg_len >= self.saw_l_max
-        should_cut = seg_len >= self.saw_l_min and (cond_jump or cond_energy or cond_force)
+        theta_high = torch.quantile(recent_ema.float(), self.saw_quantile).to(dtype=w.dtype)
+        if self.write_signal == "fixed":
+            cond_jump = cond_energy = False
+            cond_force = seg_len >= self.fixed_segment_len
+            should_cut = cond_force
+        else:
+            cond_jump = bool((w > theta_high).item())
+            cond_energy = bool((energy > self.saw_energy_budget).item())
+            cond_force = seg_len >= self.saw_l_max
+            should_cut = seg_len >= self.saw_l_min and (cond_jump or cond_energy or cond_force)
         if flush_saw and seg_len > 0:
             should_cut = True
 
@@ -1062,7 +1189,7 @@ class LVMMemoryFormer(nn.Module):
         merge_pair = torch.full((2,), -1, device=chunk_feat.device, dtype=torch.long)
         if should_cut:
             z = self._encode_segment_sequence(seg_feats)
-            surprise = seg_surprise_sum / seg_count.to(dtype=chunk_feat.dtype).clamp(min=1.0)
+            denom = seg_count.to(dtype=chunk_feat.dtype).clamp(min=1.0)
             (
                 slots,
                 active,
@@ -1080,6 +1207,7 @@ class LVMMemoryFormer(nn.Module):
                 num_merge,
                 merge_metrics,
                 merge_pair,
+                avg_importance,
             ) = self._write_one(
                 slots=slots,
                 active=active,
@@ -1094,10 +1222,17 @@ class LVMMemoryFormer(nn.Module):
                 similarity_graph=similarity_graph,
                 last_graph_slot=last_graph_slot,
                 z=z,
-                surprise=surprise,
+                surprise=seg_surprise_sum / denom,
                 step=step,
                 segment_start=float(seg_start_step.item()) if float(seg_start_step.item()) >= 0 else step,
                 segment_end=step,
+                avg_importance=avg_importance,
+                write_value=seg_w_sum / denom,
+                match_query=seg_sum / denom,
+                match_bank=node_g_mean,
+            )
+            node_g_mean, node_g_count = self._update_node_g(
+                node_g_mean, node_g_count, self._last_write["target"], action, seg_sum, seg_count, merge_pair
             )
             num_segments = 1
             if action == "new":
@@ -1107,23 +1242,43 @@ class LVMMemoryFormer(nn.Module):
             seg_sum = torch.zeros_like(seg_sum)
             seg_feats = seg_feats[:0]
             seg_surprise_sum = torch.zeros_like(seg_surprise_sum)
+            seg_w_sum = torch.zeros_like(seg_w_sum)
             seg_count = torch.zeros_like(seg_count)
             seg_start_step = chunk_feat.new_tensor(-1.0)
             energy = torch.zeros_like(energy)
 
         next_saw_state = SAWStreamState(
-            prev_feat=chunk_feat,
-            prev_attn=chunk_attn,
-            prev_ema=s_ema,
+            prev_feat=chunk_feat.detach(),
+            prev_attn=chunk_attn.detach(),
+            prev_ema=s_ema.detach(),
+            prev_w_ema=w.detach(),
             recent_ema=recent_ema,
             seg_sum=seg_sum,
             seg_feats=seg_feats,
-            seg_surprise_sum=seg_surprise_sum,
+            seg_surprise_sum=seg_surprise_sum.detach(),
+            seg_w_sum=seg_w_sum.detach(),
             seg_count=seg_count,
             seg_start_step=seg_start_step,
-            energy=energy,
+            energy=energy.detach(),
             has_prev=torch.ones_like(saw_state.has_prev),
+            node_g_mean=node_g_mean.detach(),
+            node_g_count=node_g_count.detach(),
         )
+        frame_info = {
+            "t": float(step),
+            "s_feat": float(s_feat),
+            "s_attn": float(s_attn),
+            "s_ema": float(s_ema),
+            "w": float(w),
+            "theta_high": float(theta_high),
+            "energy": float(saw_state.energy + w),
+            "cut": bool(should_cut),
+            # On a cut: cosine to the nearest node and update/new (tau_r, tau_s diagnostics, pilot §7).
+            "write": dict(self._last_write) if should_cut else None,
+            "num_merge": int(num_merge),
+            "importance_logit": logit,
+            "attn_proxy": chunk_attn.detach().float().cpu() if self.saw_use_attn_proxy else None,
+        }
         return (
             next_saw_state,
             slots,
@@ -1132,6 +1287,7 @@ class LVMMemoryFormer(nn.Module):
             time_start,
             time_end,
             avg_surprise,
+            avg_importance,
             read_count,
             write_count,
             merge_count,
@@ -1144,6 +1300,7 @@ class LVMMemoryFormer(nn.Module):
             num_merge,
             merge_metrics,
             merge_pair,
+            frame_info,
         )
 
     def _select_memory(
@@ -1191,8 +1348,10 @@ class LVMMemoryFormer(nn.Module):
         flush_saw: bool = True,
         chunk_attention: Optional[torch.Tensor] = None,
         chunk_time_spans: Optional[torch.Tensor] = None,
+        frame_signal: Optional[torch.Tensor] = None,
     ) -> torch.Tensor | tuple[torch.Tensor, List[LVMMemoryState]]:
         # Q is unused, kept for compatibility with former call signatures.
+        # frame_signal: [B] oracle y_t for this frame (write_signal='oracle' only).
         if H.dim() != 3:
             raise ValueError(f"`H` must be [B,T,D], got shape={tuple(H.shape)}.")
         bsz, _, d = H.shape
@@ -1220,6 +1379,7 @@ class LVMMemoryFormer(nn.Module):
             time_start = state.time_start
             time_end = state.time_end
             avg_surprise = state.avg_surprise
+            avg_importance = state.avg_importance
             read_count = state.read_count
             write_count = state.write_count
             merge_count = state.merge_count
@@ -1227,6 +1387,7 @@ class LVMMemoryFormer(nn.Module):
             similarity_graph = state.similarity_graph
             last_graph_slot = state.last_graph_slot
             start_step = float(state.next_step)
+            frame_info = None
             num_new = 0
             num_update = 0
             num_segments = 0
@@ -1252,6 +1413,7 @@ class LVMMemoryFormer(nn.Module):
                     time_start,
                     time_end,
                     avg_surprise,
+                    avg_importance,
                     read_count,
                     write_count,
                     merge_count,
@@ -1264,6 +1426,7 @@ class LVMMemoryFormer(nn.Module):
                     num_merge,
                     merge_metrics,
                     merge_pair,
+                    frame_info,
                 ) = self._update_temporal_saw(
                     H=H[b],
                     saw_state=saw_state,
@@ -1274,6 +1437,7 @@ class LVMMemoryFormer(nn.Module):
                     time_start=time_start,
                     time_end=time_end,
                     avg_surprise=avg_surprise,
+                    avg_importance=avg_importance,
                     read_count=read_count,
                     write_count=write_count,
                     merge_count=merge_count,
@@ -1283,6 +1447,7 @@ class LVMMemoryFormer(nn.Module):
                     chunk_start=chunk_start,
                     step=chunk_end,
                     flush_saw=flush_saw,
+                    frame_signal=frame_signal[b] if frame_signal is not None else None,
                 )
                 merge_metric_sums = merge_metric_sums + merge_metrics
                 if num_merge > 0:
@@ -1320,6 +1485,7 @@ class LVMMemoryFormer(nn.Module):
                         merged_now,
                         merge_metrics,
                         merge_pair,
+                        avg_importance,
                     ) = self._write_one(
                         slots=slots,
                         active=active,
@@ -1338,6 +1504,7 @@ class LVMMemoryFormer(nn.Module):
                         step=step,
                         segment_start=seg_start,
                         segment_end=seg_end,
+                        avg_importance=avg_importance,
                     )
                     if action == "new":
                         num_new += 1
@@ -1356,45 +1523,31 @@ class LVMMemoryFormer(nn.Module):
             # time (see `mark_read`), not by this legacy readout.
             mem_tokens, picked = self._select_memory(slots, active, age, avg_surprise, read_count)
             out_all.append(mem_tokens)
-            next_states.append(
-                LVMMemoryState(
-                    slots=slots,
-                    active=active,
-                    age=age,
-                    time_start=time_start,
-                    time_end=time_end,
-                    avg_surprise=avg_surprise,
-                    read_count=read_count,
-                    write_count=write_count,
-                    merge_count=merge_count,
-                    temporal_graph=temporal_graph,
-                    similarity_graph=similarity_graph,
-                    last_graph_slot=last_graph_slot,
-                    next_step=next_step,
-                    saw_state=saw_state,
-                )
-            )
-
-            active_idx = active.nonzero(as_tuple=False).squeeze(-1)
-            graph_edge_index, graph_edge_type, graph_edge_weight = self._export_active_graph(
+            new_state = LVMMemoryState(
+                slots=slots,
+                active=active,
+                age=age,
+                time_start=time_start,
+                time_end=time_end,
+                avg_surprise=avg_surprise,
+                avg_importance=avg_importance,
+                read_count=read_count,
+                write_count=write_count,
+                merge_count=merge_count,
                 temporal_graph=temporal_graph,
                 similarity_graph=similarity_graph,
-                active_idx=active_idx,
+                last_graph_slot=last_graph_slot,
+                next_step=next_step,
+                saw_state=saw_state,
             )
+            next_states.append(new_state)
+
             batch_states.append(
                 {
-                    "active_indices": active_idx,
-                    "active_slots": slots[active_idx],
-                    "active_times": age[active_idx],
-                    "active_time_starts": time_start[active_idx],
-                    "active_time_ends": time_end[active_idx],
-                    "active_surprise": avg_surprise[active_idx],
-                    "active_merge_count": merge_count[active_idx],
+                    **self.state_view(new_state),
+                    "frame_info": frame_info,
                     "selected_indices": picked,
                     "selected_slots": mem_tokens[: picked.size(0)] if picked.numel() > 0 else mem_tokens[:0],
-                    "graph_edge_index": graph_edge_index,
-                    "graph_edge_type": graph_edge_type,
-                    "graph_edge_weight": graph_edge_weight,
                     "merge_count": torch.tensor(float(num_merge), device=H.device, dtype=H.dtype),
                     "merge_penalty_similarity": merge_metric_sums[0].clone(),
                     "merge_penalty_surprise": merge_metric_sums[1].clone(),
@@ -1455,9 +1608,106 @@ class LVMMemoryFormer(nn.Module):
             return mem_tokens, next_states
         return mem_tokens
 
+    def _open_segment_node(self, state: LVMMemoryState) -> Optional[Dict[str, torch.Tensor]]:
+        """The open (not yet committed) segment as the node a commit would create now: same segment
+        encoder, gate and write MLP as a 'new' write (Eq. 4) into the first free slot. Nothing is
+        stored. Lets a query asked while its evidence is still in the open segment read it."""
+        saw = state.saw_state
+        if saw is None or int(saw.seg_count.item()) == 0:
+            return None
+        z = self._encode_segment_sequence(saw.seg_feats)
+        denom = saw.seg_count.to(dtype=z.dtype).clamp(min=1.0)
+        write_value = (saw.seg_w_sum / denom).to(dtype=z.dtype)
+        free = (~state.active).nonzero(as_tuple=False)
+        h_old = state.slots[int(free[0].item())] if free.numel() > 0 else state.slots.new_zeros(state.slots.size(-1))
+        gate_in = torch.cat([z, h_old, write_value.view(1), z.new_zeros(1)], dim=0)  # delta_t = 0, as for a fresh slot
+        alpha = torch.sigmoid(self.gate_mlp(gate_in)).squeeze(0)
+        h = (1.0 - alpha) * h_old + alpha * self.write_mlp(torch.cat([z, h_old], dim=0))
+        if self.normalize_slot:
+            h = F.normalize(h, dim=-1)
+        return {
+            "slot": h,
+            "time_start": saw.seg_start_step.to(dtype=state.time_start.dtype),
+            "surprise": (saw.seg_surprise_sum / denom).to(dtype=state.avg_surprise.dtype),
+            "importance": write_value.to(dtype=state.avg_importance.dtype),
+        }
+
+    def state_view(self, state: LVMMemoryState, include_open: bool = False, t_now: Optional[float] = None) -> Dict[str, torch.Tensor]:
+        """Nodes and edges of `state`, as consumed by the read path. Never writes.
+
+        include_open: also expose the open segment as a provisional node spanning [segment start, t_now],
+        index -1 (never marked read), with the edges a commit would add: a temporal edge from the last
+        committed node and similarity edges to its top-k most similar nodes."""
+        active_idx = state.active.nonzero(as_tuple=False).squeeze(-1)
+        edge_index, edge_type, edge_weight = self._export_active_graph(
+            temporal_graph=state.temporal_graph,
+            similarity_graph=state.similarity_graph,
+            active_idx=active_idx,
+        )
+        view = self._committed_view(state, active_idx, edge_index, edge_type, edge_weight)
+        view["has_open_node"] = False
+        if not include_open:
+            return view
+        node = self._open_segment_node(state)
+        if node is None:
+            return view
+        if t_now is None:
+            raise ValueError("include_open needs t_now (the current stream time) for the open node's end.")
+        n = int(active_idx.numel())
+        slots = view["active_slots"]
+        new_edges, new_types, new_w = [], [], []
+        last = int(state.last_graph_slot.item())
+        if last >= 0 and bool(state.active[last].item()):
+            src = int((active_idx == last).nonzero(as_tuple=False)[0].item())
+            new_edges.append(torch.tensor([[src], [n]], device=edge_index.device))
+            new_types.append(torch.zeros(1, dtype=torch.long, device=edge_index.device))
+            new_w.append(torch.exp(-self.graph_temporal_weight_c * node["surprise"].detach()).reshape(1).to(edge_weight.dtype))
+        if n > 0:
+            sims = F.cosine_similarity(node["slot"].detach().unsqueeze(0), slots.detach(), dim=-1)
+            k = min(self.graph_sim_topk, n)
+            topv, topi = torch.topk(sims, k=k)
+            open_col = torch.full_like(topi, n)
+            new_edges.append(torch.stack([torch.cat([open_col, topi]), torch.cat([topi, open_col])], dim=0))
+            new_types.append(torch.ones(2 * k, dtype=torch.long, device=edge_index.device))
+            new_w.append(torch.cat([topv, topv]).to(edge_weight.dtype))
+        dev, dt = state.time_start.device, state.time_start.dtype
+        view.update({
+            "active_indices": torch.cat([active_idx, active_idx.new_full((1,), -1)]),
+            "active_slots": torch.cat([slots, node["slot"].unsqueeze(0).to(slots.dtype)], dim=0),
+            "active_times": torch.cat([view["active_times"], torch.tensor([float(t_now)], device=dev, dtype=view["active_times"].dtype)]),
+            "active_time_starts": torch.cat([view["active_time_starts"], node["time_start"].reshape(1)]),
+            "active_time_ends": torch.cat([view["active_time_ends"], torch.tensor([float(t_now)], device=dev, dtype=dt)]),
+            "active_surprise": torch.cat([view["active_surprise"], node["surprise"].reshape(1)]),
+            "active_importance": torch.cat([view["active_importance"], node["importance"].reshape(1)]),
+            "active_merge_count": torch.cat([view["active_merge_count"], view["active_merge_count"].new_zeros(1)]),
+            "active_read_count": torch.cat([view["active_read_count"], view["active_read_count"].new_zeros(1)]),
+            "graph_edge_index": torch.cat([edge_index] + new_edges, dim=1),
+            "graph_edge_type": torch.cat([edge_type] + new_types),
+            "graph_edge_weight": torch.cat([edge_weight] + new_w),
+            "has_open_node": True,
+        })
+        return view
+
+    def _committed_view(self, state, active_idx, edge_index, edge_type, edge_weight) -> Dict[str, torch.Tensor]:
+        return {
+            "active_indices": active_idx,
+            "active_slots": state.slots[active_idx],
+            "active_times": state.age[active_idx],
+            "active_time_starts": state.time_start[active_idx],
+            "active_time_ends": state.time_end[active_idx],
+            "active_surprise": state.avg_surprise[active_idx],
+            "active_importance": state.avg_importance[active_idx],
+            "active_merge_count": state.merge_count[active_idx],
+            "active_read_count": state.read_count[active_idx],
+            "graph_edge_index": edge_index,
+            "graph_edge_type": edge_type,
+            "graph_edge_weight": edge_weight,
+        }
+
     @staticmethod
     def mark_read(state: LVMMemoryState, slot_indices: torch.Tensor) -> None:
         """Increment read counts of nodes exposed as evidence for a query (Appendix B.2)."""
+        slot_indices = slot_indices[slot_indices >= 0]  # -1 = open-segment node, not stored
         if slot_indices.numel() == 0:
             return
         read_count = state.read_count.clone()

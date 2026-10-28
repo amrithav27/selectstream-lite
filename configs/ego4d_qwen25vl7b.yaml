@@ -1,0 +1,112 @@
+# SelectStream on Ego4D NLQ + QaEgo4D, Qwen2.5-VL-7B (docs/plan.md). One config; arms via --arm.
+model:
+  model_name_or_path: "Qwen/Qwen2.5-VL-7B-Instruct"
+  torch_dtype: "float16"           # frozen backbone only. fp16 chosen from the pilot (docs/pilot.md §5): 2.3x faster than emulated bf16 on 2080 Ti
+  device_map: "auto"
+  trust_remote_code: true
+  # GPU0 is left to the fp32 trainable modules + AdamW (~7 GB); the backbone (~15.5 GB in 16-bit) shards over GPUs 1-3.
+  max_memory: {0: "1GiB", 1: "10GiB", 2: "10GiB", 3: "10GiB"}
+
+vismem:
+  short_invoke_token: "<ms_I>"
+  short_end_token: "<ms_E>"
+  long_invoke_token: "<ml_I>"
+  long_end_token: "<ml_E>"
+  query_len: 8
+  short_mem_len: 8
+  long_mem_len: 16
+  query_builder:
+    num_layers: 1                  # paper: "lightweight", size unspecified; each 3584-wide layer is ~154M params
+    num_heads: 8
+    dropout: 0.0
+    ff_mult: 4
+  former_backend: "lvm_sft"
+  visual_feature_source: "projected"
+  trainable_dtype: "float32"
+  trainable_device: "cuda:0"
+
+  # Budgets: the pilot's N=32 never filled (16-23 segments per 480-s clip), so nothing was merged and the
+  # Q1 arms could not differ in what memory keeps. N=16 fills on a typical stream; B and seeds keep the
+  # earlier N:B:seeds ratio (32:16:8). docs/pilot.md §10.
+  lvm_num_slots: 16
+  method_graph_budget: 8
+  method_seed_topk: 4
+  method_evidence_tokens: 4         # M = B/2 as before (pilot 2: M = B made the refined ranking a no-op)
+
+  lvm_segment_len: 32
+  lvm_tau_r: 0.75                  # cosine of mean frozen g; replaced by calibrate_write's 0.9 quantile (pilot.md §6)
+  lvm_tau_s: 0.066                 # median segment-mean sbar in the pilot (x2 for s = s_feat); calibrate_write resets it (pilot §10)
+  lvm_gate_hidden: 256
+  lvm_normalize_slot: true
+  lvm_eviction_policy: "fifo"
+  lvm_readout_policy: "recent"
+  lvm_delta_t_scale: 32.0
+  lvm_enable_graph_merge: true
+  lvm_merge_similarity_weight: 1.0
+  lvm_merge_surprise_weight: 0.5
+  lvm_merge_access_weight: 0.25
+  lvm_merge_recency_weight: 0.25
+  lvm_segment_encoder_layers: 1
+  lvm_segment_encoder_heads: 4
+  lvm_segment_time_pos: true
+  lvm_build_long_former: false     # unused on this path; saves ~150M params on GPU0
+
+  # SAW (Eq. 2-3). No attention term: s_t = s_feat (pilot §10; the channel-group proxy was ~0 on every frame)
+  lvm_use_saw: true
+  lvm_saw_lambda_attn: 0.0
+  lvm_saw_ema_decay: 0.9
+  lvm_saw_l_min: 8
+  lvm_saw_l_max: 64
+  lvm_saw_energy_budget: 8.0
+  lvm_saw_recent_window: 64
+  lvm_saw_quantile: 0.9
+  lvm_saw_attn_groups: 32
+  lvm_saw_use_attn_proxy: false
+
+  # Q1: write signal is set per arm by --arm (A surprise | B learned | C oracle | D fixed)
+  lvm_write_signal: "surprise"
+  lvm_use_importance_scorer: true  # trained in Stage R alongside arm A; drives arm B
+  lvm_scorer_proj_dim: 16
+  lvm_fixed_segment_len: 16
+
+  # GAR (Eq. 6-10)
+  method_enable_dmg_gar: true
+  method_num_hops: 2
+  method_eta_surprise_boost: 0.2
+  method_span_penalty_weight: 0.05
+  method_merge_penalty_weight: 0.05
+  method_route_edge_weight: 0.1
+  method_route_temperature: 1.0
+  method_route_threshold: 0.0
+  method_sim_topk: 4
+  method_temporal_weight_c: 1.0
+  method_gar_layers: 2
+  method_spar_subgraph_weight: 1.0
+  method_spar_redundancy_weight: 1.0
+  method_redundancy_margin: 0.0
+
+# Per-arm thresholds. B and C come from `main.cli.calibrate_write` after Stage R (matched cut budget);
+# the values below are placeholders equal to arm A's until calibration has run.
+arms:
+  A: {}
+  B: {lvm_saw_energy_budget: 8.0, lvm_tau_s: 0.066}
+  C: {lvm_saw_energy_budget: 8.0, lvm_tau_s: 0.066}
+  D: {lvm_fixed_segment_len: 16}
+
+data:
+  sample_fps: 1.0
+  frame_max_side: 448              # resize before the processor; sets visual tokens/frame (~144 at 16:9). Pilot decides.
+  query_time_mode: "uniform"       # t_q = any frame at/after the evidence end, uniformly; may be still in the open segment (pilot §10)
+  dev_frac: 0.1
+
+training:
+  seed: 42
+  epochs: 3                        # paper: 1 epoch of 465K; we have ~14.8K train queries. Pick by dev.
+  lr: 2.0e-4                       # paper's Appendix C text (Table 6 says 2e-5); most modules start from random init
+  weight_decay: 0.0
+  grad_accum: 4                    # clips per optimizer step
+  max_grad_norm: 1.0
+  beta_ret: 0.1
+  gamma_spar: 0.05
+  time_tolerance: 0.5              # Eq. 55 epsilon: half a frame period at 1 fps
+  scorer_weight: 1.0

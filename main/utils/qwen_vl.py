@@ -42,24 +42,32 @@ def init_token_embeddings(model, tokenizer, init_from_token: str | None = None, 
                 w_out[tid].copy_(w_in[tid])
 
 
-def load_qwen25vl(model_name_or_path: str, torch_dtype=None, device_map="auto", trust_remote_code=True):
+def _vl_model_class():
+    # transformers 5.x removed AutoModelForVision2Seq; AutoModelForCausalLM does not map Qwen-VL.
+    import transformers
+
+    for name in ("AutoModelForImageTextToText", "AutoModelForVision2Seq"):
+        cls = getattr(transformers, name, None)
+        if cls is not None:
+            return cls
+    raise ImportError("No vision-language auto class found in this transformers version.")
+
+
+def load_qwen25vl(model_name_or_path: str, torch_dtype=None, device_map="auto", trust_remote_code=True, max_memory=None):
     from transformers import AutoTokenizer, AutoProcessor
-    try:
-        from transformers import AutoModelForVision2Seq as AutoModelClass
-    except Exception:
-        from transformers import AutoModelForCausalLM as AutoModelClass
 
     tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=trust_remote_code)
     processor = AutoProcessor.from_pretrained(model_name_or_path, trust_remote_code=trust_remote_code)
 
     old_vocab = len(tokenizer)
     tokenizer = add_tokens(tokenizer)
-    model = AutoModelClass.from_pretrained(
-        model_name_or_path,
-        trust_remote_code=trust_remote_code,
-        torch_dtype=torch_dtype,
-        device_map=device_map,
-    )
+    kwargs = {"trust_remote_code": trust_remote_code, "device_map": device_map}
+    if max_memory is not None:
+        kwargs["max_memory"] = max_memory
+    try:
+        model = _vl_model_class().from_pretrained(model_name_or_path, dtype=torch_dtype, **kwargs)
+    except TypeError:
+        model = _vl_model_class().from_pretrained(model_name_or_path, torch_dtype=torch_dtype, **kwargs)
     # resize embeddings after adding tokens
     if hasattr(model, "resize_token_embeddings"):
         model.resize_token_embeddings(len(tokenizer))

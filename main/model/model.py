@@ -13,6 +13,7 @@ from main.model.memory_former import TinyMemoryFormer
 from main.model.lvm_memory import LVMMemoryFormer, LVMMemoryState
 from main.model.dmg_gar import DynamicMemoryGraphReasoner
 from main.model.lora_utils import is_peft_available, make_lora_adapters, set_active_adapter
+from main.utils.misc import to_torch_dtype
 
 class VisMemModel(nn.Module):
 
@@ -23,6 +24,7 @@ class VisMemModel(nn.Module):
         self.tokenizer = tokenizer
         self.processor = processor
         self.cfg = config
+        self._install_rope_reset()
 
         # Identify hidden size
         hidden_size = getattr(base_model.config, "hidden_size", None)
@@ -86,8 +88,12 @@ class VisMemModel(nn.Module):
                 saw_use_attn_proxy=config.lvm_saw_use_attn_proxy,
                 graph_temporal_weight_c=config.method_temporal_weight_c,
                 graph_sim_topk=config.method_sim_topk,
+                write_signal=config.lvm_write_signal,
+                fixed_segment_len=config.lvm_fixed_segment_len,
+                use_importance_scorer=config.lvm_use_importance_scorer,
+                scorer_proj_dim=config.lvm_scorer_proj_dim,
             )
-            self.lvm_long_former = LVMMemoryFormer(
+            self.lvm_long_former = None if not config.lvm_build_long_former else LVMMemoryFormer(
                 hidden_size=hidden_size,
                 mem_len=config.long_mem_len,
                 num_slots=config.lvm_num_slots,
@@ -180,8 +186,12 @@ class VisMemModel(nn.Module):
             if tid is not None and tid != tokenizer.unk_token_id
         ]
 
-        # The backbone stays frozen; SelectStream modules live on its device and dtype.
+        # The backbone stays frozen. Trainable modules default to its device and dtype; the Ego4D
+        # configs keep them in fp32 on a GPU the backbone does not use (docs/plan.md C5): AdamW on
+        # bf16 weights rounds away updates below ~2^-8 of a weight's magnitude.
         ref = next(base_model.parameters())
+        mod_device = torch.device(config.trainable_device) if config.trainable_device else ref.device
+        mod_dtype = to_torch_dtype(config.trainable_dtype) if config.trainable_dtype else ref.dtype
         for module in (
             self.query_builder,
             self.short_former,
@@ -191,7 +201,18 @@ class VisMemModel(nn.Module):
             self.graph_reasoner,
         ):
             if module is not None:
-                module.to(device=ref.device, dtype=ref.dtype)
+                module.to(device=mod_device, dtype=mod_dtype)
+        self.stop_token_ids = sorted(
+            {
+                tid
+                for tid in (
+                    tokenizer.eos_token_id,
+                    tokenizer.convert_tokens_to_ids("<|im_end|>"),
+                    tokenizer.convert_tokens_to_ids("<|endoftext|>"),
+                )
+                if tid is not None and tid != tokenizer.unk_token_id
+            }
+        )
 
     @property
     def device(self):
@@ -263,20 +284,49 @@ class VisMemModel(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
         **kwargs,
     ):
-        """Append tokens after a cached prefix. Explicit cache positions keep Qwen-VL M-RoPE
-        continuing from the prefix (via its rope deltas) instead of restarting at position 0."""
+        """Append tokens after a cached prefix. M-RoPE positions are passed explicitly as
+        cache_position + rope_deltas (what HF generate does): transformers 5.5.4 otherwise builds
+        them from the full attention mask, i.e. prefix+new positions for only the new tokens.
+        rope_deltas is None when the prefix had no M-RoPE (plain 1-D positions, delta 0)."""
         x = input_ids if input_ids is not None else inputs_embeds
         past_len = past_key_values.get_seq_length()
         cache_position = torch.arange(past_len, past_len + x.size(1), device=x.device)
+        position_ids = None
+        inner = self._mrope_module()
+        if inner is not None:
+            batch = x.size(0)
+            position_ids = cache_position.view(1, 1, -1).expand(3, batch, -1)
+            if inner.rope_deltas is not None:
+                delta = inner.rope_deltas.to(x.device).view(-1, 1)
+                position_ids = position_ids + delta.repeat_interleave(batch // delta.size(0), dim=0)
         return self.base_model(
             input_ids=input_ids,
             inputs_embeds=inputs_embeds,
             past_key_values=past_key_values,
             attention_mask=attention_mask,
             cache_position=cache_position,
+            position_ids=position_ids,
             use_cache=True,
             **kwargs,
         )
+
+    def _mrope_module(self):
+        inner = getattr(self.base_model, "model", None)
+        return inner if inner is not None and hasattr(inner, "rope_deltas") else None
+
+    def _install_rope_reset(self):
+        """Qwen-VL caches rope_deltas on the module across calls. Clear it at the start of every
+        fresh (uncached) forward so continue_forward never offsets by a previous prompt's delta."""
+        inner = self._mrope_module()
+        if inner is None:
+            return
+
+        def _reset(module, args, kwargs):
+            pkv = kwargs.get("past_key_values")
+            if pkv is None or pkv.get_seq_length() == 0:
+                module.rope_deltas = None
+
+        inner.register_forward_pre_hook(_reset, with_kwargs=True)
 
     def _build_H(self, visual_states: torch.Tensor, text_states: torch.Tensor) -> torch.Tensor:
         # Cap length to reduce compute
@@ -770,6 +820,166 @@ class VisMemModel(nn.Module):
         if return_memory_state:
             return evidence_tokens, evidence_mask, aux_list, next_memory_state or []
         return evidence_tokens, evidence_mask, aux_list
+
+    # ---- Streaming SelectStream path (docs/plan.md §2) ------------------------------------------
+
+    @property
+    def trainable_device(self) -> torch.device:
+        return next(self.lvm_short_former.parameters()).device
+
+    @property
+    def trainable_dtype(self) -> torch.dtype:
+        return next(self.lvm_short_former.parameters()).dtype
+
+    @torch.no_grad()
+    def encode_frame(self, image: Any) -> Tuple[torch.Tensor, Tuple[int, int]]:
+        """Phi_v(x_t) from the vision tower + projector only; the decoder is not run (C4).
+
+        These are exactly the values the decoder would see at the image positions, i.e. what
+        `visual_feature_source='projected'` read from hidden_states[0] before. Returns
+        [1, T_vis, D] and the merged-patch grid (h, w) for feature-map plots.
+        """
+        proc = self.processor.image_processor(images=[image], return_tensors="pt")
+        visual = getattr(getattr(self.base_model, "model", self.base_model), "visual")
+        dev = next(visual.parameters()).device
+        grid_thw = proc["image_grid_thw"].to(dev)
+        out = self.base_model.get_image_features(pixel_values=proc["pixel_values"].to(dev), image_grid_thw=grid_thw)
+        feats = out.pooler_output if hasattr(out, "pooler_output") else out
+        if isinstance(feats, (tuple, list)):
+            feats = feats[0]
+        merge = int(getattr(visual, "spatial_merge_size", 2))
+        grid = (int(grid_thw[0, 1]) // merge, int(grid_thw[0, 2]) // merge)
+        return feats.unsqueeze(0), grid
+
+    def update_memory_frame(
+        self,
+        image: Any,
+        t: float,
+        memory_state: List[LVMMemoryState],
+        flush: bool = False,
+        frame_signal: Optional[float] = None,
+        g: Optional[torch.Tensor] = None,
+    ) -> Tuple[List[LVMMemoryState], Dict[str, Any]]:
+        """Write one frame at time t (seconds) into memory (Algorithm 1). Differentiable in the
+        trainable writer unless called under no_grad; the backbone part never is.
+
+        g: the cached g_t [D] (main/data/frame_cache.py). The write path uses only the mean of the
+        frame's visual tokens, so a one-token H = g gives the same memory; `image` is then unused."""
+        if g is not None:
+            if getattr(self.lvm_short_former, "saw_use_attn_proxy", False):
+                raise ValueError("The attention proxy needs every visual token; it cannot run from cached g_t.")
+            H, grid = g.reshape(1, 1, -1), None
+        else:
+            H, grid = self.encode_frame(image)
+        if not bool(torch.isfinite(H).all()):
+            # The fp16-vs-bf16 pilot relies on this: fp16 overflow shows up here as inf/NaN.
+            raise FloatingPointError(f"Non-finite visual features at t={t:.1f}s in {H.dtype}.")
+        H = H.to(device=self.trainable_device, dtype=self.trainable_dtype)
+        spans = torch.tensor([[t, t]], device=self.trainable_device, dtype=torch.float32)
+        sig = None
+        if frame_signal is not None:
+            sig = torch.tensor([float(frame_signal)], device=self.trainable_device, dtype=self.trainable_dtype)
+        _, next_state = self.lvm_short_former(
+            H,
+            memory_state=memory_state,
+            return_memory_state=True,
+            flush_saw=flush,
+            chunk_time_spans=spans,
+            frame_signal=sig,
+        )
+        last = self.lvm_short_former.get_last_state(0) or {}
+        info = dict(last.get("frame_info") or {})
+        info["grid"] = grid
+        info["num_active"] = int(last["active_indices"].numel()) if "active_indices" in last else 0
+        info["token_norms"] = H[0].detach().norm(dim=-1).float().cpu() if g is None else None
+        return next_state, info
+
+    def read_evidence(
+        self,
+        prompt_hidden: torch.Tensor,
+        input_ids: torch.LongTensor,
+        attention_mask: Optional[torch.Tensor],
+        memory_state: List[LVMMemoryState],
+        mark_read: bool = True,
+        evidence_k: Optional[int] = None,
+        t_now: Optional[float] = None,
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        """Read-only GAR over the committed nodes plus, when t_now is given, the open segment as a
+        provisional node (C3): no write, no forced cut.
+        Returns evidence tokens [1, M', D] (trainable dtype/device) and the GAR aux dict."""
+        hs = prompt_hidden.to(device=self.trainable_device, dtype=self.trainable_dtype)
+        ids = input_ids.to(self.trainable_device)
+        mask = attention_mask.to(self.trainable_device) if attention_mask is not None else None
+        u = self.encode_query(hidden_states=hs, input_ids=ids, attention_mask=mask)
+        view = self.lvm_short_former.state_view(memory_state[0], include_open=t_now is not None, t_now=t_now)
+        if view["active_slots"].numel() == 0:
+            return hs.new_zeros(1, 0, self.hidden_size), {}
+        aux = self.graph_reasoner(
+            node_feats=view["active_slots"],
+            node_time_start=view["active_time_starts"],
+            node_time_end=view["active_time_ends"],
+            node_surprise=view["active_surprise"],
+            node_indices=view["active_indices"],
+            query=u[0],
+            node_merge_count=view["active_merge_count"],
+            edge_index=view["graph_edge_index"],
+            edge_type=view["graph_edge_type"],
+            edge_weight=view["graph_edge_weight"],
+            evidence_k=evidence_k,
+        )
+        if mark_read:
+            LVMMemoryFormer.mark_read(memory_state[0], aux["evidence_indices"])
+        return aux["evidence_tokens"].unsqueeze(0), aux
+
+    def answer_target_ids(self, answer: str) -> torch.LongTensor:
+        """Ground-truth answer tokens + <|im_end|>, no BOS, so the model learns where to stop."""
+        ids = self.tokenizer(answer.strip(), add_special_tokens=False).input_ids
+        end_id = self.tokenizer.convert_tokens_to_ids("<|im_end|>")
+        return torch.tensor([ids + [end_id]], dtype=torch.long)
+
+    @torch.no_grad()
+    def answer_with_memory(
+        self,
+        image: Any,
+        prompt: str,
+        memory_state: List[LVMMemoryState],
+        max_new_tokens: int = 32,
+        mark_read: bool = True,
+        t_now: Optional[float] = None,
+        evidence_k: Optional[int] = None,
+    ) -> Tuple[str, Dict[str, torch.Tensor]]:
+        """Eq. 11 at query time: [X_prompt; X_cur; e_1..e_M] -> greedy decode. Memory is only read.
+        evidence_k overrides M (Q2 splits the evidence budget across sub-questions)."""
+        inputs = self.prepare_inputs([image], [prompt])
+        out = self.base_model(**inputs, use_cache=True, output_hidden_states=True)
+        input_ids = inputs["input_ids"]
+        attn = inputs.get("attention_mask", torch.ones_like(input_ids))
+        evidence, aux = self.read_evidence(out.hidden_states[-1], input_ids, attn, memory_state, mark_read=mark_read, t_now=t_now, evidence_k=evidence_k)
+        past = out.past_key_values
+        logits = out.logits[:, -1, :]
+        emb = self.base_model.get_input_embeddings()
+        if evidence.size(1) > 0:
+            attn = torch.cat([attn, attn.new_ones(1, evidence.size(1))], dim=1)
+            step = self.continue_forward(
+                past,
+                inputs_embeds=evidence.to(device=emb.weight.device, dtype=emb.weight.dtype),
+                attention_mask=attn,
+            )
+            past, logits = step.past_key_values, step.logits[:, -1, :]
+        generated: List[int] = []
+        for _ in range(max_new_tokens):
+            next_id = int(torch.argmax(logits, dim=-1).item())
+            if next_id in self.stop_token_ids:
+                break
+            generated.append(next_id)
+            attn = torch.cat([attn, attn.new_ones(1, 1)], dim=1)
+            step = self.continue_forward(
+                past,
+                input_ids=torch.tensor([[next_id]], device=input_ids.device),
+                attention_mask=attn,
+            )
+            past, logits = step.past_key_values, step.logits[:, -1, :]
+        return self.tokenizer.decode(generated, skip_special_tokens=True).strip(), aux
 
     @staticmethod
     def _sample_next_token(logits: torch.Tensor, temperature: float = 0.0, top_p: float = 1.0) -> torch.Tensor:
