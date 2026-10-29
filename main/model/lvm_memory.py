@@ -264,6 +264,13 @@ class LVMMemoryFormer(nn.Module):
         self.segment_encoder = nn.TransformerEncoder(seg_encoder_layer, num_layers=self.segment_encoder_layers)
         self.segment_query = nn.Parameter(torch.randn(1, 1, hidden_size) * 0.02)
         self.segment_ln = nn.LayerNorm(hidden_size)
+        # Subtracted from every frame feature before the segment encoder (not from surprise or the update match).
+        # Zeros = the paper. Mean-pooled g_t share one direction (~80% of the norm), which a pre-norm encoder
+        # without an input projection passes into every node; set it to the train mean (set_segment_center).
+        self.register_buffer("segment_center", torch.zeros(hidden_size))
+
+    def set_segment_center(self, center: torch.Tensor) -> None:
+        self.segment_center.copy_(center.to(self.segment_center))
 
     def _segment_relative_pos(self, length: int, device: torch.device, dtype: torch.dtype) -> torch.Tensor:
         if length <= 0:
@@ -284,7 +291,7 @@ class LVMMemoryFormer(nn.Module):
         if seq.size(0) == 0:
             return seq.new_zeros(self.hidden_size)
 
-        x = seq.unsqueeze(0)
+        x = (seq - self.segment_center.to(device=seq.device, dtype=seq.dtype)).unsqueeze(0)
         if self.segment_time_pos:
             x = x + self._segment_relative_pos(seq.size(0), device=seq.device, dtype=seq.dtype)
 
@@ -1674,6 +1681,8 @@ class LVMMemoryFormer(nn.Module):
         view.update({
             "active_indices": torch.cat([active_idx, active_idx.new_full((1,), -1)]),
             "active_slots": torch.cat([slots, node["slot"].unsqueeze(0).to(slots.dtype)], dim=0),
+            "active_g_mean": (torch.cat([view["active_g_mean"], state.saw_state.seg_feats.mean(0, keepdim=True).to(view["active_g_mean"].dtype)], dim=0)
+                              if view["active_g_mean"] is not None else None),
             "active_times": torch.cat([view["active_times"], torch.tensor([float(t_now)], device=dev, dtype=view["active_times"].dtype)]),
             "active_time_starts": torch.cat([view["active_time_starts"], node["time_start"].reshape(1)]),
             "active_time_ends": torch.cat([view["active_time_ends"], torch.tensor([float(t_now)], device=dev, dtype=dt)]),
@@ -1689,7 +1698,10 @@ class LVMMemoryFormer(nn.Module):
         return view
 
     def _committed_view(self, state, active_idx, edge_index, edge_type, edge_weight) -> Dict[str, torch.Tensor]:
+        saw = state.saw_state
+        g_mean = saw.node_g_mean[active_idx] if saw is not None and saw.node_g_mean is not None else None
         return {
+            "active_g_mean": g_mean,  # mean frame feature g_t of each node (the update-matching bank); read prior
             "active_indices": active_idx,
             "active_slots": state.slots[active_idx],
             "active_times": state.age[active_idx],

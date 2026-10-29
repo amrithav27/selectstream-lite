@@ -40,10 +40,17 @@ def as_image(frame) -> Image.Image:
 
 
 class FrameCache:
-    def __init__(self, root: str):
+    """`video_dir` is the fallback for a cache shipped without frames/ (only g/ + meta/): frame k is then
+    decoded from <video_dir>/<clip_uid>.mp4 by the same `iter_video_frames` call cache_features used, so it
+    matches the PNG when the OpenCV build matches. Frames are asked for in increasing k within a clip, so one
+    sequential decoder per clip is kept open and advanced; an earlier k restarts it."""
+
+    def __init__(self, root: str, video_dir: Optional[str] = None, sample_fps: float = 1.0, max_side: Optional[int] = 448):
         self.root = root
+        self.video_dir, self.sample_fps, self.max_side = video_dir, sample_fps, max_side
         self._meta: Dict[str, dict] = {}
         self._g: Dict[str, np.ndarray] = {}
+        self._dec: Optional[Tuple[str, Iterator, int, Optional[Image.Image]]] = None  # (clip, iterator, next k, last frame)
 
     def meta(self, clip_uid: str) -> dict:
         if clip_uid not in self._meta:
@@ -73,15 +80,49 @@ class FrameCache:
             self._g[clip_uid] = np.load(os.path.join(self.root, "g", f"{clip_uid}.npy"), mmap_mode="r")
         return self._g[clip_uid]
 
+    def feature_mean(self, clip_uids) -> np.ndarray:
+        """Mean g_t over every cached frame of the given clips, fp32 [D] (accumulated in fp64)."""
+        total, n = None, 0
+        for u in clip_uids:
+            g = np.load(os.path.join(self.root, "g", f"{u}.npy"), mmap_mode="r")
+            s = np.asarray(g, dtype=np.float64).sum(0)
+            total = s if total is None else total + s
+            n += len(g)
+        if not n:
+            raise ValueError("feature_mean: no cached frames")
+        return (total / n).astype(np.float32)
+
     def num_frames(self, clip_uid: str) -> int:
         return int(self.meta(clip_uid)["n_frames"])
 
     def image(self, clip_uid: str, k: int) -> Image.Image:
+        if not os.path.exists(os.path.join(self.root, "frames", f"{clip_uid}.bin")):
+            return self._decode(clip_uid, k)
         off = np.load(os.path.join(self.root, "frames", f"{clip_uid}.off.npy"))
         with open(os.path.join(self.root, "frames", f"{clip_uid}.bin"), "rb") as f:
             f.seek(int(off[k]))
             buf = f.read(int(off[k + 1] - off[k]))
         return Image.open(io.BytesIO(buf)).convert("RGB")
+
+    def _decode(self, clip_uid: str, k: int) -> Image.Image:
+        if self.video_dir is None:
+            raise FileNotFoundError(f"clip {clip_uid}: no cached frames in {self.root}/frames and no video_dir to decode from")
+        from main.utils.video import iter_video_frames
+
+        if self._dec is None or self._dec[0] != clip_uid or k < self._dec[2] - 1:
+            path = os.path.join(self.video_dir, f"{clip_uid}.mp4")
+            self._dec = (clip_uid, iter_video_frames(path, sample_fps=self.sample_fps, max_side=self.max_side), 0, None)
+        uid, it, nxt, last = self._dec
+        if k == nxt - 1 and last is not None:  # the same frame asked again (several questions at one t_q)
+            return last
+        while nxt <= k:
+            try:
+                last, _ = next(it)
+            except StopIteration:
+                raise IndexError(f"clip {clip_uid}: frame {k} is past the end of {self.video_dir}/{clip_uid}.mp4 ({nxt} frames)")
+            nxt += 1
+        self._dec = (uid, it, nxt, last)
+        return last
 
     def stream_index(self, item, sample_fps: float) -> List[Tuple[str, int, float]]:
         """(clip_uid, k, video time) for every frame the stream shows; mirrors iter_stream_frames."""

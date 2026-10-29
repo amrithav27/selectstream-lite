@@ -108,6 +108,9 @@ def main():
     ap.add_argument("--calibration", default="outputs/calibration.json", help="calibrate_write output; overrides the config arms block for B/C/D.")
     ap.add_argument("--feature_cache", default=None, help="Stage-0 cache dir (main/cli/cache_features.py): write path reads g_t, queries read the cached frame.")
     ap.add_argument("--scorer", default=None, help="Stage-1 scorer (train_scorer.py); required for arm B.")
+    ap.add_argument("--segment_center", choices=("none", "train_mean"), default="none",
+                    help="Fresh runs only (a checkpoint carries its own): subtract the mean g_t of the training streams "
+                         "before the segment encoder (none = the paper). Needs --feature_cache.")
     args = ap.parse_args()
 
     if args.stage == "R" and args.arm != "A":
@@ -134,7 +137,7 @@ def main():
     elif args.init_from:
         load_trainable_state(model, args.init_from)
     prepare_scorer(model, args.arm, args.scorer)
-    cache = FrameCache(args.feature_cache) if args.feature_cache else None
+    cache = FrameCache(args.feature_cache, args.video_dir, float(dcfg.get("sample_fps", 1.0)), int(dcfg.get("frame_max_side", 448))) if args.feature_cache else None
 
     params = set_trainable(model, STAGE_GROUPS[args.stage])
     n_train = sum(p.numel() for p in params)
@@ -161,6 +164,13 @@ def main():
         n0 = len(ds.items)
         ds.items = [i for i in ds.items if all(cache.has(u) for u in i.clip_uids)]
         print(f"[data] feature cache {args.feature_cache}: {len(ds.items)}/{n0} streams fully cached")
+    if args.segment_center == "train_mean" and resume is None and not args.init_from:
+        if cache is None:
+            raise ValueError("--segment_center train_mean needs --feature_cache")
+        center = torch.from_numpy(cache.feature_mean(sorted({u for i in ds.items for u in i.clip_uids})))
+        model.lvm_short_former.set_segment_center(center)
+        np.save(os.path.join(args.output_dir, "segment_center.npy"), center.numpy())
+        print(f"[train] segment encoder input centred on the mean g_t of {len(ds.items)} training streams (|mean| = {float(center.norm()):.2f})")
     if args.clips_file:
         # Keep the streams that contain a listed clip_uid (or are a listed video_uid), in file order.
         wanted = [l.strip() for l in open(args.clips_file) if l.strip()]
@@ -294,7 +304,7 @@ def main():
                 "max_mem_gb": [round(torch.cuda.max_memory_allocated(d) / 2**30, 2) for d in range(torch.cuda.device_count())],
             }
             for key in ("loss_ans", "loss_ret", "loss_spar", "recall_at_m", "t_overlap", "evidence_survival", "num_committed",
-                        "evidence_span_s", "evidence_precision"):
+                        "evidence_span_s", "evidence_precision", "loss_ret_coarse", "loss_ret_chance", "ret_logit_scale", "prior_weight", "bias_eta"):
                 vals = [s[key] for s in q_stats if s.get(key) is not None]
                 rec[key] = float(np.mean(vals)) if vals else None
             with open(log_path, "a") as f:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import torch
@@ -484,14 +485,18 @@ def selectstream_query_loss(
     ret_terms = []
     loss_ret_coarse = zero
     loss_ret_refined = zero
+    loss_ret_chance = None
+    gr = getattr(model, "graph_reasoner", None)
     if aux:
         for scores_key, spans_key in (("all_node_scores", "all_node_time_spans"), ("node_scores", "node_time_spans")):
             target = _build_time_target(aux[spans_key], [window], time_tolerance)
             if target is not None and bool(target.any()):
-                term = _multi_positive_retrieval_loss(aux[scores_key].float(), target)
+                term = _multi_positive_retrieval_loss(aux[scores_key].float(), target)  # scores carry s (dmg_gar)
                 ret_terms.append(term)
                 if scores_key == "all_node_scores":
                     loss_ret_coarse = term
+                    # What a uniform score would give: the bar loss_ret_coarse has to beat.
+                    loss_ret_chance = -math.log(float(target.sum()) / float(target.numel()))
                 else:
                     loss_ret_refined = term
     loss_ret = torch.stack(ret_terms).mean() if ret_terms else zero
@@ -504,6 +509,10 @@ def selectstream_query_loss(
         "loss_ret": float(loss_ret.detach()),
         "loss_ret_coarse": float(loss_ret_coarse.detach()),
         "loss_ret_refined": float(loss_ret_refined.detach()),
+        "ret_logit_scale": float(gr.ret_logit_scale().detach()) if gr is not None else 1.0,
+        "prior_weight": float(gr.prior_weight.detach()) if gr is not None else 0.0,
+        "bias_eta": float(gr.bias_weights[0].detach()) if gr is not None else None,
+        "loss_ret_chance": loss_ret_chance,
         "loss_spar": float(loss_spar.detach()),
         "has_answer": float(bool(answer)),
     }

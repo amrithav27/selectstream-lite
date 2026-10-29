@@ -14,6 +14,7 @@ import time
 from collections import defaultdict
 
 import numpy as np
+from PIL import Image
 import torch
 
 from main.cli.common import load_yaml
@@ -64,6 +65,14 @@ def main():
     ap.add_argument("--calibration", default="outputs/calibration.json", help="calibrate_write output; overrides the config arms block for B/C/D.")
     ap.add_argument("--feature_cache", default=None, help="Stage-0 cache dir: write path reads g_t, queries read the cached frame.")
     ap.add_argument("--scorer", default=None, help="Stage-1 scorer (train_scorer.py); required for arm B.")
+    ap.add_argument("--read_ablation", default="none",
+                    choices=["none", "no_prior", "no_cos", "no_bias", "cos_only", "prior_only", "no_hops", "no_gar", "coarse_only", "random", "oracle"],
+                    help="Read-side ablation at eval time (dmg_gar.py; docs/plan.md §13.5).")
+    ap.add_argument("--evidence_k", type=int, default=None, help="Evidence tokens M at read (0 = answer without memory).")
+    ap.add_argument("--no_open", action="store_true", help="The read sees committed nodes only, not the open segment.")
+    ap.add_argument("--blank_frame", action="store_true", help="Query-conditioning ablation: ask over a black frame of the same size.")
+    ap.add_argument("--segment_center", default=None, help="With --ckpt none: a segment_center.npy (train_ego4d.py) so the "
+                    "untrained baseline centres like the trained run; a checkpoint carries its own.")
     args = ap.parse_args()
 
     cfg_dict = apply_arm(load_yaml(args.config), args.arm, args.calibration)
@@ -77,11 +86,16 @@ def main():
     log_device()
     model = load_model(cfg_dict, ckpt=None if args.ckpt == "none" else args.ckpt)
     prepare_scorer(model, args.arm, args.scorer)
+    if args.segment_center:
+        if args.ckpt != "none":
+            raise ValueError("--segment_center is for --ckpt none; a checkpoint carries its own segment_center")
+        model.lvm_short_former.set_segment_center(torch.from_numpy(np.load(args.segment_center)))
+    model.graph_reasoner.read_ablation = args.read_ablation
     model.eval()
-    cache = FrameCache(args.feature_cache) if args.feature_cache else None
+    sample_fps = float(dcfg.get("sample_fps", 1.0))
+    cache = FrameCache(args.feature_cache, args.video_dir, sample_fps, int(dcfg.get("frame_max_side", 448))) if args.feature_cache else None
 
     source = "qaego4d" if args.track == "qa" else "nlq"
-    sample_fps = float(dcfg.get("sample_fps", 1.0))
     ds = Ego4DStreamDataset(
         clean_dir=args.clean_dir,
         video_dir=args.video_dir,
@@ -134,12 +148,18 @@ def main():
                     committed = torch.stack([view["active_time_starts"], view["active_time_ends"]], dim=-1)
                     window = (q.window_start, q.window_end)
                     img_q = as_image(img)
+                    if args.blank_frame:
+                        img_q = Image.new("RGB", img_q.size)
+                    model.graph_reasoner.oracle_window = window
+                    t_read = None if args.no_open else t
                     if args.track == "qa":
-                        pred, aux = model.answer_with_memory(img_q, format_prompt(q.query), state, max_new_tokens=args.max_new_tokens, t_now=t)
+                        pred, aux = model.answer_with_memory(img_q, format_prompt(q.query), state, max_new_tokens=args.max_new_tokens,
+                                                             t_now=t_read, evidence_k=args.evidence_k)
                     else:
                         inputs = model.prepare_inputs([img_q], [format_prompt(q.query)])
                         out = model.base_model(**inputs, output_hidden_states=True)
-                        _, aux = model.read_evidence(out.hidden_states[-1], inputs["input_ids"], inputs.get("attention_mask"), state, t_now=t)
+                        _, aux = model.read_evidence(out.hidden_states[-1], inputs["input_ids"], inputs.get("attention_mask"), state,
+                                                     t_now=t_read, evidence_k=args.evidence_k)
                         pred = None
                     row = {
                         "query_id": q.query_id,
@@ -196,6 +216,7 @@ def main():
         "split": args.split,
         "ckpt": args.ckpt,
         "streams": len(ds),
+        "read": {"ablation": args.read_ablation, "evidence_k": args.evidence_k, "open_node": not args.no_open, "blank_frame": args.blank_frame},
         "groups": {g: summarize(rs, keys) for g, rs in groups.items()},
         "config": cfg_dict,
     }

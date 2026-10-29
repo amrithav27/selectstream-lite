@@ -106,6 +106,10 @@ class DynamicMemoryGraphReasoner(nn.Module):
         spar_subgraph_weight: float = 1.0,
         spar_redundancy_weight: float = 1.0,
         redundancy_margin: float = 0.0,
+        ret_logit_scale: float = 1.0,
+        ret_logit_scale_learnable: bool = False,
+        score_bias_learnable: bool = False,
+        prior_weight: float = 0.0,
     ):
         super().__init__()
         self.hidden_size = hidden_size
@@ -128,6 +132,27 @@ class DynamicMemoryGraphReasoner(nn.Module):
         self.evidence_proj = nn.Linear(hidden_size, hidden_size, bias=False)
         self.evidence_ln = nn.LayerNorm(hidden_size)
         nn.init.eye_(self.evidence_proj.weight)
+        # Eq. 6 as score_i = s * cos(u, h_i) + lam * z(prior_i) + eta * s_hat - xi_l * l_hat - xi_m * m_hat.
+        # The paper: s = 1, lam = 0, fixed eta/xi. s (log, CLIP-style when learnable) lets the semantic term
+        # outweigh the fixed priors; at s = 1 a cosine spread of ~0.01 loses to eta = 0.2 (docs/plan.md §5.1).
+        def maybe_param(name, value, learnable):
+            t = torch.tensor(value, dtype=torch.float32)
+            if learnable:
+                setattr(self, name, nn.Parameter(t))
+            else:
+                self.register_buffer(name, t)
+
+        maybe_param("ret_log_scale", math.log(float(ret_logit_scale)), ret_logit_scale_learnable)
+        maybe_param("bias_weights", [float(eta_surprise_boost), float(span_penalty_weight), float(merge_penalty_weight)], score_bias_learnable)
+        # lam: weight of the per-query standardised zero-shot prior (question token embedding vs the node's
+        # centred mean g); learnable whenever it is used.
+        maybe_param("prior_weight", float(prior_weight), prior_weight != 0.0)
+        # Eval-time read ablations (eval_ego4d.py --read_ablation; docs/plan.md §13.5). Never set in training.
+        self.read_ablation = "none"
+        self.oracle_window = None  # (start, end) of the asked window, for read_ablation = "oracle"
+
+    def ret_logit_scale(self) -> torch.Tensor:
+        return self.ret_log_scale.exp().clamp(max=100.0)
 
     @staticmethod
     def _normalize_stat(x: torch.Tensor) -> torch.Tensor:
@@ -297,8 +322,10 @@ class DynamicMemoryGraphReasoner(nn.Module):
         edge_type: torch.Tensor | None = None,
         edge_weight: torch.Tensor | None = None,
         evidence_k: int | None = None,
+        node_prior: torch.Tensor | None = None,
     ) -> Dict[str, torch.Tensor]:
         # evidence_k overrides M for this call (Q2 decomposed retrieval reads M/k per sub-question).
+        # node_prior: [num_nodes] zero-shot query-node similarity, standardised here over the nodes.
         if node_feats.numel() == 0:
             empty_slots = node_feats.new_zeros(0, self.hidden_size)
             empty_spans = torch.empty(0, 2, dtype=node_feats.dtype, device=node_feats.device)
@@ -352,37 +379,62 @@ class DynamicMemoryGraphReasoner(nn.Module):
         # Eq. (6): l_i = t_end - t_start + 1; surprise, span and merge count are
         # normalized over the active memory and reused when re-scoring refined nodes.
         span_len = (graph.node_time_end - graph.node_time_start).clamp_min(0) + 1.0
+        ab = self.read_ablation
+        bw = self.bias_weights.to(dtype=graph.node_feats.dtype)
         score_bias = (
-            self.eta_surprise_boost * self._normalize_stat(graph.node_surprise)
-            - self.span_penalty_weight * self._normalize_stat(span_len)
-            - self.merge_penalty_weight * self._normalize_stat(graph.node_merge_count)
-        ).to(dtype=graph.node_feats.dtype)
-        raw_score = (nodes_norm @ q) + score_bias
+            bw[0] * self._normalize_stat(graph.node_surprise).to(bw.dtype)
+            - bw[1] * self._normalize_stat(span_len).to(bw.dtype)
+            - bw[2] * self._normalize_stat(graph.node_merge_count).to(bw.dtype)
+        )
+        if ab in ("no_bias", "prior_only", "cos_only"):
+            score_bias = torch.zeros_like(score_bias)
+        if node_prior is not None and node_prior.numel() == score_bias.numel() and node_prior.numel() > 1 and ab not in ("no_prior", "cos_only"):
+            p = node_prior.to(dtype=score_bias.dtype)
+            score_bias = score_bias + self.prior_weight.to(score_bias.dtype) * (p - p.mean()) / (p.std() + 1e-6)
+        scale = self.ret_logit_scale().to(dtype=graph.node_feats.dtype)
+        if ab in ("no_cos", "prior_only"):
+            scale = scale * 0.0 + 1.0  # keeps routing's division defined; the cosine term is dropped below
+        cos_term = scale * (nodes_norm @ q) if ab not in ("no_cos", "prior_only") else torch.zeros_like(score_bias)
+        if ab == "random":
+            score_bias = torch.rand_like(score_bias) * 1e3
+        elif ab == "oracle" and self.oracle_window is not None:
+            ws, we = self.oracle_window
+            hit = (graph.node_time_end + 0.5 >= ws - 0.5) & (graph.node_time_start - 0.5 <= we + 0.5)
+            # Overlapping nodes first, the tightest (shortest) of them on top; ties broken by the model's score.
+            score_bias = hit.to(score_bias.dtype) * 1e3 - hit.to(score_bias.dtype) * span_len.to(score_bias.dtype)
+        raw_score = cos_term + score_bias
         # Routing uses edge supports in [0, 1]: similarity edges map cos to (1 + cos) / 2.
         route_support = torch.where(
             graph.edge_type == 1,
             0.5 * (1.0 + graph.edge_weight),
             graph.edge_weight,
         )
-        route_logit = (raw_score - self.route_threshold) / max(self.route_temperature, 1e-6)
+        # Routing divides by s so its sigmoid (Eq. 38) does not saturate as s grows.
+        route_logit = (raw_score / scale - self.route_threshold) / max(self.route_temperature, 1e-6)
         route_prob = torch.sigmoid(route_logit)
 
         k = min(self.seed_topk, raw_score.numel())
         seeds = torch.topk(raw_score, k=k, largest=True).indices
-        selected = self._collect_hops(
-            graph.edge_index,
-            seeds,
-            max_nodes=self.graph_budget,
-            node_scores=raw_score,
-            edge_weight=route_support,
-        )
+        if ab == "no_hops":
+            selected = seeds  # Eq. 7-8 expansion off: the subgraph is the seeds
+        else:
+            selected = self._collect_hops(
+                graph.edge_index,
+                seeds,
+                max_nodes=self.graph_budget,
+                node_scores=raw_score,
+                edge_weight=route_support,
+            )
         sub = self._subgraph(graph, selected)
         sub_node_indices = node_indices[selected]
-        refined = self.gar(sub)
+        refined = sub.node_feats if ab == "no_gar" else self.gar(sub)  # no_gar: relational layers off (Eq. 9)
 
         refined_norm = F.normalize(refined, dim=-1)
         sub_span_len = span_len[selected]
-        refined_score = (refined_norm @ q) + score_bias[selected].to(dtype=refined.dtype)
+        refined_score = (scale.to(refined.dtype) * (refined_norm @ q) if ab not in ("no_cos", "prior_only") else 0.0) \
+            + score_bias[selected].to(dtype=refined.dtype)
+        if ab in ("random", "oracle", "coarse_only"):
+            refined_score = raw_score[selected].to(refined.dtype)  # keep the coarse order (oracle/random fixed it)
         m = min(self.evidence_tokens if evidence_k is None else int(evidence_k), refined.size(0))
         ev_pos = torch.topk(refined_score, k=m, largest=True).indices
 

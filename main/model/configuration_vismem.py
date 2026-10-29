@@ -82,6 +82,12 @@ class VisMemConfig:
     method_merge_penalty_weight: float = 0.05
     method_route_edge_weight: float = 0.1
     method_route_temperature: float = 1.0
+    # Eq. 6 score = s * cos(u, h) + lam * z(prior) + eta * s_hat - xi * l_hat - xi_m * m_hat (dmg_gar). Defaults = the
+    # paper: s = 1 fixed, no prior, fixed eta/xi (docs/plan.md §5.1).
+    method_ret_logit_scale: float = 1.0
+    method_ret_logit_scale_learnable: bool = False
+    method_score_bias_learnable: bool = False
+    method_prior_weight: float = 0.0
     method_route_threshold: float = 0.0
     method_sim_topk: int = 4
     method_temporal_weight_c: float = 1.0

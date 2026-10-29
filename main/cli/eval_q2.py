@@ -110,8 +110,8 @@ def main():
     model = load_model(cfg_dict, ckpt=args.ckpt)
     prepare_scorer(model, args.arm, args.scorer)
     model.eval()
-    cache = FrameCache(args.feature_cache) if args.feature_cache else None
     sample_fps = float(dcfg.get("sample_fps", 1.0))
+    cache = FrameCache(args.feature_cache, args.video_dir, sample_fps, int(dcfg.get("frame_max_side", 448))) if args.feature_cache else None
     ds = Ego4DStreamDataset(args.clean_dir, args.video_dir, "val", "qaego4d" if args.track == "qa" else "nlq",
                             query_time_mode=str(dcfg.get("query_time_mode", "uniform")), sample_fps=sample_fps,
                             resample_ask_times=False, seed=seed, require_video=cache is None)

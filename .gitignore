@@ -5,3 +5,5 @@ source_trial/
 .claude/
 outputs/
 docs/
+scripts/hf_upload_ckpt.sh
+scripts/hf_upload_features.sh

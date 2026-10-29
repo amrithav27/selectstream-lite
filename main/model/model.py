@@ -138,6 +138,10 @@ class VisMemModel(nn.Module):
                     merge_penalty_weight=config.method_merge_penalty_weight,
                     route_edge_weight=config.method_route_edge_weight,
                     route_temperature=config.method_route_temperature,
+                    ret_logit_scale=getattr(config, "method_ret_logit_scale", 1.0),
+                    ret_logit_scale_learnable=getattr(config, "method_ret_logit_scale_learnable", False),
+                    score_bias_learnable=getattr(config, "method_score_bias_learnable", False),
+                    prior_weight=getattr(config, "method_prior_weight", 0.0),
                     route_threshold=config.method_route_threshold,
                     sim_topk=config.method_sim_topk,
                     temporal_weight_c=config.method_temporal_weight_c,
@@ -914,6 +918,9 @@ class VisMemModel(nn.Module):
         view = self.lvm_short_former.state_view(memory_state[0], include_open=t_now is not None, t_now=t_now)
         if view["active_slots"].numel() == 0:
             return hs.new_zeros(1, 0, self.hidden_size), {}
+        prior = None
+        if float(self.graph_reasoner.prior_weight) != 0.0 and view.get("active_g_mean") is not None:
+            prior = self.question_node_prior(input_ids, view["active_g_mean"])
         aux = self.graph_reasoner(
             node_feats=view["active_slots"],
             node_time_start=view["active_time_starts"],
@@ -926,10 +933,37 @@ class VisMemModel(nn.Module):
             edge_type=view["graph_edge_type"],
             edge_weight=view["graph_edge_weight"],
             evidence_k=evidence_k,
+            node_prior=prior,
         )
         if mark_read:
             LVMMemoryFormer.mark_read(memory_state[0], aux["evidence_indices"])
         return aux["evidence_tokens"].unsqueeze(0), aux
+
+    PRIOR_STOPWORDS = frozenset(
+        "the a an i my me did do does what where when how who which was were is are of to in on at for with from it this that "
+        "before after there many much put get take see saw".split())
+
+    @torch.no_grad()
+    def question_node_prior(self, input_ids: torch.LongTensor, node_g_mean: torch.Tensor) -> torch.Tensor:
+        """Zero-shot query-node similarity in the decoder's input-embedding space, where g_t (the vision
+        projector output) also lives: cos(mean content-word embedding of the question - vocabulary mean,
+        node mean g - segment_center). Measured without training (docs/plan.md §5.1): within-stream frame
+        AUC 0.568 vs 0.492 control; node Recall@4 0.464 vs 0.397 random. The question is the text after
+        "Question:" in the prompt (format_prompt)."""
+        text = self.tokenizer.decode(input_ids[0].tolist(), skip_special_tokens=True)
+        text = text.split("Question:")[-1].split("assistant")[0]
+        words = [w.strip("?,.!").lower() for w in text.split()]
+        words = [w for w in words if w and w not in self.PRIOR_STOPWORDS]
+        out = node_g_mean.new_zeros(node_g_mean.size(0), dtype=torch.float32)
+        if not words:
+            return out
+        emb = self.base_model.get_input_embeddings().weight
+        if getattr(self, "_vocab_mean", None) is None:
+            self._vocab_mean = emb.float().mean(0)
+        ids = self.tokenizer(" " + " ".join(words), add_special_tokens=False).input_ids
+        e = emb[torch.tensor(ids, device=emb.device)].float().mean(0) - self._vocab_mean
+        g = node_g_mean.float().to(e.device) - self.lvm_short_former.segment_center.float().to(e.device)
+        return F.cosine_similarity(g, e.unsqueeze(0), dim=-1).to(node_g_mean.device)
 
     def answer_target_ids(self, answer: str) -> torch.LongTensor:
         """Ground-truth answer tokens + <|im_end|>, no BOS, so the model learns where to stop."""

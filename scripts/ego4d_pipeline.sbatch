@@ -154,7 +154,9 @@ evaluate() {  # evaluate <name> <arm> <ckpt|none> <track> <extra args...>
 }
 
 # ---- 2. Stage R: reader + writer, arm A, thresholds from the pre-Stage-R probe ----
-train R A --epochs "$R_EPOCHS" $(opt --max_clips "$R_STREAMS") --calibration "$PROBE_CAL" || exit 1
+# SEG_CENTER=train_mean subtracts the train mean g_t before the segment encoder (none = the paper; docs/plan.md §5).
+train R A --epochs "$R_EPOCHS" $(opt --max_clips "$R_STREAMS") --calibration "$PROBE_CAL" --segment_center "${SEG_CENTER:-train_mean}" || exit 1
+[ -f "$OUT/R_A/segment_center.npy" ] && cp "$OUT/R_A/segment_center.npy" "$CK/R_A/"
 
 # ---- 3. Calibrate arms B/C/D against arm A's segment count (trained writer, Stage-1 scorer) ----
 if ! done_ calibrate; then
@@ -175,7 +177,7 @@ wtrain_eval A
 wtrain_eval B
 report
 # Same streams and ask times, trainables at their seed-42 init: did training change anything?
-evaluate eval_qa_untrained A none qa $(opt --max_clips "$EVAL_STREAMS")
+evaluate eval_qa_untrained A none qa $(opt --max_clips "$EVAL_STREAMS") $(opt --segment_center "$([ -f "$CK/R_A/segment_center.npy" ] && echo "$CK/R_A/segment_center.npy")")
 wtrain_eval C
 wtrain_eval D
 # Arm B with the un-retrained Stage-R writer: what Stage W buys.

@@ -77,6 +77,14 @@ vismem:
   method_merge_penalty_weight: 0.05
   method_route_edge_weight: 0.1
   method_route_temperature: 1.0
+  # Eq. 6 score = s * cos(u, h) + lam * z(prior) + eta * s_hat - xi_l * l_hat - xi_m * m_hat (docs/plan.md §5.1).
+  # Paper: s = 1, lam = 0, eta/xi fixed. There, cosines spread ~0.01 and the fixed priors rank (Recall@4 0.27 vs 0.40
+  # random, run 43319). s: learnable, init 1/0.07, cap 100 (CLIP). prior: zero-shot question-embedding vs node mean g
+  # (Recall@4 0.46 untrained), standardised per query, lam learnable from 1. eta/xi learnable from the paper's values.
+  method_ret_logit_scale: 14.2857
+  method_ret_logit_scale_learnable: true
+  method_score_bias_learnable: true
+  method_prior_weight: 1.0
   method_route_threshold: 0.0
   method_sim_topk: 4
   method_temporal_weight_c: 1.0

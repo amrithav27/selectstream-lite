@@ -655,6 +655,222 @@ def plot_check2(run_dir: str, out_dir: str) -> None:
     save(fig, os.path.join(out_dir, "check2_delay.png"))
 
 
+ABL_CORE = {"A": (SERIES[0], "A · s̄, surprise (paper)"), "As": ("#86b6ef", "raw surprise s"), "C": (SERIES[2], "C · oracle EMA(y)"),
+            "Cr": (SERIES[5], "oracle raw y"), "D": (SERIES[3], "D · fixed length"), "c4": (SERIES[6], "boundary score (causal 4+4 s)")}
+
+
+ABL_SHORT = {"A": "s̄", "As": "raw s", "C": "oracle", "Cr": "oracle raw", "D": "fixed", "c4": "boundary", "E": "s̄ + scorer"}
+
+
+def abl_label(var: str) -> str:
+    def one(sig):
+        if sig.startswith("B."):
+            return f"scorer {sig[2:]}"
+        if sig.startswith("Br."):
+            return f"scorer {sig[3:]} (raw)"
+        return ABL_SHORT.get(sig, sig)
+
+    cut, _, val = var.partition(":")
+    if val:
+        return f"cut {one(cut)} | value {one(val)}"
+    return ABL_CORE[cut][1] if cut in ABL_CORE else {"E": "E · s̄ + scorer"}.get(cut, one(cut))
+
+
+def abl_uses_oracle(var: str) -> bool:
+    return any(p in ("C", "Cr") for p in var.split(":"))
+
+
+def abl_signal_order(sigs) -> list:
+    core = [k for k in ABL_CORE if k in sigs]
+    return core + [k for k in ("E",) if k in sigs] + sorted(k for k in sigs if k not in ABL_CORE and k != "E")
+
+
+def plot_ablate(run_dir: str, out_dir: str) -> None:
+    """ablate_write.py outputs (outputs/<run>/ablate*/ablate_write.json): granularity sweep and signal ablations."""
+    for path in sorted(glob.glob(os.path.join(run_dir, "ablate*", "ablate_write.json"))):
+        res = json.load(open(path))
+        tag = os.path.basename(os.path.dirname(path))
+        a = res["args"]
+        tracks = [t for t in ("nlq", "qa") if t in res["tracks"]]
+        cells0 = res["tracks"][tracks[0]]["cells"]
+        keys = [k.split("|") for k in cells0]
+        lmins = sorted({int(k[0].split("=")[1]) for k in keys}, reverse=True)
+        variants = list(dict.fromkeys(k[1] for k in keys))
+        Ns = sorted({int(k[2].split("=")[1]) for k in keys})
+        n_main = 16 if 16 in Ns else Ns[len(Ns) // 2]
+        notes = [c["note"] for c in res["calibration"].values()]
+        extra = {"Replay": {"target": f"{a['target']}, {res['targets'][str(lmins[0])]:.1f} segments per train stream at L_min = {lmins[0]}",
+                            "value signal": "causal rank (64)" if a["norm_value"] else "raw", "τ_r": res["tau_r"], "N": n_main,
+                            "budget matched by": f"B_s {sum(n == 'ok' for n in notes)}, quantile {sum(n.startswith('spike quantile') for n in notes)}, "
+                                                 f"margin {sum(n.startswith('spike margin') for n in notes)} cells"},
+                 "Write": {"L_min (frames = s)": ", ".join(map(str, lmins)), "L_max": 64, "q/window": "0.9/64", "ρ": 0.9, "reads": "not counted (p_acc = 0)"}}
+        for tr in tracks:
+            cells = res["tracks"][tr]["cells"]
+            cell = lambda L, v, N=n_main: cells.get(f"Lmin={L}|{v}|N={N}")
+            core = [v for v in variants if v in ABL_CORE]
+            rest = [v for v in variants if v not in ABL_CORE and v != "A"]
+            # The best variant that uses no labels: what a deployable signal reaches.
+            best_b = max([v for v in rest if not abl_uses_oracle(v)], key=lambda v: np.mean([cell(L, v)["best_iou"] for L in lmins]), default=None)
+            fig, axes = plt.subplots(1, 2, figsize=(17, 0.3 * len(variants) + 3.6), gridspec_kw={"width_ratios": [1, 1.1]})
+            fig.subplots_adjust(left=0.05, right=0.99, wspace=0.5)
+            ax = axes[0]
+            for v in core + ([best_b] if best_b else []):
+                col = ABL_CORE[v][0] if v in ABL_CORE else SERIES[1]
+                ax.plot(lmins, [cell(L, v)["best_iou"] for L in lmins], marker="o", ms=6, color=col,
+                        label=abl_label(v) + (" (best label-free non-core)" if v == best_b else ""))
+            ax.set_xticks(lmins, [str(L) for L in lmins])
+            ax.invert_xaxis()
+            ax.set_xlabel("minimum segment length L_min (s; paper = 8)")
+            ax.set_ylabel("best-node IoU at t_q (0–1)")
+            ax.set_title(f"IoU* by segment length, N = {n_main}")
+            ax.legend(loc="best", fontsize=8)
+            ax = axes[1]
+            rows = [v for v in variants if v != "A"]
+            h = 0.8 / len(lmins)
+            for j, L in enumerate(lmins):
+                ys = np.arange(len(rows)) + (j - (len(lmins) - 1) / 2) * h
+                d = [cell(L, v)["vs_A_same_lmin"]["best_iou"] for v in rows]
+                ax.errorbar([x["mean"] for x in d], ys, xerr=[[x["mean"] - x["ci95"][0] for x in d], [x["ci95"][1] - x["mean"] for x in d]],
+                            fmt="o", ms=5, color=SERIES[j], ecolor=SERIES[j], elinewidth=1.2, capsize=0, label=f"L_min = {L}")
+            ax.axvline(0, color=AXIS, lw=1.2)
+            ax.set_yticks(range(len(rows)), [abl_label(v) for v in rows], fontsize=8)
+            ax.invert_yaxis()
+            ax.set_xlabel("Δ best-node IoU vs arm A at the same L_min (95% CI over videos)")
+            ax.set_title(f"Each signal vs surprise, N = {n_main}")
+            ax.legend(loc="lower right", fontsize=8)
+            q = res["tracks"][tr]["window_len_s"]["q10_25_50_75_90"]
+            suptitle(fig, f"Write ablations ({tag}) · val {tr.upper()}, {res['tracks'][tr]['streams']} streams, offline replay",
+                     f"every cell writes the same segments per stream; answer windows (s) q10/q50/q90 = {q[0]:.0f}/{q[2]:.0f}/{q[4]:.0f}")
+            footer(fig, cfg_groups({}, extra), width_chars=170, reserve_in=0.6)
+            save(fig, os.path.join(out_dir, f"{tag}_{tr}.png"))
+
+        sigs = abl_signal_order(list(res["tracks"][tracks[0]]["signal_auc"]))
+        if not sigs:
+            continue
+        fig, axes = plt.subplots(1, len(tracks), figsize=(14, 0.42 * len(sigs) + 2.6), squeeze=False, sharey=True)
+        fig.subplots_adjust(wspace=0.08)
+        kinds = [("pooled_auc", "all frames pooled", MUTED), ("within_auc", "within each video", SERIES[0]),
+                 ("local_auc", "vs last 64 frames (what the cut sees)", SERIES[2])]
+        for ax, tr in zip(axes[0], tracks):
+            sa = res["tracks"][tr]["signal_auc"]
+            h = 0.8 / len(kinds)
+            for j, (k, lab, col) in enumerate(kinds):
+                ys = np.arange(len(sigs)) + (j - 1) * h
+                ax.barh(ys, [sa[sg][k] - 0.5 for sg in sigs], h * 0.9, left=0.5, color=col, edgecolor="#fcfcfb", lw=1, label=lab)
+            ax.axvline(0.5, color=AXIS, lw=1.2)
+            ax.set_yticks(range(len(sigs)), [abl_label(sg) for sg in sigs], fontsize=8)
+            ax.invert_yaxis()
+            ax.set_xlabel("AUROC of the signal against y_t (0.5 = chance)")
+            ax.set_title(f"val {tr.upper()}")
+            ax.set_xlim(0.4, max(0.75, max(sa[sg][k] for sg in sigs for k, _, _ in kinds if sg not in ("C", "Cr")) + 0.03))
+        axes[0][-1].legend(loc="lower right", fontsize=8)
+        suptitle(fig, f"Which frames does each write signal rank high? ({tag})",
+                 "only within-video and local ranking can move a cut; pooled AUC also rewards knowing which videos get many questions (oracle bars clipped)")
+        footer(fig, cfg_groups({}, {"Labels": {"y_t": "1[t within 0.5 s of an answer window]", "local": "score − trailing 64-frame mean"}}), width_chars=170, reserve_in=0.6)
+        save(fig, os.path.join(out_dir, f"{tag}_signals.png"))
+
+
+READ_GROUPS = [  # (prefix, group label, colour): read_<name> dirs from scripts/ego4d_ablate_read.sbatch
+    ("score_", "Eq. 6 score terms", SERIES[0]), ("graph_", "graph reasoning", SERIES[2]), ("bound_", "bounds", SERIES[3]),
+    ("M", "evidence budget M", SERIES[1]), ("no_open", "open segment", SERIES[6]), ("blank_frame", "query conditioning", SERIES[4])]
+READ_LABEL = {"score_no_prior": "− zero-shot prior", "score_no_cos": "− learned cosine", "score_no_bias": "− surprise/span/merge terms",
+              "score_cos_only": "learned cosine only", "score_prior_only": "zero-shot prior only", "graph_no_hops": "no hop expansion (seeds only)",
+              "graph_no_gar": "no relational GAR layers", "graph_coarse_only": "coarse order (no refined re-rank)", "bound_random": "random nodes",
+              "bound_oracle": "oracle: nodes overlapping the window", "M0": "M = 0 (no memory)", "M1": "M = 1", "M2": "M = 2", "M8": "M = 8",
+              "no_open": "committed nodes only (no open segment)", "blank_frame": "question over a black frame"}
+
+
+def plot_read_ablation(run_dir: str, out_dir: str) -> None:
+    ref_path = os.path.join(run_dir, "read_full", "predictions.jsonl")
+    if not os.path.exists(ref_path):
+        return
+    ref = read_jsonl(ref_path)
+    ref_sum = json.load(open(os.path.join(run_dir, "read_full", "summary.json")))
+    runs = {}
+    for d in sorted(glob.glob(os.path.join(run_dir, "read_*"))):
+        name = os.path.basename(d)[5:]
+        if name != "full" and os.path.exists(os.path.join(d, "predictions.jsonl")):
+            runs[name] = read_jsonl(os.path.join(d, "predictions.jsonl"))
+    if not runs:
+        return
+    order = [n for pre, _, _ in READ_GROUPS for n in sorted(runs, key=lambda x: list(READ_LABEL).index(x) if x in READ_LABEL else 99) if n.startswith(pre)]
+    order = list(dict.fromkeys(order))
+    group_of = {n: next((g, c) for pre, g, c in READ_GROUPS if n.startswith(pre)) for n in order}
+    metrics = [("recall_at_m", "Recall@M"), ("t_overlap", "T-Overlap"), ("evidence_precision", "evidence precision"), ("contains", "answer contains-match")]
+    fig, axes = plt.subplots(1, len(metrics), figsize=(18, 0.36 * len(order) + 3.4), sharey=True)
+    fig.subplots_adjust(left=0.2, right=0.99, wspace=0.12)
+    for ax, (k, lab) in zip(axes, metrics):
+        base = bootstrap_mean(ref, k)
+        for y, n in enumerate(order):
+            d = paired_diff(ref, runs[n], k)
+            if d is None:
+                continue
+            col = group_of[n][1]
+            ax.plot([d[1], d[2]], [y, y], color=col, lw=1.6)
+            ax.plot(d[0], y, "o", ms=6, color=col)
+        ax.axvline(0, color=AXIS, lw=1.2)
+        ax.set_title(f"{lab}\nfull = {base[0]:.3f}" if base else lab, fontsize=10)
+        ax.set_xlabel("Δ vs full reader (95% CI over videos)")
+    axes[0].set_yticks(range(len(order)), [READ_LABEL.get(n, n) for n in order], fontsize=8.5)
+    axes[0].invert_yaxis()
+    handles = [Line2D([], [], marker="o", color=c, lw=1.6, label=g) for pre, g, c in READ_GROUPS if any(n.startswith(pre) for n in order)]
+    fig.legend(handles=handles, loc="upper right", ncol=len(handles), fontsize=8.5, frameon=False, bbox_to_anchor=(0.99, fig_legend_y(fig)))
+    rd = ref_sum.get("read", {})
+    suptitle(fig, f"Read-side and query-conditioning ablations · arm A, val QA, {ref_sum.get('streams')} streams, {len(ref)} questions",
+             "every variant re-reads the same memory with the trained reader; Δ is paired by question")
+    footer(fig, cfg_groups(ref_sum.get("config", {}), {"Read": {"reference": "trained W_A, M = 4, open segment in", "variants": len(order),
+                                                                "checkpoint": os.path.basename(str(ref_sum.get("ckpt")))}}), width_chars=190)
+    save(fig, os.path.join(out_dir, "read_ablation.png"), top_in=1.35)
+
+    Ms = [(0, "M0"), (1, "M1"), (2, "M2"), (4, None), (8, "M8")]
+    have = [(m, n) for m, n in Ms if n is None or n in runs]
+    if len(have) >= 3:
+        fig, ax = plt.subplots(figsize=(10, 5.4))
+        for i, (k, lab) in enumerate((("recall_at_m", "Recall@M"), ("t_overlap", "T-Overlap"), ("contains", "answer contains-match"))):
+            st = [bootstrap_mean(ref if n is None else runs[n], k) for m, n in have]
+            xs = [m for m, _ in have]
+            ax.fill_between(xs, [x[1] if x else np.nan for x in st], [x[2] if x else np.nan for x in st], color=SERIES[i], alpha=0.12, lw=0)
+            ax.plot(xs, [x[0] if x else np.nan for x in st], marker="o", ms=6, color=SERIES[i], label=lab)
+        ax.set_xticks([m for m, _ in have])
+        ax.set_xlabel("evidence tokens M read from memory (trained with M = 4)")
+        ax.set_ylabel("mean over questions (0–1)")
+        ax.legend(loc="best")
+        suptitle(fig, "How much evidence does the answer use?", "M = 0 answers from the current frame and the question alone; band = 95% CI over videos")
+        footer(fig, cfg_groups(ref_sum.get("config", {})), reserve_in=0.55)
+        save(fig, os.path.join(out_dir, "read_evidence_M.png"))
+
+
+def plot_ablate_read_offline(run_dir: str, out_dir: str) -> None:
+    path = os.path.join(run_dir, "ablate_read", "ablate_read.json")
+    if not os.path.exists(path):
+        return
+    res = json.load(open(path))
+    tracks = [t for t in ("nlq", "qa") if t in res["tracks"]]
+    fig, axes = plt.subplots(1, len(tracks), figsize=(15, 5.6), squeeze=False, sharey=True)
+    fig.subplots_adjust(wspace=0.08)
+    scores = [("random", "random choice", MUTED), ("bias", "paper's fixed Eq. 6 terms", SERIES[3]), ("prior: question", "zero-shot prior (question)", SERIES[0]),
+              ("prior: object", "zero-shot prior (object phrase)", SERIES[6]), ("prior+bias", "prior + fixed terms (trained start)", SERIES[1])]
+    for ax, tr in zip(axes[0], tracks):
+        cells = res["tracks"][tr]["cells"]
+        Ms = sorted({int(k.split("|")[2][2:]) for k in cells})
+        for key, lab, col in scores:
+            ys = [cells.get(f"N=16|open=in|M={m}|{key}") for m in Ms]
+            if not any(ys):
+                continue
+            ax.fill_between(Ms, [y["recall"][1] if y else np.nan for y in ys], [y["recall"][2] if y else np.nan for y in ys], color=col, alpha=0.12, lw=0)
+            ax.plot(Ms, [y["recall"][0] if y else np.nan for y in ys], marker="o", ms=6, color=col, label=lab, ls="--" if key == "random" else "-")
+        ax.set_xscale("log", base=2)
+        ax.set_xticks(Ms, [str(m) for m in Ms])
+        ax.set_xlabel("evidence nodes M")
+        ax.set_ylabel("Recall@M at t_q (0–1)")
+        ax.set_title(f"val {tr.upper()}, {res['tracks'][tr]['streams']} streams, N = 16")
+    axes[0][0].legend(loc="upper left", fontsize=8.5)
+    suptitle(fig, "Training-free retrieval on the replayed memory", "nodes = mean g_t of their frames (Check 2 memory, arm A); band = 95% CI over questions")
+    footer(fig, cfg_groups({}, {"Read": {"prior": "cos(question token embedding − vocab mean, node mean g − train mean)",
+                                         "fixed terms": "0.2·surprise − 0.05·span − 0.05·(writes − 1)"}}), width_chars=170, reserve_in=0.6)
+    save(fig, os.path.join(out_dir, "read_offline.png"))
+
+
 def plot_q2(run_dir: str, out_dir: str) -> None:
     for path in sorted(glob.glob(os.path.join(run_dir, "q2_*", "q2_*_summary.json"))):
         s = json.load(open(path))
@@ -738,7 +954,9 @@ def plot_run(run_dir: str, out_dir: str) -> None:
                 plot_eval_delay(evals, track, out_dir)
                 plot_eval_slices(evals, track, out_dir)
         steps.append((f"eval {track}", ev))
-    steps += [("budget", lambda: plot_budget(run_dir, out_dir)), ("q2", lambda: plot_q2(run_dir, out_dir))]
+    steps += [("budget", lambda: plot_budget(run_dir, out_dir)), ("q2", lambda: plot_q2(run_dir, out_dir)),
+              ("ablate", lambda: plot_ablate(run_dir, out_dir)), ("read ablation", lambda: plot_read_ablation(run_dir, out_dir)),
+              ("read offline", lambda: plot_ablate_read_offline(run_dir, out_dir))]
     for name, fn in steps:
         try:
             fn()
