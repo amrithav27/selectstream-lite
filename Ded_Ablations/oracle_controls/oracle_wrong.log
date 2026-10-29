@@ -1,0 +1,176 @@
+[arm] A: calibrated values from /content/ck/runs/full_v3/calibration.json: {'lvm_tau_s': 0.06815026234835386, 'lvm_tau_r': 0.9896904706954956}
+[env] GPUs: ['NVIDIA A100-SXM4-40GB']
+Fetching 5 files:   0%|          | 0/5 [00:00<?, ?it/s]Fetching 5 files:  20%|██        | 1/5 [00:29<01:58, 29.51s/it]Fetching 5 files:  40%|████      | 2/5 [00:46<01:05, 21.94s/it]Fetching 5 files:  80%|████████  | 4/5 [00:46<00:08,  8.28s/it]Fetching 5 files: 100%|██████████| 5/5 [00:46<00:00,  9.29s/it]
+Loading weights:   0%|          | 0/729 [00:00<?, ?it/s]Loading weights:   0%|          | 1/729 [00:00<10:05,  1.20it/s]Loading weights:   4%|▍         | 28/729 [00:00<00:18, 37.40it/s]Loading weights:   6%|▌         | 42/729 [00:01<00:13, 52.14it/s]Loading weights:   7%|▋         | 53/729 [00:01<00:12, 54.99it/s]Loading weights:   9%|▉         | 65/729 [00:01<00:10, 65.22it/s]Loading weights:  10%|█         | 76/729 [00:01<00:08, 74.23it/s]Loading weights:  12%|█▏        | 88/729 [00:01<00:07, 80.40it/s]Loading weights:  14%|█▎        | 100/729 [00:01<00:08, 71.97it/s]Loading weights:  16%|█▌        | 114/729 [00:01<00:07, 82.84it/s]Loading weights:  17%|█▋        | 124/729 [00:02<00:07, 80.07it/s]Loading weights:  19%|█▉        | 137/729 [00:02<00:07, 79.19it/s]Loading weights:  21%|██        | 150/729 [00:02<00:06, 87.24it/s]Loading weights:  22%|██▏       | 160/729 [00:02<00:06, 89.16it/s]Loading weights:  24%|██▎       | 173/729 [00:02<00:05, 94.73it/s]Loading weights:  25%|██▌       | 184/729 [00:02<00:06, 89.23it/s]Loading weights:  27%|██▋       | 197/729 [00:02<00:05, 94.98it/s]Loading weights:  29%|██▊       | 208/729 [00:02<00:05, 90.32it/s]Loading weights:  30%|███       | 220/729 [00:03<00:05, 94.81it/s]Loading weights:  32%|███▏      | 232/729 [00:03<00:06, 77.75it/s]Loading weights:  34%|███▎      | 246/729 [00:03<00:05, 88.84it/s]Loading weights:  35%|███▌      | 256/729 [00:03<00:05, 85.18it/s]Loading weights:  37%|███▋      | 269/729 [00:03<00:05, 84.93it/s]Loading weights:  38%|███▊      | 280/729 [00:03<00:05, 79.87it/s]Loading weights:  40%|████      | 294/729 [00:04<00:04, 89.96it/s]Loading weights:  42%|████▏     | 304/729 [00:04<00:05, 83.43it/s]Loading weights:  44%|████▎     | 318/729 [00:04<00:04, 93.31it/s]Loading weights:  45%|████▍     | 328/729 [00:04<00:04, 93.57it/s]Loading weights:  54%|█████▍    | 393/729 [00:04<00:01, 234.41it/s]Loading weights:  69%|██████▊   | 501/729 [00:04<00:00, 456.10it/s]Loading weights:  83%|████████▎ | 607/729 [00:04<00:00, 619.22it/s]Loading weights:  98%|█████████▊| 717/729 [00:04<00:00, 752.16it/s]Loading weights: 100%|██████████| 729/729 [00:04<00:00, 151.37it/s]
+/content/sl/main/model/query_builder.py:26: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+/content/sl/main/model/lvm_memory.py:264: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.segment_encoder = nn.TransformerEncoder(seg_encoder_layer, num_layers=self.segment_encoder_layers)
+[ckpt] loaded /content/ck/checkpoints/full_v3/W_A/weights.pt: 65 tensors, missing(non-backbone)=0, unexpected=0
+[scorer] loaded /content/ck/runs/full_v3/scorer/scorer.pt (seed 42, dev AP 0.3148258249050078)
+[eval] feature cache /content/feature_cache: 243/243 streams fully cached
+[eval] arm=A track=qa split=val streams=150 missing_video=0
+/content/sl/main/model/dmg_gar.py:272: UserWarning: index_reduce() is in beta and the API may change at any time. (Triggered internally at /pytorch/aten/src/ATen/native/cuda/Indexing.cu:1469.)
+  edge_bonus.index_reduce_(0, edge_src, edge_w, reduce="amax", include_self=True)
+[eval] stream 1/150 000cd456-ff8d-499b-b0c1-4acead128a8b clips=1 frames=480 queries=4 7s
+[eval] stream 2/150 0066ab25-04ad-41b2-89ab-283d2bfa1c4b clips=1 frames=480 queries=13 5s
+[eval] stream 3/150 03e90bbc-7d6b-423c-84d9-b5be3eff11c5 clips=2 frames=930 queries=24 9s
+[eval] stream 4/150 0475a0b9-9445-4083-8c6a-42f0171ff3e4 clips=1 frames=480 queries=5 3s
+[eval] stream 5/150 04994ce8-9d47-44d6-a7b0-42b395e69390 clips=1 frames=1200 queries=30 12s
+[eval] stream 6/150 055ba601-c243-4d4a-8a2c-694a5c88824c clips=1 frames=481 queries=12 5s
+[eval] stream 7/150 056db3f1-f957-46c8-b16b-c8fce22e78f9 clips=1 frames=480 queries=12 5s
+[eval] stream 8/150 06fb8090-16a4-42c3-819e-f0e95ddba24d clips=1 frames=480 queries=7 3s
+[eval] stream 9/150 07309684-1f6e-4977-ab74-f3e63c361f36 clips=1 frames=481 queries=13 5s
+[eval] stream 10/150 083b7556-9dff-40e2-9fad-bef3f82dbf37 clips=1 frames=360 queries=10 4s
+[eval] stream 11/150 0971527a-6cd3-4c82-9d94-09b3565f4505 clips=1 frames=481 queries=12 5s
+[eval] stream 12/150 0aec2b0c-18e1-453b-a6ed-e484698d41df clips=1 frames=1116 queries=5 5s
+[eval] stream 13/150 0c6ab491-c45e-4cbc-b6b2-a709cc856a9c clips=2 frames=961 queries=28 11s
+[eval] stream 14/150 0dbd615d-fde9-4936-a605-6f5659cd113e clips=1 frames=480 queries=4 3s
+[eval] stream 15/150 0de39e75-fb19-47d4-818d-fff874b05ab9 clips=1 frames=480 queries=7 3s
+[eval] stream 16/150 0ffc33a8-bbd4-47e2-8748-7069197a4e03 clips=1 frames=481 queries=14 5s
+[eval] stream 17/150 10a04147-ae19-4c5e-b13b-b0b7005938a2 clips=1 frames=481 queries=2 2s
+[eval] stream 18/150 115774b6-534d-444f-b7aa-d1b834eb0ee7 clips=5 frames=3060 queries=80 31s
+[eval] stream 19/150 12946f28-5f4a-4ba5-8296-c08cbeeca501 clips=1 frames=480 queries=15 5s
+[eval] stream 20/150 1330508f-8168-4408-a4df-79f69fb87c83 clips=1 frames=450 queries=6 3s
+[eval] stream 21/150 145881ef-5578-460d-bb5a-6fb80ef7d457 clips=2 frames=602 queries=19 7s
+[eval] stream 22/150 168f91fd-53c2-4eee-9d2d-e25e1ad73438 clips=1 frames=480 queries=16 5s
+[eval] stream 23/150 180b72fa-2102-414e-a6d5-2806e53f320c clips=1 frames=481 queries=20 7s
+[eval] stream 24/150 182dffe9-d2bf-4a7d-b1d8-137470f0143d clips=2 frames=961 queries=29 11s
+[eval] stream 25/150 18a3840b-7463-43c4-9aa9-b1d8e486fa84 clips=6 frames=2794 queries=96 35s
+[eval] stream 26/150 18e84829-901a-414d-8a2b-d1d2b3244db7 clips=3 frames=1292 queries=42 16s
+[eval] stream 27/150 1938c632-f575-49dd-8ae0-e48dbb467920 clips=1 frames=480 queries=13 5s
+[eval] stream 28/150 1c7426ad-b6ba-4494-897c-537dd4a201e9 clips=2 frames=961 queries=27 10s
+[eval] stream 29/150 1dcc108c-8bd4-42ad-b2c5-03662be62eda clips=2 frames=602 queries=20 7s
+[eval] stream 30/150 20400762-1e47-462d-a7d1-64a1b162b1f9 clips=1 frames=481 queries=13 5s
+[eval] stream 31/150 20525d50-586a-4792-bfdb-fd941ee64ea9 clips=1 frames=480 queries=7 3s
+[eval] stream 32/150 20cf795c-81da-42d8-829f-813cf68bb13c clips=1 frames=282 queries=4 2s
+[eval] stream 33/150 210b5b51-6dae-43b2-9cf8-28e04a785f18 clips=1 frames=442 queries=11 4s
+[eval] stream 34/150 216c7a1a-7ec3-4aa0-a465-e37e7b5fd2f3 clips=1 frames=1200 queries=30 11s
+[eval] stream 35/150 224c3de4-9683-462a-8eb4-224773425a7e clips=1 frames=480 queries=16 6s
+[eval] stream 36/150 225a1ffe-3e7e-4ff8-a47e-2e80989077fe clips=1 frames=481 queries=12 5s
+[eval] stream 37/150 235b49d2-b59c-4079-81cc-ad9c01dbd2df clips=1 frames=480 queries=13 5s
+[eval] stream 38/150 243e800d-fc75-473d-b944-a95844e13a78 clips=3 frames=1323 queries=35 13s
+[eval] stream 39/150 245cde61-d0a0-49c8-840d-e484b5f71a04 clips=1 frames=480 queries=15 6s
+[eval] stream 40/150 254029e5-fed4-40a7-bef1-12b9faff3202 clips=2 frames=960 queries=16 8s
+[eval] stream 41/150 256701cd-3317-47ee-b6e3-439dc2ad2bd5 clips=1 frames=481 queries=19 6s
+[eval] stream 42/150 25beabfc-48c0-4f81-b419-c47297aecf6f clips=1 frames=447 queries=13 5s
+[eval] stream 43/150 25e093a8-86d5-47e9-b09f-5a8afef85b74 clips=1 frames=480 queries=16 6s
+[eval] stream 44/150 262fd2ec-8eba-44d9-8082-4d0574f7a515 clips=1 frames=480 queries=5 3s
+[eval] stream 45/150 2763dbfc-8488-4264-b31f-4b12096c4c4b clips=1 frames=481 queries=14 5s
+[eval] stream 46/150 2876b375-e848-412c-8a6f-0664cbab6a33 clips=1 frames=480 queries=7 4s
+[eval] stream 47/150 28dca1ee-7675-47a2-be89-3fa5979789e1 clips=1 frames=480 queries=7 4s
+[eval] stream 48/150 292af6ad-aeac-453b-bc59-cdafa981dbfd clips=1 frames=480 queries=13 5s
+[eval] stream 49/150 2ac65951-49b0-4629-981e-edc34b8cdb0f clips=1 frames=481 queries=12 5s
+[eval] stream 50/150 2bd5c29e-ef5c-451c-aa2e-961d4257de9b clips=1 frames=480 queries=4 3s
+[eval] stream 51/150 2c5a603d-b9e8-45b2-8ff7-f079f6f402fc clips=1 frames=480 queries=5 3s
+[eval] stream 52/150 2d29b45a-169b-453f-8050-98ec147b0ccf clips=1 frames=439 queries=12 5s
+[eval] stream 53/150 2d442f12-3595-4b2d-b8c5-583b65c0c49f clips=1 frames=480 queries=7 3s
+[eval] stream 54/150 2f0035c9-7efb-4229-9d94-4dcb3752da20 clips=1 frames=254 queries=3 2s
+[eval] stream 55/150 2fadb1b6-dfd6-4380-98a7-dc895c223848 clips=1 frames=480 queries=4 3s
+[eval] stream 56/150 2fb3b1d4-1360-4a95-931b-936b4b962a42 clips=1 frames=445 queries=12 5s
+[eval] stream 57/150 2fcd4744-c240-475e-a183-e923184e6e73 clips=1 frames=420 queries=3 2s
+[eval] stream 58/150 30b9ff64-51c8-4481-ba6a-733ea2060aef clips=3 frames=1301 queries=40 15s
+[eval] stream 59/150 3157c96f-1629-40de-9f8d-e4091f8f5d45 clips=1 frames=480 queries=5 3s
+[eval] stream 60/150 342c7d2a-509b-4a35-83d3-0dd14c58a4da clips=1 frames=480 queries=13 5s
+[eval] stream 61/150 3534864b-2289-4aaf-b3ed-10eeeee7acd2 clips=4 frames=2518 queries=100 34s
+[eval] stream 62/150 356dd07e-8165-494c-9be8-b82d314bf88d clips=1 frames=1200 queries=5 6s
+[eval] stream 63/150 35d92405-7ebf-4e54-8b9a-7cce8af30a79 clips=1 frames=480 queries=7 4s
+[eval] stream 64/150 3625b3d9-e323-4c05-a27a-aba79f01a5bd clips=1 frames=480 queries=4 3s
+[eval] stream 65/150 363b5839-a7c3-4c2e-b966-9530e38045a1 clips=1 frames=480 queries=17 6s
+[eval] stream 66/150 37dc2985-3c70-413d-bd48-51750a5e7457 clips=1 frames=480 queries=7 3s
+[eval] stream 67/150 38737402-19bd-4689-9e74-3af391b15feb clips=1 frames=481 queries=10 4s
+[eval] stream 68/150 3c4b02ff-5304-4e58-9efe-89f22f27c4cb clips=1 frames=392 queries=2 2s
+[eval] stream 69/150 3ee7070a-fe81-49a9-97a2-902268af9985 clips=1 frames=480 queries=17 6s
+[eval] stream 70/150 3ef5b4d9-c030-4d52-8452-4261f34cbc97 clips=4 frames=1860 queries=19 12s
+[eval] stream 71/150 3f0bd238-228d-4796-a3e4-820308fb04b0 clips=1 frames=442 queries=15 5s
+[eval] stream 72/150 3f6461e5-e2c4-4eec-8f0a-914a9fb22dff clips=1 frames=260 queries=4 2s
+[eval] stream 73/150 3fc60e72-91ad-4320-bd07-1cf753f4a5f1 clips=2 frames=937 queries=11 6s
+[eval] stream 74/150 404cc1c1-f7a0-4e16-9a39-b8e2d5d9ae59 clips=1 frames=480 queries=16 6s
+[eval] stream 75/150 413fe086-1745-4573-b75b-e7d26ff72df9 clips=1 frames=480 queries=14 5s
+[eval] stream 76/150 42c08776-8832-4d37-8844-3ce89e405c62 clips=1 frames=480 queries=6 3s
+[eval] stream 77/150 432cb803-6be5-47bc-8443-6bb5b9051667 clips=1 frames=480 queries=8 4s
+[eval] stream 78/150 4335b0cc-e10c-45df-aad3-a1fa66b7a7a8 clips=1 frames=1201 queries=8 7s
+[eval] stream 79/150 4480f4ee-d218-41bd-8cdf-a7cbe13b61a0 clips=1 frames=480 queries=15 6s
+[eval] stream 80/150 450be7d0-16bc-484a-9086-d0b5427c285c clips=1 frames=452 queries=3 2s
+[eval] stream 81/150 45a02f60-e694-4bef-9c31-d5a71f556122 clips=1 frames=481 queries=16 6s
+[eval] stream 82/150 45ef4272-053f-46f2-9343-1709be6d188c clips=1 frames=480 queries=4 3s
+[eval] stream 83/150 46937f34-8c29-4daf-93ef-966b78e161cb clips=1 frames=1200 queries=8 6s
+[eval] stream 84/150 477feff8-a1ff-4f43-b726-273ca0fa47e9 clips=2 frames=930 queries=9 6s
+[eval] stream 85/150 4a05811e-f81d-49ce-b41b-2ef3ccf5e65d clips=1 frames=389 queries=3 2s
+[eval] stream 86/150 4ce119de-0f42-4bd1-b387-9e19643fdddc clips=1 frames=480 queries=18 6s
+[eval] stream 87/150 4d89d233-dbcf-4ea2-a90f-9a2c3b42d1d5 clips=2 frames=961 queries=27 10s
+[eval] stream 88/150 4dc58b9f-75f4-4f27-aa19-2b8ebd1daad6 clips=1 frames=480 queries=13 5s
+[eval] stream 89/150 4dea19df-696c-46ca-b50a-adb5f511cf99 clips=1 frames=480 queries=4 3s
+[eval] stream 90/150 4f035fa4-f388-4645-add7-89c4a0170099 clips=1 frames=480 queries=15 5s
+[eval] stream 91/150 50b2fa2f-9d39-4b9c-8e3c-4a4ef0669956 clips=1 frames=480 queries=16 6s
+[eval] stream 92/150 50d413f2-5709-475d-8999-6135dcd7d63f clips=1 frames=480 queries=13 5s
+[eval] stream 93/150 512db5d5-6aa3-4777-a1ba-1ea1718db929 clips=1 frames=481 queries=17 6s
+[eval] stream 94/150 516c9abc-dbf3-4f87-b78e-db0ab9d657ea clips=2 frames=960 queries=28 11s
+[eval] stream 95/150 51fc62f8-00f4-44e3-af9c-7ebb63da6c3d clips=1 frames=480 queries=18 6s
+[eval] stream 96/150 530dd2a8-462c-450b-9f38-1dfff28f139e clips=1 frames=480 queries=13 5s
+[eval] stream 97/150 53da674a-089d-428a-a719-e322b2de002b clips=6 frames=2820 queries=98 34s
+[eval] stream 98/150 5613f20a-991f-43c1-9a7d-87632ef6795c clips=1 frames=274 queries=4 2s
+[eval] stream 99/150 571265e5-c7b7-4313-9386-fa8655b23706 clips=3 frames=1442 queries=40 16s
+[eval] stream 100/150 57e88d87-257e-434d-953e-6025367e99fe clips=1 frames=480 queries=15 5s
+[eval] stream 101/150 57ee481e-2386-4a28-8d4c-ed8c9bdf08d8 clips=1 frames=480 queries=4 3s
+[eval] stream 102/150 5802f3e8-c11e-4403-b6c4-7504257be73c clips=2 frames=871 queries=26 9s
+[eval] stream 103/150 5825062f-4827-407c-bbd3-91ca010d25c2 clips=1 frames=480 queries=5 3s
+[eval] stream 104/150 584f625d-15b0-49e8-bfa6-718b9cf010e0 clips=1 frames=480 queries=13 5s
+[eval] stream 105/150 5935de98-30c0-4357-9e89-1c1395c1e2c1 clips=1 frames=480 queries=12 5s
+[eval] stream 106/150 59f00ff2-4e01-4498-ab40-4713217686bc clips=1 frames=480 queries=13 5s
+[eval] stream 107/150 5afd7421-fb6b-4c65-a09a-716f79a7a935 clips=2 frames=960 queries=26 10s
+[eval] stream 108/150 5b0b0b85-4238-4b95-aaa6-dce4011eab86 clips=1 frames=481 queries=3 2s
+[eval] stream 109/150 5b18a6d6-2fa6-4ec8-8b3f-709ad79dcfae clips=1 frames=480 queries=8 4s
+[eval] stream 110/150 5d090853-467e-4f95-9f9e-ac0582023111 clips=1 frames=481 queries=14 5s
+[eval] stream 111/150 5e64c89d-34ce-49a3-949a-dc90385cdbcc clips=3 frames=2160 queries=13 11s
+[eval] stream 112/150 5f2d9e8b-6e0b-4e36-9f5b-d26bbe0a7c7c clips=1 frames=480 queries=6 3s
+[eval] stream 113/150 5fce50cf-ebc5-4c09-8704-20c48fe42c7e clips=2 frames=961 queries=29 11s
+[eval] stream 114/150 5ffe23d7-77a8-4e8d-bacb-d6bc022f0eef clips=1 frames=480 queries=1 2s
+[eval] stream 115/150 603ecf93-d2c1-4611-a690-76afd18935c8 clips=1 frames=1201 queries=39 14s
+[eval] stream 116/150 6243586b-a8df-4c37-95f8-da7f4f5d57d6 clips=1 frames=480 queries=6 3s
+[eval] stream 117/150 624a6c0a-a4cb-4073-b501-48e4b6b679e4 clips=2 frames=960 queries=29 11s
+[eval] stream 118/150 62623424-f671-4380-b12c-1acdb04afeee clips=1 frames=480 queries=7 3s
+[eval] stream 119/150 66a0900b-069d-48bf-9071-f4e659f8a9d0 clips=1 frames=480 queries=13 5s
+[eval] stream 120/150 67cb31ac-4f88-4765-8806-d93276eda28a clips=1 frames=314 queries=4 2s
+[eval] stream 121/150 690f58f1-f18c-4415-bab0-787c2f83d051 clips=1 frames=480 queries=17 6s
+[eval] stream 122/150 69f1101f-cb9e-4ad1-8fe6-ed840e5bcf9b clips=1 frames=393 queries=6 3s
+[eval] stream 123/150 6b6d73b9-e92c-4698-86df-bbe687a9e95e clips=2 frames=1472 queries=10 8s
+[eval] stream 124/150 6deb79d2-b2af-4afe-b097-b98a66c0f703 clips=2 frames=960 queries=8 5s
+[eval] stream 125/150 702aa273-b108-4114-a3b6-a43a8386f06a clips=1 frames=251 queries=3 2s
+[eval] stream 126/150 72295d26-19f7-4c6a-874e-85ba8654861e clips=1 frames=480 queries=18 6s
+[eval] stream 127/150 73773748-14ac-40ba-9ef8-d5a70865aeea clips=2 frames=962 queries=29 11s
+[eval] stream 128/150 74d38b4a-6f22-43b3-b631-9234c05f27ab clips=1 frames=281 queries=4 2s
+[eval] stream 129/150 79c62f24-488e-4a69-8220-3b20cb4bf72b clips=1 frames=481 queries=5 3s
+[eval] stream 130/150 7a298543-3ffa-4254-a45e-30afe1088a55 clips=1 frames=268 queries=3 2s
+[eval] stream 131/150 7aa79be1-ea25-4bda-a722-be65b1892236 clips=1 frames=217 queries=2 1s
+[eval] stream 132/150 7b3bea48-bd62-46b7-888d-2cc6e4bbd11b clips=1 frames=480 queries=17 6s
+[eval] stream 133/150 7c5eb718-99b2-48ac-bb1c-ef0158a6361b clips=3 frames=1440 queries=42 16s
+[eval] stream 134/150 7d6d6cae-0601-485d-b900-482b4254e9f8 clips=3 frames=1440 queries=50 18s
+[eval] stream 135/150 7e2a3795-28a5-4314-a4d7-b91807812ed1 clips=1 frames=480 queries=6 3s
+[eval] stream 136/150 7f4225ed-a076-4530-91cf-f3903c5d7637 clips=1 frames=480 queries=18 6s
+[eval] stream 137/150 7f70ae0a-d097-4dda-9afa-318188dfce2d clips=1 frames=480 queries=12 5s
+[eval] stream 138/150 7fc72743-4b55-48de-b988-4c690bda912f clips=1 frames=468 queries=3 3s
+[eval] stream 139/150 805989f6-0696-4de2-ad9b-0f194e0ac48d clips=1 frames=480 queries=15 5s
+[eval] stream 140/150 80f3dd0d-6ad9-4691-9de5-dc01a834bc0a clips=2 frames=962 queries=28 10s
+[eval] stream 141/150 819257df-e650-4ed6-9c0b-26bd8e2ac726 clips=1 frames=480 queries=4 3s
+[eval] stream 142/150 824e7896-904a-4ff5-b7ee-e21df21918c2 clips=3 frames=1440 queries=44 16s
+[eval] stream 143/150 82ace2ff-4a87-4abe-ba45-3965bbc13658 clips=1 frames=480 queries=13 5s
+[eval] stream 144/150 85775377-b334-4bd7-8cfc-16885099cc9a clips=1 frames=481 queries=14 5s
+[eval] stream 145/150 863011c8-ebf7-4900-87d1-3c7930f95dab clips=1 frames=1200 queries=15 8s
+[eval] stream 146/150 86343e9e-b932-41d3-ad6f-83f2c2fe5486 clips=1 frames=480 queries=15 6s
+[eval] stream 147/150 8672b38a-7682-4244-ad7a-a336c81c2d0e clips=1 frames=269 queries=4 2s
+[eval] stream 148/150 8698a0ea-f434-49f9-a8e4-45220e5d4b2c clips=1 frames=480 queries=4 3s
+[eval] stream 149/150 86ebad37-486c-4687-b50e-67627a4be7a2 clips=1 frames=481 queries=5 3s
+[eval] stream 150/150 8717d09f-391c-4203-8e6c-7fa1f035cdda clips=1 frames=481 queries=15 5s
+{
+ "n": 2338,
+ "recall_at_m": 0.022241231822070145,
+ "t_overlap": 0.018544779044114626,
+ "evidence_precision": 0.0037144732417461485,
+ "evidence_span_s": 8.42343970340373,
+ "evidence_survival": 0.9995722840034217,
+ "best_iou": 0.1923406971499155,
+ "num_committed": 14.782720273738239,
+ "exact": 0.11120615911035073,
+ "contains": 0.20017108639863132
+}
