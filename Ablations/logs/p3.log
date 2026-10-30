@@ -1,0 +1,166 @@
+[P3 Runner] ⚡ Detected fast local SSD clips at /content/clips! Using local disk.
+
+==========================================================
+========== P3 RUN SESSION: Thu Oct 29 04:49:38 PM UTC 2026 ==========
+==========================================================
+[P3 Runner] Video Directory: /content/clips
+[P3 Runner] Output Directory: /content/drive/MyDrive/selectstream_lite/eval
+[P3 Runner] Max Clips: 50
+==========================================================
+[P3 Runner] Running Oracle Frames baseline (max_clips=50, resume=enabled) ...
+[arm][WARN] A: no calibration file (outputs/calibration.json); using config values {}
+[env] GPUs: ['NVIDIA A100-SXM4-80GB']
+
+Loading weights:   0%|          | 0/729 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/729 [00:00<09:00,  1.35it/s]
+Loading weights:   4%|▍         | 28/729 [00:00<00:16, 43.26it/s]
+Loading weights:   6%|▌         | 42/729 [00:01<00:14, 49.06it/s]
+Loading weights:   7%|▋         | 54/729 [00:01<00:11, 59.45it/s]
+Loading weights:   9%|▉         | 65/729 [00:01<00:11, 60.02it/s]
+Loading weights:  11%|█         | 77/729 [00:01<00:09, 70.81it/s]
+Loading weights:  12%|█▏        | 88/729 [00:01<00:08, 76.91it/s]
+Loading weights:  14%|█▍        | 101/729 [00:01<00:07, 84.15it/s]
+Loading weights:  15%|█▌        | 112/729 [00:01<00:07, 82.86it/s]
+Loading weights:  17%|█▋        | 124/729 [00:02<00:07, 76.89it/s]
+Loading weights:  19%|█▉        | 137/729 [00:02<00:07, 83.40it/s]
+Loading weights:  20%|██        | 148/729 [00:02<00:07, 81.87it/s]
+Loading weights:  22%|██▏       | 161/729 [00:02<00:06, 87.38it/s]
+Loading weights:  24%|██▎       | 172/729 [00:02<00:06, 84.79it/s]
+Loading weights:  25%|██▌       | 184/729 [00:02<00:07, 70.53it/s]
+Loading weights:  28%|██▊       | 204/729 [00:02<00:05, 92.33it/s]
+Loading weights:  29%|██▉       | 215/729 [00:03<00:05, 89.96it/s]
+Loading weights:  31%|███       | 225/729 [00:03<00:06, 80.35it/s]
+Loading weights:  32%|███▏      | 234/729 [00:03<00:06, 79.49it/s]
+Loading weights:  34%|███▎      | 245/729 [00:03<00:06, 74.80it/s]
+Loading weights:  35%|███▌      | 256/729 [00:03<00:06, 69.54it/s]
+Loading weights:  38%|███▊      | 280/729 [00:03<00:05, 78.58it/s]
+Loading weights:  40%|████      | 294/729 [00:04<00:05, 84.00it/s]
+Loading weights:  42%|████▏     | 306/729 [00:04<00:04, 85.26it/s]
+Loading weights:  44%|████▎     | 318/729 [00:04<00:04, 92.05it/s]
+Loading weights:  45%|████▍     | 328/729 [00:04<00:05, 80.11it/s]
+Loading weights:  62%|██████▏   | 453/729 [00:04<00:00, 334.47it/s]
+Loading weights:  77%|███████▋  | 559/729 [00:04<00:00, 503.57it/s]
+Loading weights:  91%|█████████ | 661/729 [00:04<00:00, 631.05it/s]
+Loading weights: 100%|██████████| 729/729 [00:04<00:00, 147.79it/s]
+/content/drive/MyDrive/selectstream_lite/main/model/query_builder.py:26: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+/content/drive/MyDrive/selectstream_lite/main/model/lvm_memory.py:264: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.segment_encoder = nn.TransformerEncoder(seg_encoder_layer, num_layers=self.segment_encoder_layers)
+[eval] feature cache /content/feature_cache: 243/243 streams fully cached
+[eval] arm=A track=qa split=val streams=50 missing_video=0
+[eval] stream 1/50 000cd456-ff8d-499b-b0c1-4acead128a8b clips=1 queries=4 47s (baseline=oracle)
+[eval] stream 2/50 0066ab25-04ad-41b2-89ab-283d2bfa1c4b clips=1 queries=13 79s (baseline=oracle)
+[eval] stream 3/50 03e90bbc-7d6b-423c-84d9-b5be3eff11c5 clips=2 queries=24 221s (baseline=oracle)
+[eval] stream 4/50 0475a0b9-9445-4083-8c6a-42f0171ff3e4 clips=1 queries=5 36s (baseline=oracle)
+[eval] stream 5/50 04994ce8-9d47-44d6-a7b0-42b395e69390 clips=1 queries=30 573s (baseline=oracle)
+[eval] stream 6/50 055ba601-c243-4d4a-8a2c-694a5c88824c clips=1 queries=12 73s (baseline=oracle)
+[eval] stream 7/50 056db3f1-f957-46c8-b16b-c8fce22e78f9 clips=1 queries=12 41s (baseline=oracle)
+[eval] stream 8/50 06fb8090-16a4-42c3-819e-f0e95ddba24d clips=1 queries=7 82s (baseline=oracle)
+[eval] stream 9/50 07309684-1f6e-4977-ab74-f3e63c361f36 clips=1 queries=13 122s (baseline=oracle)
+[eval] stream 10/50 083b7556-9dff-40e2-9fad-bef3f82dbf37 clips=1 queries=10 89s (baseline=oracle)
+[eval] stream 11/50 0971527a-6cd3-4c82-9d94-09b3565f4505 clips=1 queries=12 73s (baseline=oracle)
+[eval] stream 12/50 0aec2b0c-18e1-453b-a6ed-e484698d41df clips=1 queries=5 125s (baseline=oracle)
+[eval] stream 13/50 0c6ab491-c45e-4cbc-b6b2-a709cc856a9c clips=2 queries=28 294s (baseline=oracle)
+[eval] stream 14/50 0dbd615d-fde9-4936-a605-6f5659cd113e clips=1 queries=4 34s (baseline=oracle)
+[eval] stream 15/50 0de39e75-fb19-47d4-818d-fff874b05ab9 clips=1 queries=7 48s (baseline=oracle)
+[eval] stream 16/50 0ffc33a8-bbd4-47e2-8748-7069197a4e03 clips=1 queries=14 124s (baseline=oracle)
+[eval] stream 17/50 10a04147-ae19-4c5e-b13b-b0b7005938a2 clips=1 queries=2 10s (baseline=oracle)
+[eval] stream 18/50 115774b6-534d-444f-b7aa-d1b834eb0ee7 clips=5 queries=80 980s (baseline=oracle)
+[eval] stream 19/50 12946f28-5f4a-4ba5-8296-c08cbeeca501 clips=1 queries=15 107s (baseline=oracle)
+[eval] stream 20/50 1330508f-8168-4408-a4df-79f69fb87c83 clips=1 queries=6 28s (baseline=oracle)
+[eval] stream 21/50 145881ef-5578-460d-bb5a-6fb80ef7d457 clips=2 queries=19 73s (baseline=oracle)
+[eval] stream 22/50 168f91fd-53c2-4eee-9d2d-e25e1ad73438 clips=1 queries=16 96s (baseline=oracle)
+[eval] stream 23/50 180b72fa-2102-414e-a6d5-2806e53f320c clips=1 queries=20 168s (baseline=oracle)
+[eval] stream 24/50 182dffe9-d2bf-4a7d-b1d8-137470f0143d clips=2 queries=29 316s (baseline=oracle)
+[eval] stream 25/50 18a3840b-7463-43c4-9aa9-b1d8e486fa84 clips=6 queries=96 1534s (baseline=oracle)
+[eval] stream 26/50 18e84829-901a-414d-8a2b-d1d2b3244db7 clips=3 queries=42 541s (baseline=oracle)
+[eval] stream 27/50 1938c632-f575-49dd-8ae0-e48dbb467920 clips=1 queries=13 86s (baseline=oracle)
+[eval] stream 28/50 1c7426ad-b6ba-4494-897c-537dd4a201e9 clips=2 queries=27 259s (baseline=oracle)
+[eval] stream 29/50 1dcc108c-8bd4-42ad-b2c5-03662be62eda clips=2 queries=20 134s (baseline=oracle)
+[eval] stream 30/50 20400762-1e47-462d-a7d1-64a1b162b1f9 clips=1 queries=13 89s (baseline=oracle)
+[eval] stream 31/50 20525d50-586a-4792-bfdb-fd941ee64ea9 clips=1 queries=7 55s (baseline=oracle)
+[eval] stream 32/50 20cf795c-81da-42d8-829f-813cf68bb13c clips=1 queries=4 23s (baseline=oracle)
+[eval] stream 33/50 210b5b51-6dae-43b2-9cf8-28e04a785f18 clips=1 queries=11 80s (baseline=oracle)
+[eval] stream 34/50 216c7a1a-7ec3-4aa0-a465-e37e7b5fd2f3 clips=1 queries=30 436s (baseline=oracle)
+[eval] stream 35/50 224c3de4-9683-462a-8eb4-224773425a7e clips=1 queries=16 166s (baseline=oracle)
+[eval] stream 36/50 225a1ffe-3e7e-4ff8-a47e-2e80989077fe clips=1 queries=12 81s (baseline=oracle)
+[eval] stream 37/50 235b49d2-b59c-4079-81cc-ad9c01dbd2df clips=1 queries=13 99s (baseline=oracle)
+[eval] stream 38/50 243e800d-fc75-473d-b944-a95844e13a78 clips=3 queries=35 302s (baseline=oracle)
+[eval] stream 39/50 245cde61-d0a0-49c8-840d-e484b5f71a04 clips=1 queries=15 169s (baseline=oracle)
+[eval] stream 40/50 254029e5-fed4-40a7-bef1-12b9faff3202 clips=2 queries=16 136s (baseline=oracle)
+[eval] stream 41/50 256701cd-3317-47ee-b6e3-439dc2ad2bd5 clips=1 queries=19 116s (baseline=oracle)
+[eval] stream 42/50 25beabfc-48c0-4f81-b419-c47297aecf6f clips=1 queries=13 153s (baseline=oracle)
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/content/drive/MyDrive/selectstream_lite/main/cli/eval_ego4d.py", line 319, in <module>
+    main()
+    ~~~~^^
+  File "/content/drive/MyDrive/selectstream_lite/main/cli/eval_ego4d.py", line 176, in main
+    images = [cache.image(u, k) for u, k, _ in sel] if cache else []
+              ~~~~~~~~~~~^^^^^^
+  File "/content/drive/MyDrive/selectstream_lite/main/data/frame_cache.py", line 100, in image
+    return self._decode(clip_uid, k)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/content/drive/MyDrive/selectstream_lite/main/data/frame_cache.py", line 120, in _decode
+    last, _ = next(it)
+              ~~~~^^^^
+  File "/content/drive/MyDrive/selectstream_lite/main/utils/video.py", line 242, in iter_video_frames
+    raise ValueError(f"Failed to open video: {video_path}")
+ValueError: Failed to open video: /content/clips/f3e4cdf4-73fa-489a-8be3-c9265364da52.mp4
+[P3 Runner][ERROR] Oracle frames baseline failed
+
+[P3 Runner] ⚡ Detected fast local SSD clips at /content/clips! Using local disk.
+
+==========================================================
+========== P3 RUN SESSION: Thu Oct 29 09:46:43 PM UTC 2026 ==========
+==========================================================
+[P3 Runner] Video Directory: /content/clips
+[P3 Runner] Output Directory: /content/drive/MyDrive/selectstream_lite/eval
+[P3 Runner] Max Clips: 50
+==========================================================
+[P3 Runner] Running Oracle Frames baseline (max_clips=50, resume=enabled) ...
+[arm][WARN] A: no calibration file (outputs/calibration.json); using config values {}
+[env] GPUs: ['NVIDIA A100-SXM4-80GB']
+Loading weights:   0%|          | 0/729 [00:00<?, ?it/s]Loading weights:   0%|          | 1/729 [00:00<06:26,  1.88it/s]Loading weights:   0%|          | 2/729 [00:00<04:20,  2.79it/s]Loading weights:   4%|▍         | 28/729 [00:00<00:14, 49.78it/s]Loading weights:   5%|▌         | 40/729 [00:01<00:11, 61.96it/s]Loading weights:   7%|▋         | 52/729 [00:01<00:11, 56.78it/s]Loading weights:   9%|▉         | 64/729 [00:01<00:10, 64.09it/s]Loading weights:  11%|█         | 78/729 [00:01<00:08, 74.99it/s]Loading weights:  12%|█▏        | 88/729 [00:01<00:08, 79.19it/s]Loading weights:  14%|█▎        | 100/729 [00:01<00:09, 65.97it/s]Loading weights:  16%|█▋        | 120/729 [00:01<00:06, 89.70it/s]Loading weights:  18%|█▊        | 131/729 [00:02<00:07, 85.04it/s]Loading weights:  19%|█▉        | 141/729 [00:02<00:07, 83.41it/s]Loading weights:  21%|██        | 151/729 [00:02<00:07, 74.12it/s]Loading weights:  23%|██▎       | 168/729 [00:02<00:06, 89.81it/s]Loading weights:  24%|██▍       | 178/729 [00:02<00:06, 84.19it/s]Loading weights:  26%|██▌       | 187/729 [00:02<00:07, 72.61it/s]Loading weights:  28%|██▊       | 207/729 [00:02<00:05, 99.63it/s]Loading weights:  30%|███       | 219/729 [00:03<00:05, 89.27it/s]Loading weights:  31%|███▏      | 229/729 [00:03<00:05, 90.46it/s]Loading weights:  33%|███▎      | 239/729 [00:03<00:06, 80.21it/s]Loading weights:  34%|███▍      | 248/729 [00:03<00:06, 76.97it/s]Loading weights:  35%|███▌      | 258/729 [00:03<00:05, 79.97it/s]Loading weights:  37%|███▋      | 268/729 [00:03<00:06, 71.14it/s]Loading weights:  40%|███▉      | 288/729 [00:03<00:04, 99.84it/s]Loading weights:  41%|████      | 300/729 [00:04<00:04, 91.58it/s]Loading weights:  43%|████▎     | 311/729 [00:04<00:05, 82.66it/s]Loading weights:  44%|████▍     | 324/729 [00:04<00:04, 87.46it/s]Loading weights:  46%|████▌     | 334/729 [00:04<00:04, 83.13it/s]Loading weights:  61%|██████    | 443/729 [00:04<00:00, 315.99it/s]Loading weights:  76%|███████▌  | 551/729 [00:04<00:00, 504.57it/s]Loading weights:  89%|████████▉ | 651/729 [00:04<00:00, 631.95it/s]Loading weights: 100%|█████████▉| 726/729 [00:04<00:00, 660.43it/s]Loading weights: 100%|██████████| 729/729 [00:04<00:00, 146.89it/s]
+/content/drive/MyDrive/selectstream_lite/main/model/query_builder.py:26: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+/content/drive/MyDrive/selectstream_lite/main/model/lvm_memory.py:264: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.segment_encoder = nn.TransformerEncoder(seg_encoder_layer, num_layers=self.segment_encoder_layers)
+[eval] feature cache /content/feature_cache: 243/243 streams fully cached
+[eval] arm=A track=qa split=val streams=50 missing_video=0
+[eval] --resume: found 789 existing predictions across 42 streams in /content/drive/MyDrive/selectstream_lite/eval/p3_oracle_frames/predictions.jsonl
+[eval] stream 43/50 25e093a8-86d5-47e9-b09f-5a8afef85b74 clips=1 queries=16 143s (baseline=oracle)
+[eval] stream 44/50 262fd2ec-8eba-44d9-8082-4d0574f7a515 clips=1 queries=5 47s (baseline=oracle)
+[eval] stream 45/50 2763dbfc-8488-4264-b31f-4b12096c4c4b clips=1 queries=14 76s (baseline=oracle)
+[eval] stream 46/50 2876b375-e848-412c-8a6f-0664cbab6a33 clips=1 queries=7 30s (baseline=oracle)
+[eval] stream 47/50 28dca1ee-7675-47a2-be89-3fa5979789e1 clips=1 queries=7 62s (baseline=oracle)
+[eval] stream 48/50 292af6ad-aeac-453b-bc59-cdafa981dbfd clips=1 queries=13 109s (baseline=oracle)
+[eval] stream 49/50 2ac65951-49b0-4629-981e-edc34b8cdb0f clips=1 queries=12 83s (baseline=oracle)
+[eval] stream 50/50 2bd5c29e-ef5c-451c-aa2e-961d4257de9b clips=1 queries=4 30s (baseline=oracle)
+{
+ "n": 867,
+ "recall_at_m": 1.0,
+ "t_overlap": 0.5539641391665068,
+ "evidence_precision": 0.8581606614067205,
+ "evidence_span_s": 1.9999999621885183,
+ "evidence_survival": 1.0,
+ "best_iou": 0.4252890443285409,
+ "num_committed": 4.1234140715109575,
+ "exact": 0.11880046136101499,
+ "contains": 0.23414071510957324
+}
+[P3 Runner] ===== P3 oracle done at Thu Oct 29 09:56:49 PM UTC 2026 =====
+[P3 Runner] Running Uniform Frames baseline (max_clips=50, resume=enabled) ...
+[arm][WARN] A: no calibration file (outputs/calibration.json); using config values {}
+[env] GPUs: ['NVIDIA A100-SXM4-80GB']
+Loading weights:   0%|          | 0/729 [00:00<?, ?it/s]Loading weights:   0%|          | 1/729 [00:00<07:04,  1.71it/s]Loading weights:   0%|          | 2/729 [00:00<04:42,  2.57it/s]Loading weights:   2%|▏         | 16/729 [00:00<00:27, 26.37it/s]Loading weights:   4%|▍         | 29/729 [00:01<00:15, 44.46it/s]Loading weights:   5%|▌         | 40/729 [00:01<00:13, 50.50it/s]Loading weights:   7%|▋         | 54/729 [00:01<00:10, 65.64it/s]Loading weights:   9%|▉         | 64/729 [00:01<00:10, 62.82it/s]Loading weights:  11%|█         | 77/729 [00:01<00:08, 73.34it/s]Loading weights:  12%|█▏        | 88/729 [00:01<00:09, 70.87it/s]Loading weights:  15%|█▍        | 108/729 [00:01<00:06, 93.71it/s]Loading weights:  16%|█▋        | 119/729 [00:02<00:06, 87.59it/s]Loading weights:  18%|█▊        | 129/729 [00:02<00:07, 77.23it/s]Loading weights:  20%|██        | 146/729 [00:02<00:05, 97.19it/s]Loading weights:  22%|██▏       | 157/729 [00:02<00:06, 84.87it/s]Loading weights:  23%|██▎       | 168/729 [00:02<00:06, 90.44it/s]Loading weights:  24%|██▍       | 178/729 [00:02<00:07, 77.18it/s]Loading weights:  27%|██▋       | 194/729 [00:02<00:05, 95.52it/s]Loading weights:  28%|██▊       | 205/729 [00:03<00:06, 84.83it/s]Loading weights:  30%|██▉       | 218/729 [00:03<00:05, 94.59it/s]Loading weights:  31%|███▏      | 229/729 [00:03<00:06, 82.34it/s]Loading weights:  33%|███▎      | 244/729 [00:03<00:06, 70.67it/s]Loading weights:  36%|███▌      | 264/729 [00:03<00:04, 93.38it/s]Loading weights:  38%|███▊      | 276/729 [00:03<00:05, 87.90it/s]Loading weights:  39%|███▉      | 287/729 [00:04<00:04, 88.65it/s]Loading weights:  41%|████      | 297/729 [00:04<00:05, 79.08it/s]Loading weights:  43%|████▎     | 316/729 [00:04<00:05, 74.39it/s]Loading weights:  47%|████▋     | 345/729 [00:04<00:03, 113.38it/s]Loading weights:  61%|██████    | 445/729 [00:04<00:00, 295.63it/s]Loading weights:  75%|███████▍  | 545/729 [00:04<00:00, 453.84it/s]Loading weights:  89%|████████▉ | 649/729 [00:04<00:00, 594.54it/s]Loading weights: 100%|█████████▉| 726/729 [00:05<00:00, 632.92it/s]Loading weights: 100%|██████████| 729/729 [00:05<00:00, 145.10it/s]
+/content/drive/MyDrive/selectstream_lite/main/model/query_builder.py:26: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+/content/drive/MyDrive/selectstream_lite/main/model/lvm_memory.py:264: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.segment_encoder = nn.TransformerEncoder(seg_encoder_layer, num_layers=self.segment_encoder_layers)
+[eval] feature cache /content/feature_cache: 243/243 streams fully cached
+[eval] arm=A track=qa split=val streams=50 missing_video=0
+[eval] stream 1/50 000cd456-ff8d-499b-b0c1-4acead128a8b clips=1 queries=4 97s (baseline=uniform)
+[eval] stream 2/50 0066ab25-04ad-41b2-89ab-283d2bfa1c4b clips=1 queries=13 260s (baseline=uniform)
+[eval] stream 3/50 03e90bbc-7d6b-423c-84d9-b5be3eff11c5 clips=2 queries=24 871s (baseline=uniform)

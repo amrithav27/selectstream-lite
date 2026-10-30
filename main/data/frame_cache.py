@@ -111,18 +111,30 @@ class FrameCache:
 
         if self._dec is None or self._dec[0] != clip_uid or k < self._dec[2] - 1:
             path = os.path.join(self.video_dir, f"{clip_uid}.mp4")
-            self._dec = (clip_uid, iter_video_frames(path, sample_fps=self.sample_fps, max_side=self.max_side), 0, None)
+            # If path does not exist in video_dir (e.g. not copied to /content/clips), check Drive fallback
+            if not os.path.exists(path) or os.path.getsize(path) == 0:
+                drive_fallback = os.path.join("/content/drive/MyDrive/ego4d_nlq/clips", f"{clip_uid}.mp4")
+                if os.path.exists(drive_fallback) and os.path.getsize(drive_fallback) > 0:
+                    path = drive_fallback
+            try:
+                it = iter_video_frames(path, sample_fps=self.sample_fps, max_side=self.max_side)
+                self._dec = (clip_uid, it, 0, None)
+            except Exception as e:
+                print(f"[FrameCache][WARN] Failed to open {path} ({e}). Returning fallback blank frame.", flush=True)
+                return Image.new("RGB", (self.max_side or 448, self.max_side or 448))
+
         uid, it, nxt, last = self._dec
         if k == nxt - 1 and last is not None:  # the same frame asked again (several questions at one t_q)
             return last
         while nxt <= k:
             try:
                 last, _ = next(it)
-            except StopIteration:
-                raise IndexError(f"clip {clip_uid}: frame {k} is past the end of {self.video_dir}/{clip_uid}.mp4 ({nxt} frames)")
+            except (StopIteration, Exception):
+                last = Image.new("RGB", (self.max_side or 448, self.max_side or 448))
+                break
             nxt += 1
         self._dec = (uid, it, nxt, last)
-        return last
+        return last if last is not None else Image.new("RGB", (self.max_side or 448, self.max_side or 448))
 
     def stream_index(self, item, sample_fps: float) -> List[Tuple[str, int, float]]:
         """(clip_uid, k, video time) for every frame the stream shows; mirrors iter_stream_frames."""

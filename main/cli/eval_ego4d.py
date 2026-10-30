@@ -71,6 +71,11 @@ def main():
     ap.add_argument("--evidence_k", type=int, default=None, help="Evidence tokens M at read (0 = answer without memory).")
     ap.add_argument("--no_open", action="store_true", help="The read sees committed nodes only, not the open segment.")
     ap.add_argument("--blank_frame", action="store_true", help="Query-conditioning ablation: ask over a black frame of the same size.")
+    ap.add_argument("--frames_baseline", choices=["none", "oracle", "uniform"], default="none",
+                    help="P3 baseline (plain Qwen without memory): sample oracle frames (from answer window) or uniform frames (0 to t_q).")
+    ap.add_argument("--num_frames", type=int, default=8, help="Number of frames to sample for --frames_baseline (default: 8).")
+    ap.add_argument("--resume", action="store_true",
+                    help="Resume evaluation from existing predictions.jsonl, skipping completed streams.")
     ap.add_argument("--segment_center", default=None, help="With --ckpt none: a segment_center.npy (train_ego4d.py) so the "
                     "untrained baseline centres like the trained run; a checkpoint carries its own.")
     args = ap.parse_args()
@@ -127,9 +132,93 @@ def main():
 
     pred_path = os.path.join(args.out_dir, "predictions.jsonl")
     rows = []
-    with open(pred_path, "w") as fout, torch.no_grad():
+    seen_stream_ids = set()
+    mode = "w"
+    if args.resume and os.path.exists(pred_path):
+        with open(pred_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    r = json.loads(line)
+                    rows.append(r)
+                    if "stream_id" in r:
+                        seen_stream_ids.add(r["stream_id"])
+        mode = "a"
+        if seen_stream_ids:
+            print(f"[eval] --resume: found {len(rows)} existing predictions across {len(seen_stream_ids)} streams in {pred_path}")
+
+    with open(pred_path, mode) as fout, torch.no_grad():
         for ci, item in enumerate(ds):
+            if args.resume and item.stream_id in seen_stream_ids:
+                continue
             t0 = time.time()
+            if args.frames_baseline != "none":
+                seq = cache.stream_index(item, sample_fps) if cache else []
+                for q in item.queries:
+                    window = (q.window_start, q.window_end)
+                    t_q = q.ask_time
+                    if args.frames_baseline == "oracle":
+                        cands = [x for x in seq if window[0] <= x[2] <= window[1]]
+                        if not cands and seq:
+                            mid = 0.5 * (window[0] + window[1])
+                            cands = [min(seq, key=lambda x: abs(x[2] - mid))]
+                    else:  # uniform
+                        cands = [x for x in seq if x[2] <= t_q + 1e-6]
+                        if not cands and seq:
+                            cands = [seq[0]]
+
+                    if len(cands) <= args.num_frames:
+                        sel = cands
+                    else:
+                        idxs = np.round(np.linspace(0, len(cands) - 1, args.num_frames)).astype(int)
+                        sel = [cands[i] for i in idxs]
+
+                    images = [cache.image(u, k) for u, k, _ in sel] if cache else []
+                    if not images:
+                        images = [Image.new("RGB", (448, 448))]
+
+                    if args.track == "qa":
+                        content = [{"type": "image"} for _ in images] + [{"type": "text", "text": format_prompt(q.query)}]
+                        chat_text = model.processor.apply_chat_template([{"role": "user", "content": content}], tokenize=False, add_generation_prompt=True)
+                        inputs = model.processor(text=[chat_text], images=images, return_tensors="pt", padding=True)
+                        inputs = {k: v.to(model.trainable_device) if hasattr(v, "to") else v for k, v in inputs.items()}
+                        gen = model.base_model.generate(**inputs, max_new_tokens=args.max_new_tokens)
+                        pred = model.processor.decode(gen[0, inputs["input_ids"].shape[1]:], skip_special_tokens=True).strip()
+                    else:
+                        pred = None
+
+                    spans = [[t, t + 1.0 / sample_fps] for _, _, t in sel]
+                    spans_tensor = torch.tensor(spans, dtype=torch.float32) if spans else torch.empty(0, 2)
+                    aux = {"evidence_time_spans": spans_tensor}
+                    committed = spans_tensor
+
+                    row = {
+                        "query_id": q.query_id,
+                        "stream_id": item.stream_id,
+                        "clip_uid": q.clip_uid,
+                        "track": args.track,
+                        "arm": f"frames_{args.frames_baseline}",
+                        "template": q.template,
+                        "linked": q.nlq_query_id in linked_ids,
+                        "nlq_query_id": q.nlq_query_id,
+                        "participant_disjoint": item.participant_id is not None and item.participant_id not in seen_participants,
+                        "window": list(window),
+                        "ask_time": q.ask_time,
+                        "delay_bucket": delay_bucket(q),
+                        "evidence_location": "baseline_frames",
+                        "question": q.query,
+                        "answer": q.answer,
+                        "prediction": pred,
+                        "evidence_spans": spans,
+                    }
+                    row.update(retrieval_metrics(aux, committed, window, tol))
+                    if pred is not None and q.answer:
+                        row.update(answer_scores(pred, q.answer))
+                    rows.append(row)
+                    fout.write(json.dumps(row) + "\n")
+                print(f"[eval] stream {ci + 1}/{len(ds)} {item.stream_id} clips={len(item.pieces)} queries={len(item.queries)} {time.time() - t0:.0f}s (baseline={args.frames_baseline})", flush=True)
+                continue
+
             state = model.init_memory_state(batch_size=1, dtype=model.trainable_dtype, device=model.trainable_device)
             windows = [(q.window_start, q.window_end) for q in item.queries]
             pending = list(item.queries)
@@ -216,7 +305,8 @@ def main():
         "split": args.split,
         "ckpt": args.ckpt,
         "streams": len(ds),
-        "read": {"ablation": args.read_ablation, "evidence_k": args.evidence_k, "open_node": not args.no_open, "blank_frame": args.blank_frame},
+        "read": {"ablation": args.read_ablation, "evidence_k": args.evidence_k, "open_node": not args.no_open, "blank_frame": args.blank_frame,
+                 "frames_baseline": args.frames_baseline, "num_frames": args.num_frames},
         "groups": {g: summarize(rs, keys) for g, rs in groups.items()},
         "config": cfg_dict,
     }

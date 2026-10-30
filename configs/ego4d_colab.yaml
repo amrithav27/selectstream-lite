@@ -1,0 +1,108 @@
+# SelectStream on Ego4D NLQ + QaEgo4D, Qwen2.5-VL-7B for Google Colab (Single A100 40GB).
+model:
+  model_name_or_path: "Qwen/Qwen2.5-VL-7B-Instruct"
+  torch_dtype: "float16"           # frozen backbone only. fp16
+  device_map: "auto"
+  trust_remote_code: true
+  max_memory: {0: "38GiB"}
+
+vismem:
+  short_invoke_token: "<ms_I>"
+  short_end_token: "<ms_E>"
+  long_invoke_token: "<ml_I>"
+  long_end_token: "<ml_E>"
+  query_len: 8
+  short_mem_len: 8
+  long_mem_len: 16
+  query_builder:
+    num_layers: 1
+    num_heads: 8
+    dropout: 0.0
+    ff_mult: 4
+  former_backend: "lvm_sft"
+  visual_feature_source: "projected"
+  trainable_dtype: "float32"
+  trainable_device: "cuda:0"
+
+  lvm_num_slots: 16
+  method_graph_budget: 8
+  method_seed_topk: 4
+  method_evidence_tokens: 4
+
+  lvm_segment_len: 32
+  lvm_tau_r: 0.75
+  lvm_tau_s: 0.066
+  lvm_gate_hidden: 256
+  lvm_normalize_slot: true
+  lvm_eviction_policy: "fifo"
+  lvm_readout_policy: "recent"
+  lvm_delta_t_scale: 32.0
+  lvm_enable_graph_merge: true
+  lvm_merge_similarity_weight: 1.0
+  lvm_merge_surprise_weight: 0.5
+  lvm_merge_access_weight: 0.25
+  lvm_merge_recency_weight: 0.25
+  lvm_segment_encoder_layers: 1
+  lvm_segment_encoder_heads: 4
+  lvm_segment_time_pos: true
+  lvm_build_long_former: false
+
+  lvm_use_saw: true
+  lvm_saw_lambda_attn: 0.0
+  lvm_saw_ema_decay: 0.9
+  lvm_saw_l_min: 8
+  lvm_saw_l_max: 64
+  lvm_saw_energy_budget: 8.0
+  lvm_saw_recent_window: 64
+  lvm_saw_quantile: 0.9
+  lvm_saw_attn_groups: 32
+  lvm_saw_use_attn_proxy: false
+
+  lvm_write_signal: "surprise"
+  lvm_use_importance_scorer: true
+  lvm_scorer_proj_dim: 16
+  lvm_fixed_segment_len: 16
+
+  method_enable_dmg_gar: true
+  method_num_hops: 2
+  method_eta_surprise_boost: 0.2
+  method_span_penalty_weight: 0.05
+  method_merge_penalty_weight: 0.05
+  method_route_edge_weight: 0.1
+  method_route_temperature: 1.0
+  method_ret_logit_scale: 14.2857
+  method_ret_logit_scale_learnable: true
+  method_score_bias_learnable: true
+  method_prior_weight: 1.0
+  method_route_threshold: 0.0
+  method_sim_topk: 4
+  method_temporal_weight_c: 1.0
+  method_gar_layers: 2
+  method_spar_subgraph_weight: 1.0
+  method_spar_redundancy_weight: 1.0
+  method_redundancy_margin: 0.0
+
+arms:
+  A: {}
+  B: {lvm_saw_energy_budget: 8.0, lvm_tau_s: 0.066}
+  C: {lvm_saw_energy_budget: 8.0, lvm_tau_s: 0.066}
+  D: {lvm_fixed_segment_len: 16}
+
+data:
+  sample_fps: 1.0
+  frame_max_side: 448
+  query_time_mode: "uniform"
+  dev_frac: 0.1
+
+training:
+  seed: 42
+  epochs: 3
+  lr: 2.0e-4
+  weight_decay: 0.0
+  grad_accum: 4
+  max_grad_norm: 1.0
+  beta_ret: 0.1
+  gamma_spar: 0.05
+  time_tolerance: 0.5
+  scorer_weight: 1.0
+

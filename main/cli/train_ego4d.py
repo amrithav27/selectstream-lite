@@ -108,6 +108,7 @@ def main():
     ap.add_argument("--calibration", default="outputs/calibration.json", help="calibrate_write output; overrides the config arms block for B/C/D.")
     ap.add_argument("--feature_cache", default=None, help="Stage-0 cache dir (main/cli/cache_features.py): write path reads g_t, queries read the cached frame.")
     ap.add_argument("--scorer", default=None, help="Stage-1 scorer (train_scorer.py); required for arm B.")
+    ap.add_argument("--seed", type=int, default=None, help="Override training.seed in config (for multi-seed training P4).")
     ap.add_argument("--segment_center", choices=("none", "train_mean"), default="none",
                     help="Fresh runs only (a checkpoint carries its own): subtract the mean g_t of the training streams "
                          "before the segment encoder (none = the paper). Needs --feature_cache.")
@@ -121,6 +122,8 @@ def main():
         cfg_dict["model"]["torch_dtype"] = args.torch_dtype
     if args.epochs is not None:
         cfg_dict["training"]["epochs"] = args.epochs
+    if args.seed is not None:
+        cfg_dict["training"]["seed"] = int(args.seed)
     tcfg = cfg_dict["training"]
     dcfg = cfg_dict["data"]
     set_seed(int(tcfg.get("seed", 42)))

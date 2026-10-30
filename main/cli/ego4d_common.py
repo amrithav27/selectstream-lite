@@ -105,11 +105,30 @@ def trainable_state_dict(model: VisMemModel) -> Dict[str, torch.Tensor]:
 
 def load_trainable_state(model: VisMemModel, ckpt: str) -> None:
     path = ckpt
-    if not ckpt.endswith(".pt"):
-        # weights.pt (no optimizer state) is what gets archived; trainable.pt is the resumable one.
-        path = os.path.join(ckpt, "weights.pt")
-        if not os.path.exists(path):
-            path = os.path.join(ckpt, "trainable.pt")
+    if not (ckpt.endswith(".pt") and os.path.exists(ckpt)):
+        # Check standard checkpoint layouts produced by train_ego4d.py and official repos:
+        # 1. ckpt/final/weights.pt (final weights saved at end of training)
+        # 2. ckpt/weights.pt (root weights file, e.g. Hugging Face downloads)
+        # 3. ckpt/latest/trainable.pt (latest resumable checkpoint with optimizer)
+        # 4. ckpt/latest/weights.pt
+        # 5. ckpt/trainable.pt
+        candidates = [
+            os.path.join(ckpt, "final", "weights.pt"),
+            os.path.join(ckpt, "weights.pt"),
+            os.path.join(ckpt, "latest", "trainable.pt"),
+            os.path.join(ckpt, "latest", "weights.pt"),
+            os.path.join(ckpt, "trainable.pt"),
+        ]
+        found = False
+        for c in candidates:
+            if os.path.exists(c):
+                path = c
+                found = True
+                break
+        if not found:
+            # If none exist yet, fallback to the most descriptive candidate for error reporting
+            path = candidates[0] if os.path.exists(os.path.dirname(candidates[0])) else candidates[1]
+
     state = torch.load(path, map_location="cpu", weights_only=False)
     payload = state.get("model", state)
     # Memory-budget ablation: evaluating at another N than trained. slot_init ([N, D], the learned
