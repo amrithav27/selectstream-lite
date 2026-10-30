@@ -1,14 +1,7 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Dict, Any
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-@dataclass
-class GRPOBatch:
-    input_ids: torch.LongTensor          # (B, T)
-    attention_mask: torch.LongTensor     # (B, T)
-    labels: torch.LongTensor             # (B, T) with -100 for prompt positions
 def sequence_logprobs(logits: torch.Tensor, labels: torch.LongTensor) -> torch.Tensor:
     logp = F.log_softmax(logits, dim=-1)
     # gather label logp
