@@ -1,0 +1,34 @@
+[replay] train-fit streams 838 loaded (36s)
+[replay] calibration (296s): {"A": {"b_s": 8.0, "quantile": 0.9, "segments": 28.18854415274463, "tau_s": 0.06811087443008927, "tau_r": 0.9914495598290273}, "B": {"b_s": 10000.0, "quantile": 0.9365079879760743, "segments": 27.40692124105012, "note": "spike quantile raised (energy budget off)", "tau_s": 0.5280141826686727, "tau_r": 0.9914495598290273}, "C": {"b_s": 9.220702265760279, "quantile": 0.9, "segments": 28.18854415274463, "note": "ok", "tau_s": 0.4233798528476103, "tau_r": 0.9914495598290273}, "D": {"fixed_len": 24, "segments": 28.75178997613365, "tau_s": Infinity, "tau_r": 0.9914495598290273}}
+[replay] nlq N=8 A: IoU*=0.1864 surv=1.0000 IoU*_committed=0.1697 nodes=7.8 span=127s 
+[replay] nlq N=8 B: IoU*=0.1567 surv=1.0000 IoU*_committed=0.1404 nodes=7.9 span=120s vs A {"mean": -0.02973264763295393, "ci95": [-0.03791006797481669, -0.02192501854818833]}
+[replay] nlq N=8 C: IoU*=0.1958 surv=1.0000 IoU*_committed=0.1860 nodes=7.7 span=133s vs A {"mean": 0.0093201575966635, "ci95": [-0.0017504211535782177, 0.020363450433741024]}
+[replay] nlq N=8 D: IoU*=0.1667 surv=1.0000 IoU*_committed=0.1512 nodes=7.6 span=123s vs A {"mean": -0.019702749468171164, "ci95": [-0.027463048938345017, -0.012244191443459715]}
+[replay] nlq N=16 A: IoU*=0.2362 surv=1.0000 IoU*_committed=0.2194 nodes=13.9 span=73s 
+[replay] nlq N=16 B: IoU*=0.2035 surv=1.0000 IoU*_committed=0.1873 nodes=14.5 span=64s vs A {"mean": -0.03261247221067613, "ci95": [-0.04202779951859678, -0.024152451513342568]}
+[replay] nlq N=16 C: IoU*=0.2425 surv=1.0000 IoU*_committed=0.2330 nodes=13.7 span=74s vs A {"mean": 0.006346612100693295, "ci95": [-0.0057607394966206205, 0.01817714594334762]}
+[replay] nlq N=16 D: IoU*=0.2156 surv=1.0000 IoU*_committed=0.2000 nodes=13.3 span=67s vs A {"mean": -0.020587358304858378, "ci95": [-0.030156915783180093, -0.011620666717144297]}
+[replay] nlq N=32 A: IoU*=0.2659 surv=1.0000 IoU*_committed=0.2492 nodes=20.8 span=49s 
+[replay] nlq N=32 B: IoU*=0.2293 surv=1.0000 IoU*_committed=0.2130 nodes=21.8 span=38s vs A {"mean": -0.03665111979652846, "ci95": [-0.04531133589152998, -0.027770049214298265]}
+[replay] nlq N=32 C: IoU*=0.2744 surv=1.0000 IoU*_committed=0.2651 nodes=21.3 span=47s vs A {"mean": 0.008496203245270131, "ci95": [-0.0032146151074866846, 0.020203831173414993]}
+[replay] nlq N=32 D: IoU*=0.2407 surv=1.0000 IoU*_committed=0.2251 nodes=19.8 span=46s vs A {"mean": -0.025245675415307475, "ci95": [-0.03570219592623212, -0.01677754077229448]}
+[replay] nlq N=64 A: IoU*=0.2784 surv=1.0000 IoU*_committed=0.2617 nodes=26.5 span=35s 
+[replay] nlq N=64 B: IoU*=0.2408 surv=1.0000 IoU*_committed=0.2245 nodes=27.4 span=26s vs A {"mean": -0.037675261122147224, "ci95": [-0.045873275764659, -0.02891491692186857]}
+[replay] nlq N=64 C: IoU*=0.2921 surv=1.0000 IoU*_committed=0.2829 nodes=28.0 span=37s vs A {"mean": 0.013695546919327688, "ci95": [0.0032564692680439504, 0.024729885953852254]}
+[replay] nlq N=64 D: IoU*=0.2518 surv=1.0000 IoU*_committed=0.2363 nodes=25.0 span=38s vs A {"mean": -0.026603700548868788, "ci95": [-0.036407323675276784, -0.018588105245872504]}
+[replay] qa N=8 A: IoU*=0.1615 surv=0.9997 IoU*_committed=0.1469 nodes=7.7 span=125s 
+[replay] qa N=8 B: IoU*=0.1352 surv=0.9997 IoU*_committed=0.1207 nodes=7.9 span=117s vs A {"mean": -0.026356619140242434, "ci95": [-0.03453608966333738, -0.018714473410241964]}
+[replay] qa N=8 C: IoU*=0.1719 surv=0.9997 IoU*_committed=0.1636 nodes=7.6 span=127s vs A {"mean": 0.010382044028301278, "ci95": [0.0002626439676081982, 0.021043638630265402]}
+[replay] qa N=8 D: IoU*=0.1430 surv=0.9997 IoU*_committed=0.1300 nodes=7.6 span=120s vs A {"mean": -0.018579276633817036, "ci95": [-0.026260584689024286, -0.010959298130487086]}
+[replay] qa N=16 A: IoU*=0.2058 surv=0.9997 IoU*_committed=0.1911 nodes=13.8 span=72s 
+[replay] qa N=16 B: IoU*=0.1796 surv=0.9997 IoU*_committed=0.1651 nodes=14.5 span=63s vs A {"mean": -0.02614691257786528, "ci95": [-0.03467725939283786, -0.01803472503117988]}
+[replay] qa N=16 C: IoU*=0.2118 surv=0.9997 IoU*_committed=0.2037 nodes=13.4 span=73s vs A {"mean": 0.006037720985428722, "ci95": [-0.005211572563237196, 0.01799054415139402]}
+[replay] qa N=16 D: IoU*=0.1858 surv=0.9997 IoU*_committed=0.1728 nodes=13.2 span=65s vs A {"mean": -0.019981934199946972, "ci95": [-0.02925610934769225, -0.010813346067490875]}
+[replay] qa N=32 A: IoU*=0.2318 surv=0.9997 IoU*_committed=0.2172 nodes=20.4 span=50s 
+[replay] qa N=32 B: IoU*=0.2037 surv=0.9997 IoU*_committed=0.1892 nodes=21.6 span=39s vs A {"mean": -0.028077209783814554, "ci95": [-0.036278938596557356, -0.01974878487776636]}
+[replay] qa N=32 C: IoU*=0.2417 surv=0.9997 IoU*_committed=0.2338 nodes=20.4 span=48s vs A {"mean": 0.00985418964248391, "ci95": [-0.001336599689950921, 0.020870946151650492]}
+[replay] qa N=32 D: IoU*=0.2072 surv=0.9997 IoU*_committed=0.1942 nodes=19.4 span=45s vs A {"mean": -0.024619279586056413, "ci95": [-0.03367001198034384, -0.015607646560784325]}
+[replay] qa N=64 A: IoU*=0.2431 surv=0.9997 IoU*_committed=0.2284 nodes=26.0 span=35s 
+[replay] qa N=64 B: IoU*=0.2138 surv=0.9997 IoU*_committed=0.1993 nodes=27.2 span=26s vs A {"mean": -0.029298476260174792, "ci95": [-0.03779651375074414, -0.021290667768746607]}
+[replay] qa N=64 C: IoU*=0.2546 surv=0.9997 IoU*_committed=0.2468 nodes=26.5 span=38s vs A {"mean": 0.01158864670247958, "ci95": [0.0006685101574783531, 0.021793739571198473]}
+[replay] qa N=64 D: IoU*=0.2172 surv=0.9997 IoU*_committed=0.2042 nodes=24.8 span=36s vs A {"mean": -0.025828947240263026, "ci95": [-0.0345604208824767, -0.017616158057317255]}

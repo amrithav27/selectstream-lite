@@ -1,0 +1,472 @@
+[ablate] train-fit streams 838 loaded (186s); signals ['A', 'As', 'B.gonly', 'B.pooled', 'B.pooled40', 'B.rank', 'B.scalars', 'B.shift', 'B.stream', 'B.tol2', 'C', 'Cr', 'D', 'E', 'c4']
+[ablate] targets {8: 28.18854415274463, 4: 28.18854415274463, 2: 28.18854415274463}, tau_r 0.9914 (203s)
+[ablate] cal (8, 'A'): {"b_s": 8.0, "quantile": 0.9, "margin": 0.0, "note": "paper values (reference)", "segments": 28.18854415274463, "tau_s": 0.7728365384615384}
+[ablate] cal (8, 'As'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.3250694274902344, "note": "spike margin 0.325 sd (quantile could not match: 26.9)", "segments": 28.18854415274463, "tau_s": 0.5526315789473685}
+[ablate] cal (8, 'C'): {"b_s": 9.220704796746885, "quantile": 0.9, "margin": 0.0, "note": "ok", "segments": 28.18854415274463, "tau_s": 0.9027730082417582}
+[ablate] cal (8, 'Cr'): {"b_s": 6.000003616381635, "quantile": 0.9, "margin": 0.0, "note": "ok", "segments": 27.49522673031026, "tau_s": 1.0}
+[ablate] cal (8, 'D'): {"fixed_len": 24, "b_s": null, "quantile": null, "margin": 0.0, "note": "fixed", "segments": 28.75178997613365, "tau_s": Infinity}
+[ablate] cal (8, 'c4'): {"b_s": 10000.0, "quantile": 0.9206350708007812, "margin": 0.0, "note": "spike quantile raised (energy budget off)", "segments": 27.594272076372317, "tau_s": 0.5963541666666666}
+[ablate] cal (8, 'E'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.033588409423828125, "note": "spike margin 0.034 sd (quantile could not match: 27.1)", "segments": 28.18854415274463, "tau_s": 0.810546875}
+[ablate] cal (8, 'B.pooled'): {"b_s": 10000.0, "quantile": 0.9365086669921874, "margin": 0.0, "note": "spike quantile raised (energy budget off)", "segments": 27.408114558472555, "tau_s": 0.859375}
+[ablate] cal (8, 'B.stream'): {"b_s": 10000.0, "quantile": 0.9365086669921874, "margin": 0.0, "note": "spike quantile raised (energy budget off)", "segments": 27.411694510739856, "tau_s": 0.869140625}
+[ablate] cal (8, 'B.rank'): {"b_s": 10000.0, "quantile": 0.9523822631835938, "margin": 0.0, "note": "spike quantile raised (energy budget off)", "segments": 27.79832935560859, "tau_s": 0.9110576923076923}
+[ablate] cal (8, 'B.gonly'): {"b_s": 10000.0, "quantile": 0.9365086669921874, "margin": 0.0, "note": "spike quantile raised (energy budget off)", "segments": 27.372315035799524, "tau_s": 0.8665319055944056}
+[ablate] cal (8, 'B.scalars'): {"b_s": 10000.0, "quantile": 0.9365086669921874, "margin": 0.0, "note": "spike quantile raised (energy budget off)", "segments": 27.752983293556085, "tau_s": 0.8848684210526315}
+[ablate] cal (8, 'B.tol2'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.060939788818359375, "note": "spike margin 0.061 sd (quantile could not match: 27.3)", "segments": 28.18854415274463, "tau_s": 0.8799264616932789}
+[ablate] cal (8, 'B.shift'): {"b_s": 10000.0, "quantile": 0.9682543487548829, "margin": 0.0, "note": "spike quantile raised (energy budget off)", "segments": 27.651551312649165, "tau_s": 0.9184027777777778}
+[ablate] cal (8, 'B.pooled40'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.06458282470703125, "note": "spike margin 0.065 sd (quantile could not match: 27.2)", "segments": 28.18854415274463, "tau_s": 0.859375}
+[ablate] cal (8, 'A:B.pooled'): {"b_s": 7.974121593071002, "quantile": 0.9, "margin": 0.0, "note": "ok", "segments": 28.18854415274463, "tau_s": 0.6172298016726867}
+[ablate] cal (8, 'B.pooled:A'): {"b_s": 10000.0, "quantile": 0.9365086669921874, "margin": 0.0, "note": "spike quantile raised (energy budget off)", "segments": 27.408114558472555, "tau_s": 0.5713191699604743}
+[ablate] cal (8, 'A:B.stream'): {"b_s": 7.974121593071002, "quantile": 0.9, "margin": 0.0, "note": "ok", "segments": 28.18854415274463, "tau_s": 0.6796875}
+[ablate] cal (8, 'B.stream:A'): {"b_s": 10000.0, "quantile": 0.9365086669921874, "margin": 0.0, "note": "spike quantile raised (energy budget off)", "segments": 27.411694510739856, "tau_s": 0.635986328125}
+[ablate] cal (8, 'C:A'): {"b_s": 9.220704796746885, "quantile": 0.9, "margin": 0.0, "note": "ok", "segments": 28.18854415274463, "tau_s": 0.54296875}
+[ablate] cal (8, 'A:C'): {"b_s": 7.974121593071002, "quantile": 0.9, "margin": 0.0, "note": "ok", "segments": 28.18854415274463, "tau_s": 0.4473017939814815}
+[ablate] cal (4, 'A'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.4193687438964844, "note": "spike margin 0.419 sd (quantile could not match: 26.4)", "segments": 28.18854415274463, "tau_s": 0.85546875}
+[ablate] cal (4, 'As'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.725250244140625, "note": "spike margin 0.725 sd (quantile could not match: 24.3)", "segments": 28.18854415274463, "tau_s": 0.5714285714285714}
+[ablate] cal (4, 'C'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.11791229248046875, "note": "spike margin 0.118 sd (quantile could not match: 35.8)", "segments": 28.18854415274463, "tau_s": 0.98828125}
+[ablate] cal (4, 'Cr'): {"b_s": 8.000000242428031, "quantile": 0.9, "margin": 0.0, "note": "ok", "segments": 26.312649164677804, "tau_s": 1.0}
+[ablate] cal (4, 'D'): {"fixed_len": 24, "b_s": null, "quantile": null, "margin": 0.0, "note": "fixed", "segments": 28.75178997613365, "tau_s": Infinity}
+[ablate] cal (4, 'c4'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.6555557250976562, "note": "spike margin 0.656 sd (quantile could not match: 24.6)", "segments": 28.18854415274463, "tau_s": 0.6348905723905723}
+[ablate] cal (4, 'E'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.36327362060546875, "note": "spike margin 0.363 sd (quantile could not match: 29.2)", "segments": 28.18854415274463, "tau_s": 0.87890625}
+[ablate] cal (4, 'B.pooled'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.3516960144042969, "note": "spike margin 0.352 sd (quantile could not match: 33.2)", "segments": 28.18854415274463, "tau_s": 0.916015625}
+[ablate] cal (4, 'B.stream'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.3365898132324219, "note": "spike margin 0.337 sd (quantile could not match: 34.2)", "segments": 28.187350835322196, "tau_s": 0.928125}
+[ablate] cal (4, 'B.rank'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.30612945556640625, "note": "spike margin 0.306 sd (quantile could not match: 38.0)", "segments": 28.18854415274463, "tau_s": 0.9491275858023852}
+[ablate] cal (4, 'B.gonly'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.3331565856933594, "note": "spike margin 0.333 sd (quantile could not match: 33.9)", "segments": 28.187350835322196, "tau_s": 0.9249900999036055}
+[ablate] cal (4, 'B.scalars'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.3027153015136719, "note": "spike margin 0.303 sd (quantile could not match: 34.6)", "segments": 28.18854415274463, "tau_s": 0.9151785714285714}
+[ablate] cal (4, 'B.tol2'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.3274345397949219, "note": "spike margin 0.327 sd (quantile could not match: 34.3)", "segments": 28.18854415274463, "tau_s": 0.9309895833333334}
+[ablate] cal (4, 'B.shift'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.30059814453125, "note": "spike margin 0.301 sd (quantile could not match: 39.3)", "segments": 28.18854415274463, "tau_s": 0.934375}
+[ablate] cal (4, 'B.pooled40'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.3517341613769531, "note": "spike margin 0.352 sd (quantile could not match: 32.8)", "segments": 28.18854415274463, "tau_s": 0.914925553780968}
+[ablate] cal (4, 'A:B.pooled'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.4193687438964844, "note": "spike margin 0.419 sd (quantile could not match: 26.4)", "segments": 28.18854415274463, "tau_s": 0.614990234375}
+[ablate] cal (4, 'B.pooled:A'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.3516960144042969, "note": "spike margin 0.352 sd (quantile could not match: 33.2)", "segments": 28.18854415274463, "tau_s": 0.55078125}
+[ablate] cal (4, 'A:B.stream'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.4193687438964844, "note": "spike margin 0.419 sd (quantile could not match: 26.4)", "segments": 28.18854415274463, "tau_s": 0.6988146551724138}
+[ablate] cal (4, 'B.stream:A'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.3365898132324219, "note": "spike margin 0.337 sd (quantile could not match: 34.2)", "segments": 28.187350835322196, "tau_s": 0.647705078125}
+[ablate] cal (4, 'C:A'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.11791229248046875, "note": "spike margin 0.118 sd (quantile could not match: 35.8)", "segments": 28.18854415274463, "tau_s": 0.578125}
+[ablate] cal (4, 'A:C'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.4193687438964844, "note": "spike margin 0.419 sd (quantile could not match: 26.4)", "segments": 28.18854415274463, "tau_s": 0.4416551972796156}
+[ablate] cal (2, 'A'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.8385467529296875, "note": "spike margin 0.839 sd (quantile could not match: 37.0)", "segments": 28.18854415274463, "tau_s": 0.9296875}
+[ablate] cal (2, 'As'): {"b_s": 10000.0, "quantile": 0.9833333587646484, "margin": 0.0, "note": "spike quantile raised (energy budget off)", "segments": 28.184964200477328, "tau_s": 0.59339399916323}
+[ablate] cal (2, 'C'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.8516502380371094, "note": "spike margin 0.852 sd (quantile could not match: 61.1)", "segments": 28.18854415274463, "tau_s": 0.9921875}
+[ablate] cal (2, 'Cr'): {"b_s": 10.0, "quantile": 0.9, "margin": 0.0, "note": "ok", "segments": 28.01670644391408, "tau_s": 1.0}
+[ablate] cal (2, 'D'): {"fixed_len": 24, "b_s": null, "quantile": null, "margin": 0.0, "note": "fixed", "segments": 28.75178997613365, "tau_s": Infinity}
+[ablate] cal (2, 'c4'): {"b_s": 10000.0, "quantile": 0.9, "margin": 1.010589599609375, "note": "spike margin 1.011 sd (quantile could not match: 22.7)", "segments": 28.18854415274463, "tau_s": 0.6697443181818182}
+[ablate] cal (2, 'E'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.7233619689941406, "note": "spike margin 0.723 sd (quantile could not match: 42.6)", "segments": 28.187350835322196, "tau_s": 0.9375}
+[ablate] cal (2, 'B.pooled'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.6744956970214844, "note": "spike margin 0.674 sd (quantile could not match: 51.4)", "segments": 28.18854415274463, "tau_s": 0.9609375}
+[ablate] cal (2, 'B.stream'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.6650161743164062, "note": "spike margin 0.665 sd (quantile could not match: 53.8)", "segments": 28.18854415274463, "tau_s": 0.96875}
+[ablate] cal (2, 'B.rank'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.6025505065917969, "note": "spike margin 0.603 sd (quantile could not match: 61.7)", "segments": 28.18854415274463, "tau_s": 0.9765625}
+[ablate] cal (2, 'B.gonly'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.6564712524414062, "note": "spike margin 0.656 sd (quantile could not match: 53.4)", "segments": 28.18854415274463, "tau_s": 0.96875}
+[ablate] cal (2, 'B.scalars'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.7779884338378906, "note": "spike margin 0.778 sd (quantile could not match: 54.1)", "segments": 28.18854415274463, "tau_s": 0.9609375}
+[ablate] cal (2, 'B.tol2'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.6414031982421875, "note": "spike margin 0.641 sd (quantile could not match: 54.1)", "segments": 28.18854415274463, "tau_s": 0.96875}
+[ablate] cal (2, 'B.shift'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.6541061401367188, "note": "spike margin 0.654 sd (quantile could not match: 64.3)", "segments": 28.18854415274463, "tau_s": 0.96875}
+[ablate] cal (2, 'B.pooled40'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.6719398498535156, "note": "spike margin 0.672 sd (quantile could not match: 50.6)", "segments": 28.18854415274463, "tau_s": 0.9609375}
+[ablate] cal (2, 'A:B.pooled'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.8385467529296875, "note": "spike margin 0.839 sd (quantile could not match: 37.0)", "segments": 28.18854415274463, "tau_s": 0.6028593473191473}
+[ablate] cal (2, 'B.pooled:A'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.6744956970214844, "note": "spike margin 0.674 sd (quantile could not match: 51.4)", "segments": 28.18854415274463, "tau_s": 0.5530044093276515}
+[ablate] cal (2, 'A:B.stream'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.8385467529296875, "note": "spike margin 0.839 sd (quantile could not match: 37.0)", "segments": 28.18854415274463, "tau_s": 0.706298828125}
+[ablate] cal (2, 'B.stream:A'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.6650161743164062, "note": "spike margin 0.665 sd (quantile could not match: 53.8)", "segments": 28.18854415274463, "tau_s": 0.673583984375}
+[ablate] cal (2, 'C:A'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.8516502380371094, "note": "spike margin 0.852 sd (quantile could not match: 61.1)", "segments": 28.18854415274463, "tau_s": 0.6015625}
+[ablate] cal (2, 'A:C'): {"b_s": 10000.0, "quantile": 0.9, "margin": 0.8385467529296875, "note": "spike margin 0.839 sd (quantile could not match: 37.0)", "segments": 28.18854415274463, "tau_s": 0.4179233284883721}
+[ablate] nlq Lmin=8  N=8   A              IoU* 0.171 c 0.154 seg  43.3 nodes  7.8 span  146s merges  19.4 upd   1.6 | vs A same L_min       --         | vs A L_min 8       --        
+[ablate] nlq Lmin=8  N=16  A              IoU* 0.224 c 0.208 seg  43.3 nodes 14.2 span   95s merges  11.5 upd   1.8 | vs A same L_min       --         | vs A L_min 8       --        
+[ablate] nlq Lmin=8  N=32  A              IoU* 0.258 c 0.241 seg  43.3 nodes 21.1 span   61s merges   4.8 upd   2.0 | vs A same L_min       --         | vs A L_min 8       --        
+[ablate] nlq Lmin=8  N=8   As             IoU* 0.178 c 0.162 seg  43.9 nodes  7.7 span  134s merges  19.1 upd   1.8 | vs A same L_min +0.008 [+0.002,+0.014] | vs A L_min 8 +0.008 [+0.002,+0.014]
+[ablate] nlq Lmin=8  N=16  As             IoU* 0.231 c 0.215 seg  43.9 nodes 13.8 span   89s merges  11.5 upd   1.9 | vs A same L_min +0.007 [+0.001,+0.013] | vs A L_min 8 +0.007 [+0.001,+0.013]
+[ablate] nlq Lmin=8  N=32  As             IoU* 0.262 c 0.246 seg  43.9 nodes 20.8 span   57s merges   5.1 upd   2.0 | vs A same L_min +0.005 [-0.002,+0.011] | vs A L_min 8 +0.005 [-0.002,+0.011]
+[ablate] nlq Lmin=8  N=8   C              IoU* 0.209 c 0.199 seg  47.5 nodes  7.7 span  133s merges  18.5 upd   1.3 | vs A same L_min +0.038 [+0.027,+0.050] | vs A L_min 8 +0.038 [+0.027,+0.050]
+[ablate] nlq Lmin=8  N=16  C              IoU* 0.250 c 0.241 seg  47.5 nodes 13.7 span   82s merges  12.1 upd   1.4 | vs A same L_min +0.026 [+0.013,+0.039] | vs A L_min 8 +0.026 [+0.013,+0.039]
+[ablate] nlq Lmin=8  N=32  C              IoU* 0.280 c 0.271 seg  47.5 nodes 21.3 span   47s merges   5.6 upd   1.6 | vs A same L_min +0.023 [+0.011,+0.035] | vs A L_min 8 +0.023 [+0.011,+0.035]
+[ablate] nlq Lmin=8  N=8   Cr             IoU* 0.192 c 0.180 seg  46.6 nodes  7.6 span  123s merges  18.0 upd   1.0 | vs A same L_min +0.021 [+0.012,+0.030] | vs A L_min 8 +0.021 [+0.012,+0.030]
+[ablate] nlq Lmin=8  N=16  Cr             IoU* 0.239 c 0.226 seg  46.6 nodes 13.6 span   74s merges  11.9 upd   1.0 | vs A same L_min +0.014 [+0.003,+0.024] | vs A L_min 8 +0.014 [+0.003,+0.024]
+[ablate] nlq Lmin=8  N=32  Cr             IoU* 0.269 c 0.257 seg  46.6 nodes 21.1 span   55s merges   5.6 upd   1.0 | vs A same L_min +0.011 [-0.001,+0.022] | vs A L_min 8 +0.011 [-0.001,+0.022]
+[ablate] nlq Lmin=8  N=8   D              IoU* 0.167 c 0.151 seg  44.2 nodes  7.6 span  123s merges  16.9 upd   4.2 | vs A same L_min -0.004 [-0.013,+0.004] | vs A L_min 8 -0.004 [-0.013,+0.004]
+[ablate] nlq Lmin=8  N=16  D              IoU* 0.216 c 0.200 seg  44.2 nodes 13.3 span   67s merges   9.9 upd   4.2 | vs A same L_min -0.009 [-0.020,+0.000] | vs A L_min 8 -0.009 [-0.020,+0.000]
+[ablate] nlq Lmin=8  N=32  D              IoU* 0.241 c 0.225 seg  44.2 nodes 19.8 span   46s merges   4.2 upd   4.3 | vs A same L_min -0.017 [-0.029,-0.006] | vs A L_min 8 -0.017 [-0.029,-0.006]
+[ablate] nlq Lmin=8  N=8   c4             IoU* 0.177 c 0.159 seg  41.5 nodes  7.8 span  139s merges  18.2 upd   1.8 | vs A same L_min +0.006 [+0.000,+0.012] | vs A L_min 8 +0.006 [+0.000,+0.012]
+[ablate] nlq Lmin=8  N=16  c4             IoU* 0.229 c 0.211 seg  41.5 nodes 13.9 span   91s merges  10.5 upd   1.9 | vs A same L_min +0.004 [-0.002,+0.011] | vs A L_min 8 +0.004 [-0.002,+0.011]
+[ablate] nlq Lmin=8  N=32  c4             IoU* 0.259 c 0.242 seg  41.5 nodes 20.5 span   63s merges   4.2 upd   2.0 | vs A same L_min +0.002 [-0.005,+0.009] | vs A L_min 8 +0.002 [-0.005,+0.009]
+[ablate] nlq Lmin=8  N=8   E              IoU* 0.172 c 0.156 seg  42.7 nodes  7.8 span  147s merges  19.1 upd   1.6 | vs A same L_min +0.001 [-0.004,+0.006] | vs A L_min 8 +0.001 [-0.004,+0.006]
+[ablate] nlq Lmin=8  N=16  E              IoU* 0.223 c 0.207 seg  42.7 nodes 14.3 span   93s merges  11.2 upd   1.8 | vs A same L_min -0.001 [-0.007,+0.004] | vs A L_min 8 -0.001 [-0.007,+0.004]
+[ablate] nlq Lmin=8  N=32  E              IoU* 0.255 c 0.239 seg  42.7 nodes 21.2 span   55s merges   4.6 upd   1.9 | vs A same L_min -0.003 [-0.008,+0.003] | vs A L_min 8 -0.003 [-0.008,+0.003]
+[ablate] nlq Lmin=8  N=8   B.pooled       IoU* 0.141 c 0.124 seg  40.7 nodes  7.9 span  148s merges  18.1 upd   1.8 | vs A same L_min -0.030 [-0.038,-0.023] | vs A L_min 8 -0.030 [-0.038,-0.023]
+[ablate] nlq Lmin=8  N=16  B.pooled       IoU* 0.185 c 0.169 seg  40.7 nodes 14.3 span   96s merges  10.4 upd   2.0 | vs A same L_min -0.039 [-0.048,-0.031] | vs A L_min 8 -0.039 [-0.048,-0.031]
+[ablate] nlq Lmin=8  N=32  B.pooled       IoU* 0.217 c 0.201 seg  40.7 nodes 21.2 span   54s merges   3.9 upd   2.1 | vs A same L_min -0.040 [-0.050,-0.031] | vs A L_min 8 -0.040 [-0.050,-0.031]
+[ablate] nlq Lmin=8  N=8   B.stream       IoU* 0.161 c 0.146 seg  40.4 nodes  7.9 span  146s merges  18.1 upd   1.7 | vs A same L_min -0.009 [-0.017,-0.002] | vs A L_min 8 -0.009 [-0.017,-0.002]
+[ablate] nlq Lmin=8  N=16  B.stream       IoU* 0.209 c 0.194 seg  40.4 nodes 14.2 span   90s merges  10.4 upd   1.8 | vs A same L_min -0.015 [-0.023,-0.008] | vs A L_min 8 -0.015 [-0.023,-0.008]
+[ablate] nlq Lmin=8  N=32  B.stream       IoU* 0.241 c 0.225 seg  40.4 nodes 20.9 span   52s merges   3.8 upd   2.0 | vs A same L_min -0.017 [-0.025,-0.009] | vs A L_min 8 -0.017 [-0.025,-0.009]
+[ablate] nlq Lmin=8  N=8   B.rank         IoU* 0.160 c 0.144 seg  40.6 nodes  7.9 span  152s merges  18.3 upd   1.7 | vs A same L_min -0.010 [-0.017,-0.004] | vs A L_min 8 -0.010 [-0.017,-0.004]
+[ablate] nlq Lmin=8  N=16  B.rank         IoU* 0.204 c 0.188 seg  40.6 nodes 14.5 span   98s merges  10.5 upd   1.8 | vs A same L_min -0.020 [-0.027,-0.013] | vs A L_min 8 -0.020 [-0.027,-0.013]
+[ablate] nlq Lmin=8  N=32  B.rank         IoU* 0.234 c 0.218 seg  40.6 nodes 21.4 span   54s merges   3.7 upd   1.9 | vs A same L_min -0.024 [-0.031,-0.017] | vs A L_min 8 -0.024 [-0.031,-0.017]
+[ablate] nlq Lmin=8  N=8   B.gonly        IoU* 0.161 c 0.144 seg  40.3 nodes  7.9 span  145s merges  18.1 upd   1.7 | vs A same L_min -0.010 [-0.017,-0.003] | vs A L_min 8 -0.010 [-0.017,-0.003]
+[ablate] nlq Lmin=8  N=16  B.gonly        IoU* 0.207 c 0.191 seg  40.3 nodes 14.2 span   90s merges  10.3 upd   1.9 | vs A same L_min -0.017 [-0.025,-0.010] | vs A L_min 8 -0.017 [-0.025,-0.010]
+[ablate] nlq Lmin=8  N=32  B.gonly        IoU* 0.237 c 0.221 seg  40.3 nodes 20.9 span   50s merges   3.8 upd   2.0 | vs A same L_min -0.020 [-0.029,-0.013] | vs A L_min 8 -0.020 [-0.029,-0.013]
+[ablate] nlq Lmin=8  N=8   B.scalars      IoU* 0.166 c 0.148 seg  40.7 nodes  7.9 span  155s merges  18.8 upd   1.6 | vs A same L_min -0.005 [-0.010,-0.000] | vs A L_min 8 -0.005 [-0.010,-0.000]
+[ablate] nlq Lmin=8  N=16  B.scalars      IoU* 0.214 c 0.196 seg  40.7 nodes 14.7 span  102s merges  10.9 upd   1.7 | vs A same L_min -0.011 [-0.016,-0.006] | vs A L_min 8 -0.011 [-0.016,-0.006]
+[ablate] nlq Lmin=8  N=32  B.scalars      IoU* 0.252 c 0.234 seg  40.7 nodes 21.7 span   58s merges   3.9 upd   1.9 | vs A same L_min -0.006 [-0.011,-0.001] | vs A L_min 8 -0.006 [-0.011,-0.001]
+[ablate] nlq Lmin=8  N=8   B.tol2         IoU* 0.167 c 0.150 seg  42.3 nodes  7.9 span  144s merges  19.2 upd   1.6 | vs A same L_min -0.004 [-0.011,+0.003] | vs A L_min 8 -0.004 [-0.011,+0.003]
+[ablate] nlq Lmin=8  N=16  B.tol2         IoU* 0.219 c 0.203 seg  42.3 nodes 14.2 span   95s merges  11.3 upd   1.9 | vs A same L_min -0.005 [-0.012,+0.001] | vs A L_min 8 -0.005 [-0.012,+0.001]
+[ablate] nlq Lmin=8  N=32  B.tol2         IoU* 0.252 c 0.236 seg  42.3 nodes 21.2 span   58s merges   4.4 upd   2.0 | vs A same L_min -0.005 [-0.013,+0.002] | vs A L_min 8 -0.005 [-0.013,+0.002]
+[ablate] nlq Lmin=8  N=8   B.shift        IoU* 0.131 c 0.112 seg  39.0 nodes  7.9 span  164s merges  17.5 upd   1.9 | vs A same L_min -0.040 [-0.048,-0.032] | vs A L_min 8 -0.040 [-0.048,-0.032]
+[ablate] nlq Lmin=8  N=16  B.shift        IoU* 0.173 c 0.154 seg  39.0 nodes 14.7 span   98s merges   9.8 upd   1.9 | vs A same L_min -0.051 [-0.060,-0.044] | vs A L_min 8 -0.051 [-0.060,-0.044]
+[ablate] nlq Lmin=8  N=32  B.shift        IoU* 0.208 c 0.189 seg  39.0 nodes 21.5 span   49s merges   3.1 upd   2.0 | vs A same L_min -0.050 [-0.060,-0.041] | vs A L_min 8 -0.050 [-0.060,-0.041]
+[ablate] nlq Lmin=8  N=8   B.pooled40     IoU* 0.145 c 0.128 seg  42.5 nodes  7.8 span  144s merges  18.9 upd   1.9 | vs A same L_min -0.026 [-0.034,-0.018] | vs A L_min 8 -0.026 [-0.034,-0.018]
+[ablate] nlq Lmin=8  N=16  B.pooled40     IoU* 0.193 c 0.175 seg  42.5 nodes 14.3 span   95s merges  11.2 upd   2.0 | vs A same L_min -0.032 [-0.041,-0.023] | vs A L_min 8 -0.032 [-0.041,-0.023]
+[ablate] nlq Lmin=8  N=32  B.pooled40     IoU* 0.223 c 0.206 seg  42.5 nodes 21.4 span   53s merges   4.4 upd   2.1 | vs A same L_min -0.034 [-0.044,-0.025] | vs A L_min 8 -0.034 [-0.044,-0.025]
+[ablate] nlq Lmin=8  N=8   A:B.pooled     IoU* 0.171 c 0.153 seg  43.3 nodes  7.8 span  144s merges  19.7 upd   1.3 | vs A same L_min +0.000 [-0.006,+0.006] | vs A L_min 8 +0.000 [-0.006,+0.006]
+[ablate] nlq Lmin=8  N=16  A:B.pooled     IoU* 0.228 c 0.211 seg  43.3 nodes 14.3 span   90s merges  11.8 upd   1.5 | vs A same L_min +0.004 [-0.001,+0.008] | vs A L_min 8 +0.004 [-0.001,+0.008]
+[ablate] nlq Lmin=8  N=32  A:B.pooled     IoU* 0.264 c 0.247 seg  43.3 nodes 21.4 span   52s merges   5.0 upd   1.5 | vs A same L_min +0.006 [+0.002,+0.010] | vs A L_min 8 +0.006 [+0.002,+0.010]
+[ablate] nlq Lmin=8  N=8   B.pooled:A     IoU* 0.157 c 0.140 seg  40.7 nodes  7.9 span  141s merges  18.1 upd   1.8 | vs A same L_min -0.013 [-0.021,-0.007] | vs A L_min 8 -0.013 [-0.021,-0.007]
+[ablate] nlq Lmin=8  N=16  B.pooled:A     IoU* 0.200 c 0.184 seg  40.7 nodes 14.2 span   84s merges  10.2 upd   2.1 | vs A same L_min -0.024 [-0.033,-0.017] | vs A L_min 8 -0.024 [-0.033,-0.017]
+[ablate] nlq Lmin=8  N=32  B.pooled:A     IoU* 0.227 c 0.211 seg  40.7 nodes 21.1 span   48s merges   3.8 upd   2.3 | vs A same L_min -0.031 [-0.041,-0.022] | vs A L_min 8 -0.031 [-0.041,-0.022]
+[ablate] nlq Lmin=8  N=8   A:B.stream     IoU* 0.178 c 0.161 seg  43.3 nodes  7.8 span  142s merges  19.5 upd   1.5 | vs A same L_min +0.008 [+0.003,+0.013] | vs A L_min 8 +0.008 [+0.003,+0.013]
+[ablate] nlq Lmin=8  N=16  A:B.stream     IoU* 0.231 c 0.214 seg  43.3 nodes 14.2 span   86s merges  11.6 upd   1.7 | vs A same L_min +0.007 [+0.003,+0.011] | vs A L_min 8 +0.007 [+0.003,+0.011]
+[ablate] nlq Lmin=8  N=32  A:B.stream     IoU* 0.261 c 0.245 seg  43.3 nodes 21.2 span   50s merges   4.9 upd   1.8 | vs A same L_min +0.004 [+0.000,+0.007] | vs A L_min 8 +0.004 [+0.000,+0.007]
+[ablate] nlq Lmin=8  N=8   B.stream:A     IoU* 0.166 c 0.150 seg  40.4 nodes  7.9 span  142s merges  18.1 upd   1.6 | vs A same L_min -0.005 [-0.011,+0.001] | vs A L_min 8 -0.005 [-0.011,+0.001]
+[ablate] nlq Lmin=8  N=16  B.stream:A     IoU* 0.216 c 0.200 seg  40.4 nodes 14.3 span   90s merges  10.3 upd   1.9 | vs A same L_min -0.008 [-0.015,-0.003] | vs A L_min 8 -0.008 [-0.015,-0.003]
+[ablate] nlq Lmin=8  N=32  B.stream:A     IoU* 0.245 c 0.230 seg  40.4 nodes 21.0 span   50s merges   3.8 upd   2.0 | vs A same L_min -0.012 [-0.020,-0.005] | vs A L_min 8 -0.012 [-0.020,-0.005]
+[ablate] nlq Lmin=8  N=8   C:A            IoU* 0.202 c 0.192 seg  47.5 nodes  7.7 span  137s merges  18.1 upd   1.7 | vs A same L_min +0.031 [+0.023,+0.039] | vs A L_min 8 +0.031 [+0.023,+0.039]
+[ablate] nlq Lmin=8  N=16  C:A            IoU* 0.252 c 0.243 seg  47.5 nodes 13.7 span   86s merges  11.5 upd   2.0 | vs A same L_min +0.028 [+0.019,+0.038] | vs A L_min 8 +0.028 [+0.019,+0.038]
+[ablate] nlq Lmin=8  N=32  C:A            IoU* 0.288 c 0.279 seg  47.5 nodes 21.1 span   51s merges   5.2 upd   2.2 | vs A same L_min +0.030 [+0.021,+0.040] | vs A L_min 8 +0.030 [+0.021,+0.040]
+[ablate] nlq Lmin=8  N=8   A:C            IoU* 0.207 c 0.190 seg  43.3 nodes  7.8 span  136s merges  19.8 upd   1.2 | vs A same L_min +0.036 [+0.030,+0.043] | vs A L_min 8 +0.036 [+0.030,+0.043]
+[ablate] nlq Lmin=8  N=16  A:C            IoU* 0.252 c 0.235 seg  43.3 nodes 14.2 span   73s merges  11.9 upd   1.5 | vs A same L_min +0.027 [+0.022,+0.033] | vs A L_min 8 +0.027 [+0.022,+0.033]
+[ablate] nlq Lmin=8  N=32  A:C            IoU* 0.275 c 0.259 seg  43.3 nodes 21.4 span   43s merges   4.9 upd   1.6 | vs A same L_min +0.018 [+0.011,+0.024] | vs A L_min 8 +0.018 [+0.011,+0.024]
+[ablate] nlq Lmin=4  N=8   A              IoU* 0.156 c 0.137 seg  42.6 nodes  7.7 span  144s merges  19.3 upd   1.4 | vs A same L_min       --         | vs A L_min 8 -0.015 [-0.020,-0.010]
+[ablate] nlq Lmin=4  N=16  A              IoU* 0.204 c 0.186 seg  42.6 nodes 14.0 span   88s merges  11.5 upd   1.6 | vs A same L_min       --         | vs A L_min 8 -0.020 [-0.026,-0.015]
+[ablate] nlq Lmin=4  N=32  A              IoU* 0.237 c 0.219 seg  42.6 nodes 20.9 span   54s merges   4.7 upd   1.8 | vs A same L_min       --         | vs A L_min 8 -0.021 [-0.026,-0.015]
+[ablate] nlq Lmin=4  N=8   As             IoU* 0.170 c 0.153 seg  43.1 nodes  7.7 span  134s merges  18.6 upd   1.8 | vs A same L_min +0.015 [+0.009,+0.021] | vs A L_min 8 -0.000 [-0.006,+0.006]
+[ablate] nlq Lmin=4  N=16  As             IoU* 0.223 c 0.206 seg  43.1 nodes 13.8 span   86s merges  11.0 upd   1.9 | vs A same L_min +0.019 [+0.012,+0.026] | vs A L_min 8 -0.001 [-0.008,+0.005]
+[ablate] nlq Lmin=4  N=32  As             IoU* 0.254 c 0.236 seg  43.1 nodes 20.5 span   57s merges   4.8 upd   2.0 | vs A same L_min +0.017 [+0.010,+0.024] | vs A L_min 8 -0.004 [-0.011,+0.003]
+[ablate] nlq Lmin=4  N=8   C              IoU* 0.193 c 0.184 seg  46.5 nodes  7.8 span  131s merges  18.9 upd   1.1 | vs A same L_min +0.038 [+0.027,+0.049] | vs A L_min 8 +0.023 [+0.012,+0.034]
+[ablate] nlq Lmin=4  N=16  C              IoU* 0.244 c 0.235 seg  46.5 nodes 14.2 span   79s merges  11.8 upd   1.2 | vs A same L_min +0.041 [+0.027,+0.054] | vs A L_min 8 +0.020 [+0.007,+0.033]
+[ablate] nlq Lmin=4  N=32  C              IoU* 0.269 c 0.260 seg  46.5 nodes 21.7 span   50s merges   5.0 upd   1.4 | vs A same L_min +0.033 [+0.019,+0.047] | vs A L_min 8 +0.012 [-0.002,+0.026]
+[ablate] nlq Lmin=4  N=8   Cr             IoU* 0.190 c 0.180 seg  43.8 nodes  7.6 span  123s merges  16.9 upd   1.0 | vs A same L_min +0.034 [+0.025,+0.043] | vs A L_min 8 +0.019 [+0.010,+0.027]
+[ablate] nlq Lmin=4  N=16  Cr             IoU* 0.235 c 0.225 seg  43.8 nodes 13.5 span   75s merges  10.7 upd   1.0 | vs A same L_min +0.031 [+0.020,+0.042] | vs A L_min 8 +0.010 [-0.001,+0.020]
+[ablate] nlq Lmin=4  N=32  Cr             IoU* 0.262 c 0.252 seg  43.8 nodes 20.6 span   56s merges   4.7 upd   1.0 | vs A same L_min +0.025 [+0.012,+0.036] | vs A L_min 8 +0.004 [-0.008,+0.015]
+[ablate] nlq Lmin=4  N=8   D              IoU* 0.167 c 0.151 seg  44.2 nodes  7.6 span  123s merges  16.9 upd   4.2 | vs A same L_min +0.011 [+0.002,+0.019] | vs A L_min 8 -0.004 [-0.013,+0.004]
+[ablate] nlq Lmin=4  N=16  D              IoU* 0.216 c 0.200 seg  44.2 nodes 13.3 span   67s merges   9.9 upd   4.2 | vs A same L_min +0.012 [+0.001,+0.022] | vs A L_min 8 -0.009 [-0.020,+0.000]
+[ablate] nlq Lmin=4  N=32  D              IoU* 0.241 c 0.225 seg  44.2 nodes 19.8 span   46s merges   4.2 upd   4.3 | vs A same L_min +0.004 [-0.008,+0.016] | vs A L_min 8 -0.017 [-0.029,-0.006]
+[ablate] nlq Lmin=4  N=8   c4             IoU* 0.159 c 0.141 seg  41.5 nodes  7.7 span  141s merges  18.6 upd   1.7 | vs A same L_min +0.004 [-0.002,+0.010] | vs A L_min 8 -0.011 [-0.018,-0.005]
+[ablate] nlq Lmin=4  N=16  c4             IoU* 0.211 c 0.193 seg  41.5 nodes 14.0 span   91s merges  10.8 upd   1.8 | vs A same L_min +0.007 [-0.001,+0.014] | vs A L_min 8 -0.014 [-0.021,-0.007]
+[ablate] nlq Lmin=4  N=32  c4             IoU* 0.246 c 0.228 seg  41.5 nodes 20.8 span   55s merges   4.3 upd   1.9 | vs A same L_min +0.009 [+0.001,+0.017] | vs A L_min 8 -0.012 [-0.020,-0.005]
+[ablate] nlq Lmin=4  N=8   E              IoU* 0.153 c 0.135 seg  42.9 nodes  7.7 span  138s merges  19.2 upd   1.6 | vs A same L_min -0.003 [-0.008,+0.002] | vs A L_min 8 -0.018 [-0.024,-0.012]
+[ablate] nlq Lmin=4  N=16  E              IoU* 0.199 c 0.182 seg  42.9 nodes 13.7 span   91s merges  11.5 upd   1.7 | vs A same L_min -0.005 [-0.011,+0.002] | vs A L_min 8 -0.025 [-0.031,-0.019]
+[ablate] nlq Lmin=4  N=32  E              IoU* 0.233 c 0.215 seg  42.9 nodes 20.6 span   59s merges   5.0 upd   1.9 | vs A same L_min -0.004 [-0.011,+0.002] | vs A L_min 8 -0.025 [-0.032,-0.017]
+[ablate] nlq Lmin=4  N=8   B.pooled       IoU* 0.123 c 0.104 seg  42.5 nodes  7.5 span  136s merges  18.7 upd   1.7 | vs A same L_min -0.033 [-0.041,-0.026] | vs A L_min 8 -0.048 [-0.057,-0.040]
+[ablate] nlq Lmin=4  N=16  B.pooled       IoU* 0.155 c 0.136 seg  42.5 nodes 13.3 span   89s merges  11.4 upd   1.8 | vs A same L_min -0.049 [-0.059,-0.039] | vs A L_min 8 -0.069 [-0.080,-0.060]
+[ablate] nlq Lmin=4  N=32  B.pooled       IoU* 0.182 c 0.163 seg  42.5 nodes 20.1 span   55s merges   5.1 upd   1.9 | vs A same L_min -0.055 [-0.065,-0.046] | vs A L_min 8 -0.076 [-0.086,-0.066]
+[ablate] nlq Lmin=4  N=8   B.stream       IoU* 0.141 c 0.123 seg  42.5 nodes  7.6 span  138s merges  19.0 upd   1.6 | vs A same L_min -0.015 [-0.021,-0.009] | vs A L_min 8 -0.030 [-0.038,-0.023]
+[ablate] nlq Lmin=4  N=16  B.stream       IoU* 0.180 c 0.163 seg  42.5 nodes 13.5 span   90s merges  11.5 upd   1.8 | vs A same L_min -0.024 [-0.031,-0.016] | vs A L_min 8 -0.044 [-0.053,-0.036]
+[ablate] nlq Lmin=4  N=32  B.stream       IoU* 0.210 c 0.193 seg  42.5 nodes 20.3 span   56s merges   4.7 upd   1.9 | vs A same L_min -0.027 [-0.035,-0.019] | vs A L_min 8 -0.048 [-0.057,-0.039]
+[ablate] nlq Lmin=4  N=8   B.rank         IoU* 0.132 c 0.115 seg  43.1 nodes  7.6 span  139s merges  18.7 upd   1.7 | vs A same L_min -0.023 [-0.030,-0.017] | vs A L_min 8 -0.038 [-0.047,-0.031]
+[ablate] nlq Lmin=4  N=16  B.rank         IoU* 0.174 c 0.156 seg  43.1 nodes 13.4 span   89s merges  11.3 upd   1.8 | vs A same L_min -0.030 [-0.038,-0.023] | vs A L_min 8 -0.051 [-0.059,-0.043]
+[ablate] nlq Lmin=4  N=32  B.rank         IoU* 0.200 c 0.183 seg  43.1 nodes 20.2 span   61s merges   5.0 upd   1.9 | vs A same L_min -0.037 [-0.044,-0.029] | vs A L_min 8 -0.057 [-0.066,-0.050]
+[ablate] nlq Lmin=4  N=8   B.gonly        IoU* 0.139 c 0.121 seg  43.0 nodes  7.6 span  137s merges  19.1 upd   1.7 | vs A same L_min -0.017 [-0.024,-0.010] | vs A L_min 8 -0.032 [-0.040,-0.024]
+[ablate] nlq Lmin=4  N=16  B.gonly        IoU* 0.179 c 0.161 seg  43.0 nodes 13.5 span   91s merges  11.6 upd   1.9 | vs A same L_min -0.025 [-0.033,-0.017] | vs A L_min 8 -0.045 [-0.054,-0.037]
+[ablate] nlq Lmin=4  N=32  B.gonly        IoU* 0.208 c 0.191 seg  43.0 nodes 20.3 span   56s merges   4.9 upd   2.0 | vs A same L_min -0.029 [-0.038,-0.020] | vs A L_min 8 -0.049 [-0.059,-0.041]
+[ablate] nlq Lmin=4  N=8   B.scalars      IoU* 0.141 c 0.123 seg  44.5 nodes  7.5 span  137s merges  19.5 upd   1.5 | vs A same L_min -0.014 [-0.019,-0.010] | vs A L_min 8 -0.029 [-0.036,-0.024]
+[ablate] nlq Lmin=4  N=16  B.scalars      IoU* 0.185 c 0.167 seg  44.5 nodes 13.4 span   92s merges  11.9 upd   1.6 | vs A same L_min -0.019 [-0.025,-0.013] | vs A L_min 8 -0.039 [-0.046,-0.033]
+[ablate] nlq Lmin=4  N=32  B.scalars      IoU* 0.214 c 0.197 seg  44.5 nodes 20.2 span   62s merges   5.6 upd   1.8 | vs A same L_min -0.022 [-0.028,-0.017] | vs A L_min 8 -0.043 [-0.050,-0.037]
+[ablate] nlq Lmin=4  N=8   B.tol2         IoU* 0.146 c 0.128 seg  43.1 nodes  7.6 span  137s merges  19.0 upd   1.7 | vs A same L_min -0.009 [-0.016,-0.003] | vs A L_min 8 -0.024 [-0.032,-0.018]
+[ablate] nlq Lmin=4  N=16  B.tol2         IoU* 0.189 c 0.172 seg  43.1 nodes 13.6 span   88s merges  11.5 upd   1.8 | vs A same L_min -0.014 [-0.023,-0.007] | vs A L_min 8 -0.035 [-0.044,-0.027]
+[ablate] nlq Lmin=4  N=32  B.tol2         IoU* 0.219 c 0.201 seg  43.1 nodes 20.4 span   58s merges   4.9 upd   1.9 | vs A same L_min -0.018 [-0.026,-0.010] | vs A L_min 8 -0.039 [-0.048,-0.031]
+[ablate] nlq Lmin=4  N=8   B.shift        IoU* 0.108 c 0.087 seg  43.4 nodes  7.4 span  140s merges  18.2 upd   1.7 | vs A same L_min -0.048 [-0.057,-0.040] | vs A L_min 8 -0.063 [-0.073,-0.055]
+[ablate] nlq Lmin=4  N=16  B.shift        IoU* 0.143 c 0.123 seg  43.4 nodes 13.0 span   92s merges  11.1 upd   1.8 | vs A same L_min -0.060 [-0.070,-0.051] | vs A L_min 8 -0.081 [-0.092,-0.072]
+[ablate] nlq Lmin=4  N=32  B.shift        IoU* 0.166 c 0.146 seg  43.4 nodes 19.7 span   56s merges   5.2 upd   1.9 | vs A same L_min -0.071 [-0.081,-0.061] | vs A L_min 8 -0.092 [-0.102,-0.083]
+[ablate] nlq Lmin=4  N=8   B.pooled40     IoU* 0.123 c 0.103 seg  43.0 nodes  7.5 span  138s merges  18.9 upd   1.6 | vs A same L_min -0.033 [-0.041,-0.025] | vs A L_min 8 -0.048 [-0.057,-0.039]
+[ablate] nlq Lmin=4  N=16  B.pooled40     IoU* 0.160 c 0.140 seg  43.0 nodes 13.4 span   89s merges  11.5 upd   1.8 | vs A same L_min -0.044 [-0.053,-0.034] | vs A L_min 8 -0.064 [-0.075,-0.055]
+[ablate] nlq Lmin=4  N=32  B.pooled40     IoU* 0.187 c 0.168 seg  43.0 nodes 20.3 span   55s merges   5.2 upd   1.9 | vs A same L_min -0.049 [-0.059,-0.040] | vs A L_min 8 -0.070 [-0.081,-0.060]
+[ablate] nlq Lmin=4  N=8   A:B.pooled     IoU* 0.160 c 0.142 seg  42.6 nodes  7.8 span  141s merges  19.5 upd   1.2 | vs A same L_min +0.005 [-0.000,+0.010] | vs A L_min 8 -0.011 [-0.017,-0.005]
+[ablate] nlq Lmin=4  N=16  A:B.pooled     IoU* 0.211 c 0.193 seg  42.6 nodes 14.1 span   84s merges  11.7 upd   1.3 | vs A same L_min +0.007 [+0.003,+0.011] | vs A L_min 8 -0.013 [-0.019,-0.008]
+[ablate] nlq Lmin=4  N=32  A:B.pooled     IoU* 0.244 c 0.226 seg  42.6 nodes 21.1 span   51s merges   4.9 upd   1.4 | vs A same L_min +0.007 [+0.003,+0.011] | vs A L_min 8 -0.014 [-0.020,-0.008]
+[ablate] nlq Lmin=4  N=8   B.pooled:A     IoU* 0.139 c 0.119 seg  42.5 nodes  7.5 span  135s merges  18.8 upd   1.6 | vs A same L_min -0.017 [-0.024,-0.010] | vs A L_min 8 -0.032 [-0.040,-0.025]
+[ablate] nlq Lmin=4  N=16  B.pooled:A     IoU* 0.173 c 0.154 seg  42.5 nodes 13.3 span   82s merges  11.4 upd   1.8 | vs A same L_min -0.031 [-0.040,-0.022] | vs A L_min 8 -0.051 [-0.060,-0.042]
+[ablate] nlq Lmin=4  N=32  B.pooled:A     IoU* 0.197 c 0.178 seg  42.5 nodes 20.1 span   50s merges   5.1 upd   1.9 | vs A same L_min -0.040 [-0.052,-0.029] | vs A L_min 8 -0.061 [-0.073,-0.050]
+[ablate] nlq Lmin=4  N=8   A:B.stream     IoU* 0.164 c 0.145 seg  42.6 nodes  7.8 span  139s merges  19.4 upd   1.4 | vs A same L_min +0.008 [+0.005,+0.012] | vs A L_min 8 -0.007 [-0.013,-0.001]
+[ablate] nlq Lmin=4  N=16  A:B.stream     IoU* 0.210 c 0.192 seg  42.6 nodes 14.1 span   89s merges  11.5 upd   1.6 | vs A same L_min +0.006 [+0.003,+0.010] | vs A L_min 8 -0.014 [-0.020,-0.009]
+[ablate] nlq Lmin=4  N=32  A:B.stream     IoU* 0.241 c 0.223 seg  42.6 nodes 20.9 span   47s merges   4.7 upd   1.7 | vs A same L_min +0.004 [+0.001,+0.007] | vs A L_min 8 -0.017 [-0.022,-0.011]
+[ablate] nlq Lmin=4  N=8   B.stream:A     IoU* 0.147 c 0.130 seg  42.5 nodes  7.6 span  138s merges  19.0 upd   1.6 | vs A same L_min -0.008 [-0.015,-0.002] | vs A L_min 8 -0.023 [-0.031,-0.016]
+[ablate] nlq Lmin=4  N=16  B.stream:A     IoU* 0.186 c 0.169 seg  42.5 nodes 13.5 span   88s merges  11.4 upd   1.8 | vs A same L_min -0.018 [-0.025,-0.011] | vs A L_min 8 -0.038 [-0.047,-0.031]
+[ablate] nlq Lmin=4  N=32  B.stream:A     IoU* 0.217 c 0.199 seg  42.5 nodes 20.4 span   55s merges   4.7 upd   1.8 | vs A same L_min -0.020 [-0.028,-0.013] | vs A L_min 8 -0.041 [-0.049,-0.032]
+[ablate] nlq Lmin=4  N=8   C:A            IoU* 0.189 c 0.179 seg  46.5 nodes  7.8 span  133s merges  18.6 upd   1.4 | vs A same L_min +0.033 [+0.025,+0.042] | vs A L_min 8 +0.018 [+0.009,+0.027]
+[ablate] nlq Lmin=4  N=16  C:A            IoU* 0.239 c 0.229 seg  46.5 nodes 14.1 span   77s merges  11.4 upd   1.6 | vs A same L_min +0.035 [+0.024,+0.046] | vs A L_min 8 +0.015 [+0.003,+0.026]
+[ablate] nlq Lmin=4  N=32  C:A            IoU* 0.272 c 0.263 seg  46.5 nodes 21.6 span   46s merges   5.0 upd   1.7 | vs A same L_min +0.035 [+0.022,+0.049] | vs A L_min 8 +0.015 [+0.001,+0.028]
+[ablate] nlq Lmin=4  N=8   A:C            IoU* 0.194 c 0.175 seg  42.6 nodes  7.7 span  132s merges  19.6 upd   1.1 | vs A same L_min +0.038 [+0.033,+0.044] | vs A L_min 8 +0.023 [+0.016,+0.031]
+[ablate] nlq Lmin=4  N=16  A:C            IoU* 0.234 c 0.216 seg  42.6 nodes 14.1 span   75s merges  11.8 upd   1.3 | vs A same L_min +0.031 [+0.026,+0.036] | vs A L_min 8 +0.010 [+0.003,+0.017]
+[ablate] nlq Lmin=4  N=32  A:C            IoU* 0.255 c 0.237 seg  42.6 nodes 21.1 span   45s merges   4.8 upd   1.4 | vs A same L_min +0.018 [+0.012,+0.024] | vs A L_min 8 -0.003 [-0.011,+0.006]
+[ablate] nlq Lmin=2  N=8   A              IoU* 0.127 c 0.106 seg  42.1 nodes  7.6 span  135s merges  19.0 upd   1.5 | vs A same L_min       --         | vs A L_min 8 -0.044 [-0.051,-0.037]
+[ablate] nlq Lmin=2  N=16  A              IoU* 0.164 c 0.143 seg  42.1 nodes 13.6 span   86s merges  11.5 upd   1.7 | vs A same L_min       --         | vs A L_min 8 -0.061 [-0.068,-0.054]
+[ablate] nlq Lmin=2  N=32  A              IoU* 0.193 c 0.173 seg  42.1 nodes 20.3 span   52s merges   4.8 upd   1.8 | vs A same L_min       --         | vs A L_min 8 -0.065 [-0.072,-0.057]
+[ablate] nlq Lmin=2  N=8   As             IoU* 0.155 c 0.137 seg  42.0 nodes  7.8 span  139s merges  18.7 upd   1.6 | vs A same L_min +0.028 [+0.022,+0.035] | vs A L_min 8 -0.016 [-0.022,-0.009]
+[ablate] nlq Lmin=2  N=16  As             IoU* 0.206 c 0.188 seg  42.0 nodes 14.1 span   86s merges  11.0 upd   1.7 | vs A same L_min +0.043 [+0.035,+0.050] | vs A L_min 8 -0.018 [-0.024,-0.012]
+[ablate] nlq Lmin=2  N=32  As             IoU* 0.240 c 0.222 seg  42.0 nodes 21.0 span   52s merges   4.3 upd   1.9 | vs A same L_min +0.047 [+0.040,+0.055] | vs A L_min 8 -0.017 [-0.024,-0.011]
+[ablate] nlq Lmin=2  N=8   C              IoU* 0.154 c 0.136 seg  44.6 nodes  7.5 span  133s merges  19.0 upd   1.1 | vs A same L_min +0.027 [+0.019,+0.035] | vs A L_min 8 -0.017 [-0.026,-0.008]
+[ablate] nlq Lmin=2  N=16  C              IoU* 0.190 c 0.173 seg  44.6 nodes 13.4 span   77s merges  11.9 upd   1.2 | vs A same L_min +0.026 [+0.016,+0.036] | vs A L_min 8 -0.034 [-0.046,-0.023]
+[ablate] nlq Lmin=2  N=32  C              IoU* 0.212 c 0.195 seg  44.6 nodes 20.7 span   47s merges   5.3 upd   1.4 | vs A same L_min +0.020 [+0.008,+0.031] | vs A L_min 8 -0.045 [-0.058,-0.033]
+[ablate] nlq Lmin=2  N=8   Cr             IoU* 0.187 c 0.177 seg  46.0 nodes  7.7 span  122s merges  18.8 upd   0.9 | vs A same L_min +0.060 [+0.050,+0.069] | vs A L_min 8 +0.016 [+0.006,+0.026]
+[ablate] nlq Lmin=2  N=16  Cr             IoU* 0.234 c 0.225 seg  46.0 nodes 13.9 span   72s merges  11.8 upd   0.9 | vs A same L_min +0.071 [+0.061,+0.081] | vs A L_min 8 +0.010 [-0.001,+0.021]
+[ablate] nlq Lmin=2  N=32  Cr             IoU* 0.264 c 0.255 seg  46.0 nodes 21.4 span   50s merges   5.2 upd   0.9 | vs A same L_min +0.071 [+0.059,+0.083] | vs A L_min 8 +0.007 [-0.006,+0.018]
+[ablate] nlq Lmin=2  N=8   D              IoU* 0.167 c 0.151 seg  44.2 nodes  7.6 span  123s merges  16.9 upd   4.2 | vs A same L_min +0.040 [+0.032,+0.047] | vs A L_min 8 -0.004 [-0.013,+0.004]
+[ablate] nlq Lmin=2  N=16  D              IoU* 0.216 c 0.200 seg  44.2 nodes 13.3 span   67s merges   9.9 upd   4.2 | vs A same L_min +0.052 [+0.043,+0.060] | vs A L_min 8 -0.009 [-0.020,+0.000]
+[ablate] nlq Lmin=2  N=32  D              IoU* 0.241 c 0.225 seg  44.2 nodes 19.8 span   46s merges   4.2 upd   4.3 | vs A same L_min +0.048 [+0.036,+0.058] | vs A L_min 8 -0.017 [-0.029,-0.006]
+[ablate] nlq Lmin=2  N=8   c4             IoU* 0.144 c 0.124 seg  40.6 nodes  7.7 span  140s merges  18.3 upd   1.6 | vs A same L_min +0.017 [+0.011,+0.023] | vs A L_min 8 -0.027 [-0.034,-0.020]
+[ablate] nlq Lmin=2  N=16  c4             IoU* 0.186 c 0.166 seg  40.6 nodes 13.8 span   83s merges  10.6 upd   1.9 | vs A same L_min +0.022 [+0.016,+0.029] | vs A L_min 8 -0.038 [-0.045,-0.031]
+[ablate] nlq Lmin=2  N=32  c4             IoU* 0.222 c 0.203 seg  40.6 nodes 20.6 span   54s merges   4.0 upd   2.0 | vs A same L_min +0.029 [+0.021,+0.037] | vs A L_min 8 -0.035 [-0.044,-0.027]
+[ablate] nlq Lmin=2  N=8   E              IoU* 0.125 c 0.104 seg  42.1 nodes  7.5 span  135s merges  18.8 upd   1.4 | vs A same L_min -0.002 [-0.007,+0.003] | vs A L_min 8 -0.046 [-0.053,-0.039]
+[ablate] nlq Lmin=2  N=16  E              IoU* 0.160 c 0.139 seg  42.1 nodes 13.3 span   88s merges  11.4 upd   1.7 | vs A same L_min -0.004 [-0.010,+0.001] | vs A L_min 8 -0.065 [-0.072,-0.057]
+[ablate] nlq Lmin=2  N=32  E              IoU* 0.187 c 0.167 seg  42.1 nodes 19.9 span   55s merges   5.0 upd   1.8 | vs A same L_min -0.006 [-0.011,+0.000] | vs A L_min 8 -0.070 [-0.078,-0.062]
+[ablate] nlq Lmin=2  N=8   B.pooled       IoU* 0.106 c 0.085 seg  42.3 nodes  7.4 span  136s merges  18.3 upd   1.6 | vs A same L_min -0.021 [-0.028,-0.014] | vs A L_min 8 -0.065 [-0.074,-0.056]
+[ablate] nlq Lmin=2  N=16  B.pooled       IoU* 0.131 c 0.111 seg  42.3 nodes 12.9 span   88s merges  11.4 upd   1.7 | vs A same L_min -0.033 [-0.040,-0.024] | vs A L_min 8 -0.093 [-0.104,-0.083]
+[ablate] nlq Lmin=2  N=32  B.pooled       IoU* 0.155 c 0.134 seg  42.3 nodes 19.6 span   57s merges   5.1 upd   1.8 | vs A same L_min -0.038 [-0.046,-0.031] | vs A L_min 8 -0.103 [-0.114,-0.092]
+[ablate] nlq Lmin=2  N=8   B.stream       IoU* 0.114 c 0.094 seg  41.8 nodes  7.5 span  134s merges  18.7 upd   1.5 | vs A same L_min -0.012 [-0.019,-0.006] | vs A L_min 8 -0.056 [-0.065,-0.048]
+[ablate] nlq Lmin=2  N=16  B.stream       IoU* 0.144 c 0.124 seg  41.8 nodes 13.3 span   89s merges  11.4 upd   1.7 | vs A same L_min -0.020 [-0.026,-0.013] | vs A L_min 8 -0.080 [-0.089,-0.071]
+[ablate] nlq Lmin=2  N=32  B.stream       IoU* 0.173 c 0.153 seg  41.8 nodes 20.1 span   51s merges   4.8 upd   1.8 | vs A same L_min -0.020 [-0.028,-0.013] | vs A L_min 8 -0.085 [-0.095,-0.075]
+[ablate] nlq Lmin=2  N=8   B.rank         IoU* 0.110 c 0.089 seg  41.1 nodes  7.4 span  132s merges  17.8 upd   1.5 | vs A same L_min -0.017 [-0.023,-0.012] | vs A L_min 8 -0.061 [-0.070,-0.053]
+[ablate] nlq Lmin=2  N=16  B.rank         IoU* 0.139 c 0.119 seg  41.1 nodes 13.0 span   89s merges  10.8 upd   1.7 | vs A same L_min -0.024 [-0.031,-0.018] | vs A L_min 8 -0.085 [-0.094,-0.076]
+[ablate] nlq Lmin=2  N=32  B.rank         IoU* 0.165 c 0.144 seg  41.1 nodes 19.6 span   51s merges   4.6 upd   1.8 | vs A same L_min -0.028 [-0.036,-0.021] | vs A L_min 8 -0.093 [-0.103,-0.084]
+[ablate] nlq Lmin=2  N=8   B.gonly        IoU* 0.114 c 0.093 seg  42.0 nodes  7.4 span  136s merges  18.7 upd   1.6 | vs A same L_min -0.013 [-0.019,-0.007] | vs A L_min 8 -0.057 [-0.065,-0.049]
+[ablate] nlq Lmin=2  N=16  B.gonly        IoU* 0.143 c 0.123 seg  42.0 nodes 13.3 span   83s merges  11.5 upd   1.7 | vs A same L_min -0.020 [-0.028,-0.014] | vs A L_min 8 -0.081 [-0.091,-0.072]
+[ablate] nlq Lmin=2  N=32  B.gonly        IoU* 0.171 c 0.151 seg  42.0 nodes 20.1 span   49s merges   4.8 upd   1.8 | vs A same L_min -0.022 [-0.030,-0.015] | vs A L_min 8 -0.087 [-0.097,-0.077]
+[ablate] nlq Lmin=2  N=8   B.scalars      IoU* 0.119 c 0.098 seg  43.3 nodes  7.4 span  135s merges  19.2 upd   1.4 | vs A same L_min -0.008 [-0.012,-0.005] | vs A L_min 8 -0.052 [-0.060,-0.045]
+[ablate] nlq Lmin=2  N=16  B.scalars      IoU* 0.151 c 0.130 seg  43.3 nodes 13.1 span   89s merges  11.9 upd   1.6 | vs A same L_min -0.013 [-0.017,-0.008] | vs A L_min 8 -0.073 [-0.082,-0.066]
+[ablate] nlq Lmin=2  N=32  B.scalars      IoU* 0.177 c 0.156 seg  43.3 nodes 19.8 span   56s merges   5.5 upd   1.8 | vs A same L_min -0.016 [-0.021,-0.012] | vs A L_min 8 -0.081 [-0.088,-0.073]
+[ablate] nlq Lmin=2  N=8   B.tol2         IoU* 0.118 c 0.096 seg  42.2 nodes  7.4 span  134s merges  18.8 upd   1.5 | vs A same L_min -0.009 [-0.016,-0.003] | vs A L_min 8 -0.053 [-0.062,-0.046]
+[ablate] nlq Lmin=2  N=16  B.tol2         IoU* 0.147 c 0.126 seg  42.2 nodes 13.3 span   87s merges  11.6 upd   1.7 | vs A same L_min -0.016 [-0.023,-0.010] | vs A L_min 8 -0.077 [-0.087,-0.069]
+[ablate] nlq Lmin=2  N=32  B.tol2         IoU* 0.174 c 0.152 seg  42.2 nodes 20.1 span   50s merges   4.9 upd   1.8 | vs A same L_min -0.019 [-0.027,-0.012] | vs A L_min 8 -0.084 [-0.094,-0.075]
+[ablate] nlq Lmin=2  N=8   B.shift        IoU* 0.097 c 0.075 seg  43.2 nodes  7.3 span  136s merges  17.9 upd   1.6 | vs A same L_min -0.030 [-0.036,-0.024] | vs A L_min 8 -0.074 [-0.083,-0.066]
+[ablate] nlq Lmin=2  N=16  B.shift        IoU* 0.123 c 0.102 seg  43.2 nodes 12.8 span   85s merges  11.0 upd   1.8 | vs A same L_min -0.040 [-0.048,-0.033] | vs A L_min 8 -0.101 [-0.112,-0.092]
+[ablate] nlq Lmin=2  N=32  B.shift        IoU* 0.145 c 0.124 seg  43.2 nodes 19.2 span   56s merges   5.1 upd   1.9 | vs A same L_min -0.048 [-0.057,-0.040] | vs A L_min 8 -0.113 [-0.123,-0.104]
+[ablate] nlq Lmin=2  N=8   B.pooled40     IoU* 0.105 c 0.084 seg  42.6 nodes  7.4 span  135s merges  18.5 upd   1.6 | vs A same L_min -0.022 [-0.028,-0.015] | vs A L_min 8 -0.065 [-0.075,-0.056]
+[ablate] nlq Lmin=2  N=16  B.pooled40     IoU* 0.131 c 0.110 seg  42.6 nodes 13.0 span   84s merges  11.6 upd   1.8 | vs A same L_min -0.033 [-0.041,-0.026] | vs A L_min 8 -0.094 [-0.104,-0.084]
+[ablate] nlq Lmin=2  N=32  B.pooled40     IoU* 0.155 c 0.135 seg  42.6 nodes 19.8 span   53s merges   5.3 upd   1.8 | vs A same L_min -0.038 [-0.046,-0.030] | vs A L_min 8 -0.102 [-0.113,-0.092]
+[ablate] nlq Lmin=2  N=8   A:B.pooled     IoU* 0.138 c 0.118 seg  42.1 nodes  7.6 span  137s merges  19.2 upd   1.2 | vs A same L_min +0.011 [+0.007,+0.016] | vs A L_min 8 -0.032 [-0.040,-0.026]
+[ablate] nlq Lmin=2  N=16  A:B.pooled     IoU* 0.175 c 0.155 seg  42.1 nodes 13.7 span   84s merges  11.8 upd   1.3 | vs A same L_min +0.011 [+0.008,+0.015] | vs A L_min 8 -0.049 [-0.057,-0.042]
+[ablate] nlq Lmin=2  N=32  A:B.pooled     IoU* 0.203 c 0.183 seg  42.1 nodes 20.6 span   49s merges   5.0 upd   1.4 | vs A same L_min +0.010 [+0.005,+0.015] | vs A L_min 8 -0.055 [-0.063,-0.046]
+[ablate] nlq Lmin=2  N=8   B.pooled:A     IoU* 0.123 c 0.103 seg  42.3 nodes  7.4 span  136s merges  18.6 upd   1.3 | vs A same L_min -0.003 [-0.010,+0.003] | vs A L_min 8 -0.047 [-0.056,-0.039]
+[ablate] nlq Lmin=2  N=16  B.pooled:A     IoU* 0.151 c 0.131 seg  42.3 nodes 13.0 span   76s merges  11.7 upd   1.4 | vs A same L_min -0.013 [-0.021,-0.005] | vs A L_min 8 -0.073 [-0.084,-0.064]
+[ablate] nlq Lmin=2  N=32  B.pooled:A     IoU* 0.171 c 0.151 seg  42.3 nodes 19.8 span   50s merges   5.3 upd   1.4 | vs A same L_min -0.022 [-0.033,-0.012] | vs A L_min 8 -0.086 [-0.099,-0.075]
+[ablate] nlq Lmin=2  N=8   A:B.stream     IoU* 0.139 c 0.118 seg  42.1 nodes  7.6 span  134s merges  19.0 upd   1.4 | vs A same L_min +0.012 [+0.008,+0.016] | vs A L_min 8 -0.032 [-0.040,-0.025]
+[ablate] nlq Lmin=2  N=16  A:B.stream     IoU* 0.172 c 0.152 seg  42.1 nodes 13.7 span   81s merges  11.5 upd   1.6 | vs A same L_min +0.008 [+0.005,+0.011] | vs A L_min 8 -0.052 [-0.060,-0.046]
+[ablate] nlq Lmin=2  N=32  A:B.stream     IoU* 0.199 c 0.179 seg  42.1 nodes 20.4 span   50s merges   4.8 upd   1.7 | vs A same L_min +0.006 [+0.004,+0.008] | vs A L_min 8 -0.059 [-0.066,-0.052]
+[ablate] nlq Lmin=2  N=8   B.stream:A     IoU* 0.123 c 0.103 seg  41.8 nodes  7.5 span  136s merges  18.7 upd   1.4 | vs A same L_min -0.004 [-0.010,+0.003] | vs A L_min 8 -0.047 [-0.056,-0.040]
+[ablate] nlq Lmin=2  N=16  B.stream:A     IoU* 0.154 c 0.135 seg  41.8 nodes 13.3 span   83s merges  11.5 upd   1.6 | vs A same L_min -0.009 [-0.016,-0.003] | vs A L_min 8 -0.070 [-0.079,-0.062]
+[ablate] nlq Lmin=2  N=32  B.stream:A     IoU* 0.180 c 0.160 seg  41.8 nodes 20.2 span   50s merges   4.8 upd   1.7 | vs A same L_min -0.013 [-0.021,-0.006] | vs A L_min 8 -0.078 [-0.088,-0.069]
+[ablate] nlq Lmin=2  N=8   C:A            IoU* 0.156 c 0.139 seg  44.6 nodes  7.5 span  132s merges  18.9 upd   1.2 | vs A same L_min +0.029 [+0.021,+0.036] | vs A L_min 8 -0.015 [-0.024,-0.007]
+[ablate] nlq Lmin=2  N=16  C:A            IoU* 0.188 c 0.171 seg  44.6 nodes 13.4 span   77s merges  11.9 upd   1.3 | vs A same L_min +0.025 [+0.016,+0.033] | vs A L_min 8 -0.036 [-0.047,-0.026]
+[ablate] nlq Lmin=2  N=32  C:A            IoU* 0.215 c 0.198 seg  44.6 nodes 20.8 span   50s merges   5.4 upd   1.3 | vs A same L_min +0.022 [+0.010,+0.033] | vs A L_min 8 -0.043 [-0.056,-0.032]
+[ablate] nlq Lmin=2  N=8   A:C            IoU* 0.161 c 0.141 seg  42.1 nodes  7.6 span  130s merges  19.5 upd   0.9 | vs A same L_min +0.034 [+0.029,+0.040] | vs A L_min 8 -0.010 [-0.017,-0.002]
+[ablate] nlq Lmin=2  N=16  A:C            IoU* 0.194 c 0.174 seg  42.1 nodes 13.7 span   74s merges  11.8 upd   1.2 | vs A same L_min +0.030 [+0.025,+0.035] | vs A L_min 8 -0.031 [-0.039,-0.023]
+[ablate] nlq Lmin=2  N=32  A:C            IoU* 0.213 c 0.193 seg  42.1 nodes 20.6 span   47s merges   4.9 upd   1.4 | vs A same L_min +0.020 [+0.013,+0.027] | vs A L_min 8 -0.045 [-0.054,-0.036]
+[ablate] nlq signal A            within 0.543 local 0.523 pooled 0.486
+[ablate] nlq signal As           within 0.553 local 0.519 pooled 0.505
+[ablate] nlq signal B.gonly      within 0.557 local 0.552 pooled 0.533
+[ablate] nlq signal B.pooled     within 0.539 local 0.550 pooled 0.598
+[ablate] nlq signal B.pooled40   within 0.543 local 0.549 pooled 0.595
+[ablate] nlq signal B.rank       within 0.544 local 0.557 pooled 0.542
+[ablate] nlq signal B.scalars    within 0.523 local 0.533 pooled 0.476
+[ablate] nlq signal B.shift      within 0.475 local 0.521 pooled 0.484
+[ablate] nlq signal B.stream     within 0.558 local 0.552 pooled 0.532
+[ablate] nlq signal B.tol2       within 0.557 local 0.548 pooled 0.525
+[ablate] nlq signal C            within 0.957 local 0.906 pooled 0.969
+[ablate] nlq signal Cr           within 1.000 local 0.962 pooled 1.000
+[ablate] nlq signal E            within 0.550 local 0.541 pooled 0.550
+[ablate] nlq signal c4           within 0.555 local 0.517 pooled 0.499
+[ablate] qa Lmin=8  N=8   A              IoU* 0.149 c 0.134 seg  43.1 nodes  7.8 span  142s merges  18.6 upd   1.7 | vs A same L_min       --         | vs A L_min 8       --        
+[ablate] qa Lmin=8  N=16  A              IoU* 0.197 c 0.182 seg  43.1 nodes 14.1 span   93s merges  10.8 upd   1.8 | vs A same L_min       --         | vs A L_min 8       --        
+[ablate] qa Lmin=8  N=32  A              IoU* 0.224 c 0.210 seg  43.1 nodes 20.7 span   63s merges   4.6 upd   1.9 | vs A same L_min       --         | vs A L_min 8       --        
+[ablate] qa Lmin=8  N=8   As             IoU* 0.156 c 0.141 seg  43.6 nodes  7.7 span  131s merges  18.4 upd   1.8 | vs A same L_min +0.008 [+0.002,+0.013] | vs A L_min 8 +0.008 [+0.002,+0.013]
+[ablate] qa Lmin=8  N=16  As             IoU* 0.203 c 0.189 seg  43.6 nodes 13.8 span   88s merges  10.8 upd   1.9 | vs A same L_min +0.007 [+0.000,+0.014] | vs A L_min 8 +0.007 [+0.000,+0.014]
+[ablate] qa Lmin=8  N=32  As             IoU* 0.229 c 0.214 seg  43.6 nodes 20.4 span   58s merges   4.8 upd   1.9 | vs A same L_min +0.005 [-0.002,+0.011] | vs A L_min 8 +0.005 [-0.002,+0.011]
+[ablate] qa Lmin=8  N=8   C              IoU* 0.182 c 0.174 seg  45.2 nodes  7.6 span  129s merges  17.0 upd   1.3 | vs A same L_min +0.034 [+0.024,+0.044] | vs A L_min 8 +0.034 [+0.024,+0.044]
+[ablate] qa Lmin=8  N=16  C              IoU* 0.219 c 0.211 seg  45.2 nodes 13.4 span   82s merges  10.8 upd   1.5 | vs A same L_min +0.022 [+0.010,+0.034] | vs A L_min 8 +0.022 [+0.010,+0.034]
+[ablate] qa Lmin=8  N=32  C              IoU* 0.247 c 0.239 seg  45.2 nodes 20.3 span   49s merges   5.0 upd   1.6 | vs A same L_min +0.022 [+0.011,+0.034] | vs A L_min 8 +0.022 [+0.011,+0.034]
+[ablate] qa Lmin=8  N=8   Cr             IoU* 0.167 c 0.156 seg  44.0 nodes  7.6 span  122s merges  16.4 upd   1.1 | vs A same L_min +0.019 [+0.010,+0.027] | vs A L_min 8 +0.019 [+0.010,+0.027]
+[ablate] qa Lmin=8  N=16  Cr             IoU* 0.208 c 0.197 seg  44.0 nodes 13.2 span   73s merges  10.6 upd   1.1 | vs A same L_min +0.012 [+0.000,+0.022] | vs A L_min 8 +0.012 [+0.000,+0.022]
+[ablate] qa Lmin=8  N=32  Cr             IoU* 0.232 c 0.221 seg  44.0 nodes 20.0 span   55s merges   4.9 upd   1.1 | vs A same L_min +0.008 [-0.004,+0.019] | vs A L_min 8 +0.008 [-0.004,+0.019]
+[ablate] qa Lmin=8  N=8   D              IoU* 0.143 c 0.130 seg  43.8 nodes  7.6 span  120s merges  16.2 upd   4.2 | vs A same L_min -0.006 [-0.013,+0.002] | vs A L_min 8 -0.006 [-0.013,+0.002]
+[ablate] qa Lmin=8  N=16  D              IoU* 0.186 c 0.173 seg  43.8 nodes 13.2 span   65s merges   9.3 upd   4.2 | vs A same L_min -0.011 [-0.021,+0.000] | vs A L_min 8 -0.011 [-0.021,+0.000]
+[ablate] qa Lmin=8  N=32  D              IoU* 0.207 c 0.194 seg  43.8 nodes 19.4 span   45s merges   4.0 upd   4.2 | vs A same L_min -0.017 [-0.028,-0.006] | vs A L_min 8 -0.017 [-0.028,-0.006]
+[ablate] qa Lmin=8  N=8   c4             IoU* 0.150 c 0.135 seg  41.1 nodes  7.8 span  137s merges  17.4 upd   1.8 | vs A same L_min +0.002 [-0.004,+0.007] | vs A L_min 8 +0.002 [-0.004,+0.007]
+[ablate] qa Lmin=8  N=16  c4             IoU* 0.199 c 0.183 seg  41.1 nodes 13.8 span   90s merges   9.7 upd   1.9 | vs A same L_min +0.002 [-0.004,+0.008] | vs A L_min 8 +0.002 [-0.004,+0.008]
+[ablate] qa Lmin=8  N=32  c4             IoU* 0.224 c 0.208 seg  41.1 nodes 20.1 span   64s merges   3.9 upd   1.9 | vs A same L_min -0.001 [-0.007,+0.005] | vs A L_min 8 -0.001 [-0.007,+0.005]
+[ablate] qa Lmin=8  N=8   E              IoU* 0.150 c 0.135 seg  42.5 nodes  7.8 span  143s merges  18.5 upd   1.6 | vs A same L_min +0.001 [-0.004,+0.006] | vs A L_min 8 +0.001 [-0.004,+0.006]
+[ablate] qa Lmin=8  N=16  E              IoU* 0.195 c 0.181 seg  42.5 nodes 14.2 span   91s merges  10.7 upd   1.7 | vs A same L_min -0.001 [-0.006,+0.004] | vs A L_min 8 -0.001 [-0.006,+0.004]
+[ablate] qa Lmin=8  N=32  E              IoU* 0.225 c 0.211 seg  42.5 nodes 21.0 span   56s merges   4.3 upd   1.8 | vs A same L_min +0.000 [-0.005,+0.006] | vs A L_min 8 +0.000 [-0.005,+0.006]
+[ablate] qa Lmin=8  N=8   B.pooled       IoU* 0.122 c 0.107 seg  40.4 nodes  7.9 span  145s merges  17.6 upd   1.8 | vs A same L_min -0.027 [-0.035,-0.020] | vs A L_min 8 -0.027 [-0.035,-0.020]
+[ablate] qa Lmin=8  N=16  B.pooled       IoU* 0.164 c 0.149 seg  40.4 nodes 14.2 span   94s merges   9.9 upd   2.0 | vs A same L_min -0.033 [-0.041,-0.024] | vs A L_min 8 -0.033 [-0.041,-0.024]
+[ablate] qa Lmin=8  N=32  B.pooled       IoU* 0.192 c 0.177 seg  40.4 nodes 20.9 span   56s merges   3.7 upd   2.0 | vs A same L_min -0.032 [-0.041,-0.024] | vs A L_min 8 -0.032 [-0.041,-0.024]
+[ablate] qa Lmin=8  N=8   B.stream       IoU* 0.140 c 0.125 seg  40.4 nodes  7.9 span  142s merges  17.5 upd   1.7 | vs A same L_min -0.009 [-0.016,-0.002] | vs A L_min 8 -0.009 [-0.016,-0.002]
+[ablate] qa Lmin=8  N=16  B.stream       IoU* 0.186 c 0.171 seg  40.4 nodes 14.2 span   87s merges   9.8 upd   1.8 | vs A same L_min -0.011 [-0.018,-0.004] | vs A L_min 8 -0.011 [-0.018,-0.004]
+[ablate] qa Lmin=8  N=32  B.stream       IoU* 0.212 c 0.197 seg  40.4 nodes 20.6 span   53s merges   3.6 upd   2.0 | vs A same L_min -0.012 [-0.019,-0.006] | vs A L_min 8 -0.012 [-0.019,-0.006]
+[ablate] qa Lmin=8  N=8   B.rank         IoU* 0.141 c 0.127 seg  40.4 nodes  7.9 span  148s merges  17.6 upd   1.7 | vs A same L_min -0.008 [-0.014,-0.002] | vs A L_min 8 -0.008 [-0.014,-0.002]
+[ablate] qa Lmin=8  N=16  B.rank         IoU* 0.182 c 0.168 seg  40.4 nodes 14.4 span   96s merges   9.9 upd   1.8 | vs A same L_min -0.015 [-0.021,-0.008] | vs A L_min 8 -0.015 [-0.021,-0.008]
+[ablate] qa Lmin=8  N=32  B.rank         IoU* 0.207 c 0.193 seg  40.4 nodes 21.0 span   55s merges   3.5 upd   1.9 | vs A same L_min -0.017 [-0.024,-0.010] | vs A L_min 8 -0.017 [-0.024,-0.010]
+[ablate] qa Lmin=8  N=8   B.gonly        IoU* 0.139 c 0.124 seg  40.1 nodes  7.9 span  139s merges  17.4 upd   1.6 | vs A same L_min -0.010 [-0.017,-0.003] | vs A L_min 8 -0.010 [-0.017,-0.003]
+[ablate] qa Lmin=8  N=16  B.gonly        IoU* 0.184 c 0.169 seg  40.1 nodes 14.2 span   88s merges   9.7 upd   1.8 | vs A same L_min -0.012 [-0.020,-0.005] | vs A L_min 8 -0.012 [-0.020,-0.005]
+[ablate] qa Lmin=8  N=32  B.gonly        IoU* 0.210 c 0.195 seg  40.1 nodes 20.5 span   50s merges   3.7 upd   1.9 | vs A same L_min -0.015 [-0.022,-0.008] | vs A L_min 8 -0.015 [-0.022,-0.008]
+[ablate] qa Lmin=8  N=8   B.scalars      IoU* 0.143 c 0.127 seg  40.5 nodes  7.9 span  150s merges  18.1 upd   1.6 | vs A same L_min -0.006 [-0.011,-0.001] | vs A L_min 8 -0.006 [-0.011,-0.001]
+[ablate] qa Lmin=8  N=16  B.scalars      IoU* 0.188 c 0.173 seg  40.5 nodes 14.6 span  100s merges  10.2 upd   1.8 | vs A same L_min -0.008 [-0.013,-0.003] | vs A L_min 8 -0.008 [-0.013,-0.003]
+[ablate] qa Lmin=8  N=32  B.scalars      IoU* 0.220 c 0.205 seg  40.5 nodes 21.4 span   60s merges   3.7 upd   1.9 | vs A same L_min -0.005 [-0.009,+0.001] | vs A L_min 8 -0.005 [-0.009,+0.001]
+[ablate] qa Lmin=8  N=8   B.tol2         IoU* 0.146 c 0.130 seg  42.2 nodes  7.8 span  140s merges  18.5 upd   1.6 | vs A same L_min -0.003 [-0.009,+0.003] | vs A L_min 8 -0.003 [-0.009,+0.003]
+[ablate] qa Lmin=8  N=16  B.tol2         IoU* 0.194 c 0.179 seg  42.2 nodes 14.2 span   94s merges  10.7 upd   1.8 | vs A same L_min -0.003 [-0.010,+0.003] | vs A L_min 8 -0.003 [-0.010,+0.003]
+[ablate] qa Lmin=8  N=32  B.tol2         IoU* 0.223 c 0.208 seg  42.2 nodes 20.9 span   59s merges   4.2 upd   1.9 | vs A same L_min -0.001 [-0.008,+0.005] | vs A L_min 8 -0.001 [-0.008,+0.005]
+[ablate] qa Lmin=8  N=8   B.shift        IoU* 0.115 c 0.098 seg  38.9 nodes  7.9 span  159s merges  17.0 upd   1.9 | vs A same L_min -0.033 [-0.041,-0.026] | vs A L_min 8 -0.033 [-0.041,-0.026]
+[ablate] qa Lmin=8  N=16  B.shift        IoU* 0.155 c 0.138 seg  38.9 nodes 14.6 span   95s merges   9.4 upd   1.9 | vs A same L_min -0.041 [-0.050,-0.033] | vs A L_min 8 -0.041 [-0.050,-0.033]
+[ablate] qa Lmin=8  N=32  B.shift        IoU* 0.184 c 0.168 seg  38.9 nodes 21.3 span   49s merges   3.0 upd   2.0 | vs A same L_min -0.040 [-0.049,-0.031] | vs A L_min 8 -0.040 [-0.049,-0.031]
+[ablate] qa Lmin=8  N=8   B.pooled40     IoU* 0.125 c 0.111 seg  42.4 nodes  7.8 span  141s merges  18.3 upd   1.8 | vs A same L_min -0.024 [-0.031,-0.017] | vs A L_min 8 -0.024 [-0.031,-0.017]
+[ablate] qa Lmin=8  N=16  B.pooled40     IoU* 0.170 c 0.156 seg  42.4 nodes 14.2 span   95s merges  10.6 upd   2.0 | vs A same L_min -0.027 [-0.035,-0.018] | vs A L_min 8 -0.027 [-0.035,-0.018]
+[ablate] qa Lmin=8  N=32  B.pooled40     IoU* 0.196 c 0.182 seg  42.4 nodes 21.1 span   54s merges   4.2 upd   2.1 | vs A same L_min -0.028 [-0.036,-0.019] | vs A L_min 8 -0.028 [-0.036,-0.019]
+[ablate] qa Lmin=8  N=8   A:B.pooled     IoU* 0.148 c 0.133 seg  43.1 nodes  7.8 span  140s merges  19.0 upd   1.3 | vs A same L_min -0.001 [-0.007,+0.005] | vs A L_min 8 -0.001 [-0.007,+0.005]
+[ablate] qa Lmin=8  N=16  A:B.pooled     IoU* 0.200 c 0.186 seg  43.1 nodes 14.2 span   89s merges  11.1 upd   1.4 | vs A same L_min +0.004 [-0.000,+0.008] | vs A L_min 8 +0.004 [-0.000,+0.008]
+[ablate] qa Lmin=8  N=32  A:B.pooled     IoU* 0.231 c 0.217 seg  43.1 nodes 21.0 span   52s merges   4.7 upd   1.5 | vs A same L_min +0.007 [+0.004,+0.011] | vs A L_min 8 +0.007 [+0.004,+0.011]
+[ablate] qa Lmin=8  N=8   B.pooled:A     IoU* 0.138 c 0.123 seg  40.4 nodes  7.9 span  138s merges  17.6 upd   1.8 | vs A same L_min -0.011 [-0.018,-0.003] | vs A L_min 8 -0.011 [-0.018,-0.003]
+[ablate] qa Lmin=8  N=16  B.pooled:A     IoU* 0.177 c 0.163 seg  40.4 nodes 14.2 span   82s merges   9.7 upd   2.1 | vs A same L_min -0.019 [-0.027,-0.011] | vs A L_min 8 -0.019 [-0.027,-0.011]
+[ablate] qa Lmin=8  N=32  B.pooled:A     IoU* 0.201 c 0.186 seg  40.4 nodes 20.8 span   47s merges   3.6 upd   2.3 | vs A same L_min -0.024 [-0.033,-0.015] | vs A L_min 8 -0.024 [-0.033,-0.015]
+[ablate] qa Lmin=8  N=8   A:B.stream     IoU* 0.154 c 0.139 seg  43.1 nodes  7.8 span  138s merges  18.7 upd   1.5 | vs A same L_min +0.005 [+0.001,+0.010] | vs A L_min 8 +0.005 [+0.001,+0.010]
+[ablate] qa Lmin=8  N=16  A:B.stream     IoU* 0.201 c 0.186 seg  43.1 nodes 14.1 span   82s merges  10.9 upd   1.7 | vs A same L_min +0.004 [+0.001,+0.009] | vs A L_min 8 +0.004 [+0.001,+0.009]
+[ablate] qa Lmin=8  N=32  A:B.stream     IoU* 0.228 c 0.214 seg  43.1 nodes 20.8 span   50s merges   4.6 upd   1.8 | vs A same L_min +0.004 [+0.001,+0.007] | vs A L_min 8 +0.004 [+0.001,+0.007]
+[ablate] qa Lmin=8  N=8   B.stream:A     IoU* 0.146 c 0.131 seg  40.4 nodes  7.9 span  138s merges  17.6 upd   1.6 | vs A same L_min -0.003 [-0.009,+0.003] | vs A L_min 8 -0.003 [-0.009,+0.003]
+[ablate] qa Lmin=8  N=16  B.stream:A     IoU* 0.191 c 0.177 seg  40.4 nodes 14.2 span   90s merges   9.8 upd   1.9 | vs A same L_min -0.005 [-0.011,+0.001] | vs A L_min 8 -0.005 [-0.011,+0.001]
+[ablate] qa Lmin=8  N=32  B.stream:A     IoU* 0.216 c 0.201 seg  40.4 nodes 20.7 span   50s merges   3.6 upd   2.0 | vs A same L_min -0.008 [-0.016,-0.002] | vs A L_min 8 -0.008 [-0.016,-0.002]
+[ablate] qa Lmin=8  N=8   C:A            IoU* 0.175 c 0.167 seg  45.2 nodes  7.6 span  136s merges  16.6 upd   1.7 | vs A same L_min +0.026 [+0.019,+0.034] | vs A L_min 8 +0.026 [+0.019,+0.034]
+[ablate] qa Lmin=8  N=16  C:A            IoU* 0.221 c 0.213 seg  45.2 nodes 13.4 span   82s merges  10.3 upd   2.0 | vs A same L_min +0.025 [+0.016,+0.033] | vs A L_min 8 +0.025 [+0.016,+0.033]
+[ablate] qa Lmin=8  N=32  C:A            IoU* 0.249 c 0.242 seg  45.2 nodes 20.1 span   54s merges   4.6 upd   2.1 | vs A same L_min +0.025 [+0.016,+0.034] | vs A L_min 8 +0.025 [+0.016,+0.034]
+[ablate] qa Lmin=8  N=8   A:C            IoU* 0.182 c 0.167 seg  43.1 nodes  7.8 span  132s merges  18.8 upd   1.4 | vs A same L_min +0.033 [+0.028,+0.040] | vs A L_min 8 +0.033 [+0.028,+0.040]
+[ablate] qa Lmin=8  N=16  A:C            IoU* 0.221 c 0.206 seg  43.1 nodes 14.1 span   74s merges  11.1 upd   1.6 | vs A same L_min +0.024 [+0.019,+0.030] | vs A L_min 8 +0.024 [+0.019,+0.030]
+[ablate] qa Lmin=8  N=32  A:C            IoU* 0.241 c 0.226 seg  43.1 nodes 21.0 span   41s merges   4.6 upd   1.6 | vs A same L_min +0.017 [+0.010,+0.023] | vs A L_min 8 +0.017 [+0.010,+0.023]
+[ablate] qa Lmin=4  N=8   A              IoU* 0.135 c 0.120 seg  42.2 nodes  7.7 span  141s merges  18.6 upd   1.5 | vs A same L_min       --         | vs A L_min 8 -0.013 [-0.018,-0.008]
+[ablate] qa Lmin=4  N=16  A              IoU* 0.180 c 0.165 seg  42.2 nodes 14.0 span   86s merges  10.8 upd   1.6 | vs A same L_min       --         | vs A L_min 8 -0.017 [-0.022,-0.012]
+[ablate] qa Lmin=4  N=32  A              IoU* 0.207 c 0.193 seg  42.2 nodes 20.5 span   55s merges   4.3 upd   1.8 | vs A same L_min       --         | vs A L_min 8 -0.017 [-0.022,-0.011]
+[ablate] qa Lmin=4  N=8   As             IoU* 0.149 c 0.134 seg  42.8 nodes  7.7 span  131s merges  18.0 upd   1.8 | vs A same L_min +0.013 [+0.006,+0.020] | vs A L_min 8 -0.000 [-0.006,+0.006]
+[ablate] qa Lmin=4  N=16  As             IoU* 0.195 c 0.180 seg  42.8 nodes 13.7 span   84s merges  10.5 upd   1.9 | vs A same L_min +0.015 [+0.008,+0.023] | vs A L_min 8 -0.002 [-0.008,+0.005]
+[ablate] qa Lmin=4  N=32  As             IoU* 0.221 c 0.206 seg  42.8 nodes 20.2 span   57s merges   4.7 upd   1.9 | vs A same L_min +0.014 [+0.006,+0.021] | vs A L_min 8 -0.003 [-0.010,+0.004]
+[ablate] qa Lmin=4  N=8   C              IoU* 0.177 c 0.169 seg  46.6 nodes  7.8 span  128s merges  18.3 upd   1.2 | vs A same L_min +0.042 [+0.030,+0.053] | vs A L_min 8 +0.028 [+0.017,+0.040]
+[ablate] qa Lmin=4  N=16  C              IoU* 0.222 c 0.214 seg  46.6 nodes 14.1 span   78s merges  11.3 upd   1.3 | vs A same L_min +0.043 [+0.030,+0.056] | vs A L_min 8 +0.026 [+0.013,+0.039]
+[ablate] qa Lmin=4  N=32  C              IoU* 0.243 c 0.236 seg  46.6 nodes 21.2 span   51s merges   5.0 upd   1.4 | vs A same L_min +0.036 [+0.023,+0.049] | vs A L_min 8 +0.019 [+0.006,+0.032]
+[ablate] qa Lmin=4  N=8   Cr             IoU* 0.167 c 0.158 seg  41.9 nodes  7.6 span  121s merges  15.7 upd   1.0 | vs A same L_min +0.031 [+0.023,+0.039] | vs A L_min 8 +0.018 [+0.010,+0.026]
+[ablate] qa Lmin=4  N=16  Cr             IoU* 0.205 c 0.196 seg  41.9 nodes 13.2 span   74s merges   9.6 upd   1.1 | vs A same L_min +0.025 [+0.014,+0.036] | vs A L_min 8 +0.008 [-0.003,+0.018]
+[ablate] qa Lmin=4  N=32  Cr             IoU* 0.226 c 0.217 seg  41.9 nodes 19.7 span   56s merges   4.2 upd   1.1 | vs A same L_min +0.019 [+0.007,+0.030] | vs A L_min 8 +0.002 [-0.009,+0.012]
+[ablate] qa Lmin=4  N=8   D              IoU* 0.143 c 0.130 seg  43.8 nodes  7.6 span  120s merges  16.2 upd   4.2 | vs A same L_min +0.008 [-0.000,+0.016] | vs A L_min 8 -0.006 [-0.013,+0.002]
+[ablate] qa Lmin=4  N=16  D              IoU* 0.186 c 0.173 seg  43.8 nodes 13.2 span   65s merges   9.3 upd   4.2 | vs A same L_min +0.006 [-0.004,+0.016] | vs A L_min 8 -0.011 [-0.021,+0.000]
+[ablate] qa Lmin=4  N=32  D              IoU* 0.207 c 0.194 seg  43.8 nodes 19.4 span   45s merges   4.0 upd   4.2 | vs A same L_min -0.000 [-0.012,+0.012] | vs A L_min 8 -0.017 [-0.028,-0.006]
+[ablate] qa Lmin=4  N=8   c4             IoU* 0.140 c 0.124 seg  40.9 nodes  7.8 span  139s merges  17.9 upd   1.6 | vs A same L_min +0.004 [-0.002,+0.011] | vs A L_min 8 -0.009 [-0.015,-0.002]
+[ablate] qa Lmin=4  N=16  c4             IoU* 0.186 c 0.171 seg  40.9 nodes 13.9 span   90s merges  10.2 upd   1.8 | vs A same L_min +0.007 [+0.000,+0.014] | vs A L_min 8 -0.010 [-0.017,-0.003]
+[ablate] qa Lmin=4  N=32  c4             IoU* 0.217 c 0.202 seg  40.9 nodes 20.6 span   55s merges   4.1 upd   1.8 | vs A same L_min +0.010 [+0.002,+0.017] | vs A L_min 8 -0.007 [-0.014,-0.001]
+[ablate] qa Lmin=4  N=8   E              IoU* 0.134 c 0.119 seg  42.5 nodes  7.7 span  135s merges  18.5 upd   1.5 | vs A same L_min -0.001 [-0.007,+0.005] | vs A L_min 8 -0.014 [-0.021,-0.008]
+[ablate] qa Lmin=4  N=16  E              IoU* 0.175 c 0.160 seg  42.5 nodes 13.6 span   88s merges  10.8 upd   1.7 | vs A same L_min -0.004 [-0.011,+0.002] | vs A L_min 8 -0.021 [-0.028,-0.015]
+[ablate] qa Lmin=4  N=32  E              IoU* 0.204 c 0.189 seg  42.5 nodes 20.3 span   60s merges   4.7 upd   1.8 | vs A same L_min -0.003 [-0.010,+0.004] | vs A L_min 8 -0.020 [-0.028,-0.012]
+[ablate] qa Lmin=4  N=8   B.pooled       IoU* 0.107 c 0.091 seg  42.1 nodes  7.5 span  133s merges  17.8 upd   1.7 | vs A same L_min -0.029 [-0.037,-0.022] | vs A L_min 8 -0.042 [-0.050,-0.034]
+[ablate] qa Lmin=4  N=16  B.pooled       IoU* 0.136 c 0.120 seg  42.1 nodes 13.1 span   88s merges  10.6 upd   1.8 | vs A same L_min -0.043 [-0.053,-0.034] | vs A L_min 8 -0.060 [-0.070,-0.051]
+[ablate] qa Lmin=4  N=32  B.pooled       IoU* 0.160 c 0.144 seg  42.1 nodes 19.7 span   55s merges   4.8 upd   1.9 | vs A same L_min -0.048 [-0.057,-0.039] | vs A L_min 8 -0.065 [-0.074,-0.055]
+[ablate] qa Lmin=4  N=8   B.stream       IoU* 0.125 c 0.110 seg  42.2 nodes  7.6 span  134s merges  18.0 upd   1.6 | vs A same L_min -0.011 [-0.018,-0.005] | vs A L_min 8 -0.024 [-0.032,-0.016]
+[ablate] qa Lmin=4  N=16  B.stream       IoU* 0.162 c 0.147 seg  42.2 nodes 13.4 span   89s merges  10.6 upd   1.8 | vs A same L_min -0.018 [-0.026,-0.010] | vs A L_min 8 -0.035 [-0.043,-0.026]
+[ablate] qa Lmin=4  N=32  B.stream       IoU* 0.187 c 0.172 seg  42.2 nodes 19.9 span   57s merges   4.4 upd   1.9 | vs A same L_min -0.021 [-0.029,-0.012] | vs A L_min 8 -0.038 [-0.046,-0.029]
+[ablate] qa Lmin=4  N=8   B.rank         IoU* 0.119 c 0.103 seg  42.6 nodes  7.5 span  136s merges  18.0 upd   1.7 | vs A same L_min -0.017 [-0.023,-0.011] | vs A L_min 8 -0.030 [-0.037,-0.023]
+[ablate] qa Lmin=4  N=16  B.rank         IoU* 0.157 c 0.142 seg  42.6 nodes 13.4 span   88s merges  10.6 upd   1.8 | vs A same L_min -0.023 [-0.030,-0.015] | vs A L_min 8 -0.040 [-0.048,-0.032]
+[ablate] qa Lmin=4  N=32  B.rank         IoU* 0.178 c 0.163 seg  42.6 nodes 19.9 span   62s merges   4.7 upd   1.9 | vs A same L_min -0.029 [-0.037,-0.022] | vs A L_min 8 -0.046 [-0.053,-0.038]
+[ablate] qa Lmin=4  N=8   B.gonly        IoU* 0.123 c 0.108 seg  42.7 nodes  7.6 span  133s merges  18.2 upd   1.7 | vs A same L_min -0.012 [-0.020,-0.005] | vs A L_min 8 -0.025 [-0.033,-0.018]
+[ablate] qa Lmin=4  N=16  B.gonly        IoU* 0.160 c 0.144 seg  42.7 nodes 13.4 span   89s merges  10.8 upd   1.8 | vs A same L_min -0.020 [-0.028,-0.012] | vs A L_min 8 -0.037 [-0.046,-0.028]
+[ablate] qa Lmin=4  N=32  B.gonly        IoU* 0.185 c 0.170 seg  42.7 nodes 20.0 span   55s merges   4.7 upd   1.9 | vs A same L_min -0.022 [-0.031,-0.013] | vs A L_min 8 -0.039 [-0.048,-0.030]
+[ablate] qa Lmin=4  N=8   B.scalars      IoU* 0.124 c 0.108 seg  44.1 nodes  7.5 span  134s merges  18.6 upd   1.5 | vs A same L_min -0.012 [-0.016,-0.008] | vs A L_min 8 -0.025 [-0.031,-0.019]
+[ablate] qa Lmin=4  N=16  B.scalars      IoU* 0.162 c 0.146 seg  44.1 nodes 13.3 span   91s merges  11.1 upd   1.7 | vs A same L_min -0.017 [-0.023,-0.011] | vs A L_min 8 -0.034 [-0.041,-0.027]
+[ablate] qa Lmin=4  N=32  B.scalars      IoU* 0.186 c 0.170 seg  44.1 nodes 19.8 span   63s merges   5.1 upd   1.8 | vs A same L_min -0.021 [-0.027,-0.015] | vs A L_min 8 -0.038 [-0.044,-0.031]
+[ablate] qa Lmin=4  N=8   B.tol2         IoU* 0.130 c 0.114 seg  42.6 nodes  7.6 span  134s merges  18.1 upd   1.7 | vs A same L_min -0.005 [-0.012,+0.001] | vs A L_min 8 -0.018 [-0.026,-0.011]
+[ablate] qa Lmin=4  N=16  B.tol2         IoU* 0.170 c 0.154 seg  42.6 nodes 13.5 span   87s merges  10.6 upd   1.8 | vs A same L_min -0.010 [-0.018,-0.002] | vs A L_min 8 -0.027 [-0.036,-0.019]
+[ablate] qa Lmin=4  N=32  B.tol2         IoU* 0.195 c 0.179 seg  42.6 nodes 20.0 span   59s merges   4.6 upd   1.9 | vs A same L_min -0.013 [-0.021,-0.003] | vs A L_min 8 -0.030 [-0.038,-0.021]
+[ablate] qa Lmin=4  N=8   B.shift        IoU* 0.095 c 0.076 seg  43.4 nodes  7.4 span  138s merges  17.5 upd   1.7 | vs A same L_min -0.041 [-0.049,-0.032] | vs A L_min 8 -0.054 [-0.062,-0.045]
+[ablate] qa Lmin=4  N=16  B.shift        IoU* 0.126 c 0.108 seg  43.4 nodes 13.0 span   92s merges  10.5 upd   1.8 | vs A same L_min -0.053 [-0.063,-0.044] | vs A L_min 8 -0.070 [-0.080,-0.061]
+[ablate] qa Lmin=4  N=32  B.shift        IoU* 0.144 c 0.126 seg  43.4 nodes 19.4 span   57s merges   4.9 upd   1.8 | vs A same L_min -0.063 [-0.073,-0.053] | vs A L_min 8 -0.080 [-0.090,-0.071]
+[ablate] qa Lmin=4  N=8   B.pooled40     IoU* 0.107 c 0.091 seg  42.6 nodes  7.5 span  136s merges  18.0 upd   1.6 | vs A same L_min -0.028 [-0.036,-0.020] | vs A L_min 8 -0.041 [-0.050,-0.033]
+[ablate] qa Lmin=4  N=16  B.pooled40     IoU* 0.142 c 0.126 seg  42.6 nodes 13.2 span   89s merges  10.7 upd   1.8 | vs A same L_min -0.038 [-0.047,-0.028] | vs A L_min 8 -0.055 [-0.064,-0.045]
+[ablate] qa Lmin=4  N=32  B.pooled40     IoU* 0.165 c 0.149 seg  42.6 nodes 19.9 span   55s merges   4.8 upd   1.8 | vs A same L_min -0.043 [-0.052,-0.033] | vs A L_min 8 -0.060 [-0.070,-0.050]
+[ablate] qa Lmin=4  N=8   A:B.pooled     IoU* 0.139 c 0.124 seg  42.2 nodes  7.8 span  138s merges  18.8 upd   1.2 | vs A same L_min +0.003 [-0.002,+0.008] | vs A L_min 8 -0.010 [-0.016,-0.004]
+[ablate] qa Lmin=4  N=16  A:B.pooled     IoU* 0.188 c 0.173 seg  42.2 nodes 14.1 span   82s merges  11.0 upd   1.3 | vs A same L_min +0.008 [+0.004,+0.012] | vs A L_min 8 -0.009 [-0.015,-0.003]
+[ablate] qa Lmin=4  N=32  A:B.pooled     IoU* 0.215 c 0.201 seg  42.2 nodes 20.8 span   51s merges   4.5 upd   1.4 | vs A same L_min +0.008 [+0.004,+0.012] | vs A L_min 8 -0.009 [-0.015,-0.003]
+[ablate] qa Lmin=4  N=8   B.pooled:A     IoU* 0.120 c 0.104 seg  42.1 nodes  7.5 span  132s merges  17.9 upd   1.6 | vs A same L_min -0.015 [-0.023,-0.008] | vs A L_min 8 -0.028 [-0.037,-0.021]
+[ablate] qa Lmin=4  N=16  B.pooled:A     IoU* 0.152 c 0.136 seg  42.1 nodes 13.1 span   80s merges  10.6 upd   1.8 | vs A same L_min -0.028 [-0.037,-0.019] | vs A L_min 8 -0.045 [-0.054,-0.036]
+[ablate] qa Lmin=4  N=32  B.pooled:A     IoU* 0.172 c 0.157 seg  42.1 nodes 19.7 span   49s merges   4.8 upd   1.8 | vs A same L_min -0.035 [-0.046,-0.025] | vs A L_min 8 -0.052 [-0.063,-0.042]
+[ablate] qa Lmin=4  N=8   A:B.stream     IoU* 0.142 c 0.127 seg  42.2 nodes  7.8 span  136s merges  18.7 upd   1.3 | vs A same L_min +0.007 [+0.003,+0.010] | vs A L_min 8 -0.007 [-0.012,-0.001]
+[ablate] qa Lmin=4  N=16  A:B.stream     IoU* 0.186 c 0.171 seg  42.2 nodes 14.0 span   88s merges  10.9 upd   1.6 | vs A same L_min +0.006 [+0.003,+0.009] | vs A L_min 8 -0.011 [-0.017,-0.005]
+[ablate] qa Lmin=4  N=32  A:B.stream     IoU* 0.213 c 0.198 seg  42.2 nodes 20.6 span   46s merges   4.4 upd   1.7 | vs A same L_min +0.005 [+0.002,+0.009] | vs A L_min 8 -0.012 [-0.017,-0.006]
+[ablate] qa Lmin=4  N=8   B.stream:A     IoU* 0.130 c 0.115 seg  42.2 nodes  7.6 span  134s merges  18.1 upd   1.6 | vs A same L_min -0.006 [-0.012,+0.000] | vs A L_min 8 -0.019 [-0.026,-0.011]
+[ablate] qa Lmin=4  N=16  B.stream:A     IoU* 0.165 c 0.150 seg  42.2 nodes 13.4 span   85s merges  10.6 upd   1.7 | vs A same L_min -0.015 [-0.022,-0.007] | vs A L_min 8 -0.032 [-0.039,-0.023]
+[ablate] qa Lmin=4  N=32  B.stream:A     IoU* 0.191 c 0.177 seg  42.2 nodes 20.0 span   56s merges   4.4 upd   1.8 | vs A same L_min -0.016 [-0.024,-0.008] | vs A L_min 8 -0.033 [-0.041,-0.024]
+[ablate] qa Lmin=4  N=8   C:A            IoU* 0.174 c 0.167 seg  46.6 nodes  7.8 span  131s merges  18.1 upd   1.4 | vs A same L_min +0.039 [+0.030,+0.048] | vs A L_min 8 +0.026 [+0.017,+0.035]
+[ablate] qa Lmin=4  N=16  C:A            IoU* 0.220 c 0.212 seg  46.6 nodes 14.0 span   79s merges  11.0 upd   1.6 | vs A same L_min +0.041 [+0.030,+0.053] | vs A L_min 8 +0.024 [+0.013,+0.035]
+[ablate] qa Lmin=4  N=32  C:A            IoU* 0.247 c 0.240 seg  46.6 nodes 21.1 span   46s merges   5.0 upd   1.6 | vs A same L_min +0.040 [+0.028,+0.053] | vs A L_min 8 +0.023 [+0.011,+0.036]
+[ablate] qa Lmin=4  N=8   A:C            IoU* 0.169 c 0.153 seg  42.2 nodes  7.8 span  127s merges  18.8 upd   1.2 | vs A same L_min +0.033 [+0.028,+0.038] | vs A L_min 8 +0.020 [+0.013,+0.027]
+[ablate] qa Lmin=4  N=16  A:C            IoU* 0.205 c 0.190 seg  42.2 nodes 14.1 span   72s merges  11.0 upd   1.4 | vs A same L_min +0.026 [+0.021,+0.031] | vs A L_min 8 +0.009 [+0.002,+0.016]
+[ablate] qa Lmin=4  N=32  A:C            IoU* 0.224 c 0.210 seg  42.2 nodes 20.8 span   46s merges   4.4 upd   1.4 | vs A same L_min +0.017 [+0.011,+0.023] | vs A L_min 8 +0.000 [-0.009,+0.009]
+[ablate] qa Lmin=2  N=8   A              IoU* 0.111 c 0.094 seg  41.3 nodes  7.6 span  133s merges  18.5 upd   1.4 | vs A same L_min       --         | vs A L_min 8 -0.038 [-0.045,-0.031]
+[ablate] qa Lmin=2  N=16  A              IoU* 0.145 c 0.128 seg  41.3 nodes 13.6 span   85s merges  11.0 upd   1.6 | vs A same L_min       --         | vs A L_min 8 -0.052 [-0.059,-0.044]
+[ablate] qa Lmin=2  N=32  A              IoU* 0.170 c 0.153 seg  41.3 nodes 20.0 span   52s merges   4.4 upd   1.8 | vs A same L_min       --         | vs A L_min 8 -0.054 [-0.062,-0.046]
+[ablate] qa Lmin=2  N=8   As             IoU* 0.139 c 0.123 seg  41.7 nodes  7.8 span  136s merges  18.2 upd   1.6 | vs A same L_min +0.028 [+0.021,+0.034] | vs A L_min 8 -0.010 [-0.017,-0.003]
+[ablate] qa Lmin=2  N=16  As             IoU* 0.184 c 0.168 seg  41.7 nodes 14.1 span   84s merges  10.6 upd   1.7 | vs A same L_min +0.040 [+0.032,+0.047] | vs A L_min 8 -0.012 [-0.018,-0.005]
+[ablate] qa Lmin=2  N=32  As             IoU* 0.213 c 0.197 seg  41.7 nodes 20.8 span   52s merges   4.1 upd   1.8 | vs A same L_min +0.043 [+0.034,+0.051] | vs A L_min 8 -0.011 [-0.018,-0.005]
+[ablate] qa Lmin=2  N=8   C              IoU* 0.140 c 0.126 seg  46.0 nodes  7.5 span  130s merges  18.9 upd   1.2 | vs A same L_min +0.029 [+0.020,+0.038] | vs A L_min 8 -0.009 [-0.019,+0.001]
+[ablate] qa Lmin=2  N=16  C              IoU* 0.176 c 0.162 seg  46.0 nodes 13.4 span   75s merges  11.9 upd   1.3 | vs A same L_min +0.031 [+0.020,+0.043] | vs A L_min 8 -0.021 [-0.032,-0.008]
+[ablate] qa Lmin=2  N=32  C              IoU* 0.193 c 0.179 seg  46.0 nodes 20.7 span   50s merges   5.5 upd   1.5 | vs A same L_min +0.023 [+0.011,+0.035] | vs A L_min 8 -0.031 [-0.042,-0.018]
+[ablate] qa Lmin=2  N=8   Cr             IoU* 0.166 c 0.158 seg  44.8 nodes  7.7 span  119s merges  17.5 upd   1.0 | vs A same L_min +0.055 [+0.046,+0.065] | vs A L_min 8 +0.018 [+0.008,+0.028]
+[ablate] qa Lmin=2  N=16  Cr             IoU* 0.210 c 0.201 seg  44.8 nodes 13.7 span   71s merges  10.7 upd   1.0 | vs A same L_min +0.065 [+0.053,+0.075] | vs A L_min 8 +0.013 [+0.001,+0.024]
+[ablate] qa Lmin=2  N=32  Cr             IoU* 0.235 c 0.226 seg  44.8 nodes 20.6 span   51s merges   4.7 upd   1.0 | vs A same L_min +0.065 [+0.052,+0.076] | vs A L_min 8 +0.010 [-0.003,+0.023]
+[ablate] qa Lmin=2  N=8   D              IoU* 0.143 c 0.130 seg  43.8 nodes  7.6 span  120s merges  16.2 upd   4.2 | vs A same L_min +0.032 [+0.024,+0.040] | vs A L_min 8 -0.006 [-0.013,+0.002]
+[ablate] qa Lmin=2  N=16  D              IoU* 0.186 c 0.173 seg  43.8 nodes 13.2 span   65s merges   9.3 upd   4.2 | vs A same L_min +0.041 [+0.032,+0.049] | vs A L_min 8 -0.011 [-0.021,+0.000]
+[ablate] qa Lmin=2  N=32  D              IoU* 0.207 c 0.194 seg  43.8 nodes 19.4 span   45s merges   4.0 upd   4.2 | vs A same L_min +0.037 [+0.025,+0.049] | vs A L_min 8 -0.017 [-0.028,-0.006]
+[ablate] qa Lmin=2  N=8   c4             IoU* 0.126 c 0.109 seg  39.9 nodes  7.7 span  139s merges  17.9 upd   1.6 | vs A same L_min +0.015 [+0.009,+0.021] | vs A L_min 8 -0.023 [-0.029,-0.017]
+[ablate] qa Lmin=2  N=16  c4             IoU* 0.164 c 0.148 seg  39.9 nodes 13.8 span   82s merges  10.2 upd   1.8 | vs A same L_min +0.019 [+0.013,+0.026] | vs A L_min 8 -0.032 [-0.039,-0.025]
+[ablate] qa Lmin=2  N=32  c4             IoU* 0.197 c 0.181 seg  39.9 nodes 20.4 span   54s merges   3.9 upd   2.0 | vs A same L_min +0.027 [+0.019,+0.036] | vs A L_min 8 -0.027 [-0.035,-0.019]
+[ablate] qa Lmin=2  N=8   E              IoU* 0.111 c 0.094 seg  41.5 nodes  7.5 span  132s merges  18.1 upd   1.5 | vs A same L_min +0.000 [-0.005,+0.006] | vs A L_min 8 -0.037 [-0.045,-0.030]
+[ablate] qa Lmin=2  N=16  E              IoU* 0.142 c 0.125 seg  41.5 nodes 13.2 span   85s merges  10.7 upd   1.6 | vs A same L_min -0.003 [-0.010,+0.003] | vs A L_min 8 -0.055 [-0.063,-0.047]
+[ablate] qa Lmin=2  N=32  E              IoU* 0.166 c 0.149 seg  41.5 nodes 19.6 span   55s merges   4.5 upd   1.7 | vs A same L_min -0.004 [-0.011,+0.002] | vs A L_min 8 -0.058 [-0.067,-0.050]
+[ablate] qa Lmin=2  N=8   B.pooled       IoU* 0.093 c 0.076 seg  41.9 nodes  7.3 span  134s merges  17.4 upd   1.6 | vs A same L_min -0.018 [-0.025,-0.012] | vs A L_min 8 -0.056 [-0.065,-0.047]
+[ablate] qa Lmin=2  N=16  B.pooled       IoU* 0.116 c 0.099 seg  41.9 nodes 12.8 span   89s merges  10.6 upd   1.7 | vs A same L_min -0.029 [-0.038,-0.021] | vs A L_min 8 -0.081 [-0.091,-0.070]
+[ablate] qa Lmin=2  N=32  B.pooled       IoU* 0.136 c 0.119 seg  41.9 nodes 19.2 span   58s merges   4.8 upd   1.7 | vs A same L_min -0.034 [-0.043,-0.026] | vs A L_min 8 -0.089 [-0.098,-0.079]
+[ablate] qa Lmin=2  N=8   B.stream       IoU* 0.101 c 0.083 seg  41.2 nodes  7.4 span  131s merges  17.9 upd   1.5 | vs A same L_min -0.010 [-0.016,-0.004] | vs A L_min 8 -0.048 [-0.056,-0.040]
+[ablate] qa Lmin=2  N=16  B.stream       IoU* 0.129 c 0.112 seg  41.2 nodes 13.2 span   87s merges  10.7 upd   1.6 | vs A same L_min -0.016 [-0.023,-0.009] | vs A L_min 8 -0.067 [-0.076,-0.057]
+[ablate] qa Lmin=2  N=32  B.stream       IoU* 0.154 c 0.137 seg  41.2 nodes 19.7 span   50s merges   4.5 upd   1.7 | vs A same L_min -0.016 [-0.025,-0.008] | vs A L_min 8 -0.070 [-0.080,-0.061]
+[ablate] qa Lmin=2  N=8   B.rank         IoU* 0.097 c 0.080 seg  40.6 nodes  7.4 span  130s merges  17.3 upd   1.5 | vs A same L_min -0.014 [-0.019,-0.008] | vs A L_min 8 -0.051 [-0.059,-0.043]
+[ablate] qa Lmin=2  N=16  B.rank         IoU* 0.124 c 0.107 seg  40.6 nodes 12.9 span   87s merges  10.4 upd   1.6 | vs A same L_min -0.021 [-0.027,-0.014] | vs A L_min 8 -0.072 [-0.081,-0.064]
+[ablate] qa Lmin=2  N=32  B.rank         IoU* 0.146 c 0.128 seg  40.6 nodes 19.3 span   50s merges   4.4 upd   1.7 | vs A same L_min -0.024 [-0.033,-0.016] | vs A L_min 8 -0.079 [-0.087,-0.070]
+[ablate] qa Lmin=2  N=8   B.gonly        IoU* 0.100 c 0.082 seg  41.6 nodes  7.4 span  133s merges  18.0 upd   1.5 | vs A same L_min -0.011 [-0.017,-0.006] | vs A L_min 8 -0.049 [-0.057,-0.041]
+[ablate] qa Lmin=2  N=16  B.gonly        IoU* 0.128 c 0.110 seg  41.6 nodes 13.2 span   81s merges  10.8 upd   1.7 | vs A same L_min -0.017 [-0.024,-0.010] | vs A L_min 8 -0.068 [-0.077,-0.059]
+[ablate] qa Lmin=2  N=32  B.gonly        IoU* 0.153 c 0.135 seg  41.6 nodes 19.8 span   48s merges   4.6 upd   1.7 | vs A same L_min -0.017 [-0.026,-0.009] | vs A L_min 8 -0.072 [-0.081,-0.062]
+[ablate] qa Lmin=2  N=8   B.scalars      IoU* 0.104 c 0.087 seg  42.7 nodes  7.4 span  132s merges  18.7 upd   1.4 | vs A same L_min -0.007 [-0.011,-0.004] | vs A L_min 8 -0.045 [-0.052,-0.038]
+[ablate] qa Lmin=2  N=16  B.scalars      IoU* 0.133 c 0.116 seg  42.7 nodes 13.0 span   87s merges  11.4 upd   1.6 | vs A same L_min -0.012 [-0.016,-0.007] | vs A L_min 8 -0.063 [-0.071,-0.055]
+[ablate] qa Lmin=2  N=32  B.scalars      IoU* 0.155 c 0.138 seg  42.7 nodes 19.5 span   56s merges   5.1 upd   1.7 | vs A same L_min -0.015 [-0.020,-0.010] | vs A L_min 8 -0.069 [-0.076,-0.061]
+[ablate] qa Lmin=2  N=8   B.tol2         IoU* 0.103 c 0.085 seg  41.6 nodes  7.4 span  132s merges  18.0 upd   1.4 | vs A same L_min -0.008 [-0.013,-0.002] | vs A L_min 8 -0.045 [-0.053,-0.037]
+[ablate] qa Lmin=2  N=16  B.tol2         IoU* 0.131 c 0.113 seg  41.6 nodes 13.2 span   86s merges  10.7 upd   1.7 | vs A same L_min -0.014 [-0.021,-0.007] | vs A L_min 8 -0.065 [-0.075,-0.056]
+[ablate] qa Lmin=2  N=32  B.tol2         IoU* 0.154 c 0.137 seg  41.6 nodes 19.8 span   49s merges   4.5 upd   1.8 | vs A same L_min -0.016 [-0.024,-0.008] | vs A L_min 8 -0.070 [-0.079,-0.061]
+[ablate] qa Lmin=2  N=8   B.shift        IoU* 0.084 c 0.065 seg  43.1 nodes  7.3 span  134s merges  17.3 upd   1.6 | vs A same L_min -0.027 [-0.034,-0.020] | vs A L_min 8 -0.064 [-0.073,-0.056]
+[ablate] qa Lmin=2  N=16  B.shift        IoU* 0.108 c 0.089 seg  43.1 nodes 12.7 span   84s merges  10.5 upd   1.8 | vs A same L_min -0.037 [-0.045,-0.029] | vs A L_min 8 -0.089 [-0.098,-0.079]
+[ablate] qa Lmin=2  N=32  B.shift        IoU* 0.126 c 0.107 seg  43.1 nodes 19.0 span   56s merges   4.8 upd   1.8 | vs A same L_min -0.044 [-0.053,-0.035] | vs A L_min 8 -0.098 [-0.107,-0.089]
+[ablate] qa Lmin=2  N=8   B.pooled40     IoU* 0.092 c 0.074 seg  42.3 nodes  7.4 span  133s merges  17.7 upd   1.5 | vs A same L_min -0.019 [-0.025,-0.013] | vs A L_min 8 -0.057 [-0.066,-0.048]
+[ablate] qa Lmin=2  N=16  B.pooled40     IoU* 0.114 c 0.097 seg  42.3 nodes 12.9 span   84s merges  10.8 upd   1.7 | vs A same L_min -0.031 [-0.039,-0.023] | vs A L_min 8 -0.082 [-0.092,-0.072]
+[ablate] qa Lmin=2  N=32  B.pooled40     IoU* 0.136 c 0.119 seg  42.3 nodes 19.4 span   54s merges   5.0 upd   1.8 | vs A same L_min -0.034 [-0.042,-0.026] | vs A L_min 8 -0.088 [-0.098,-0.078]
+[ablate] qa Lmin=2  N=8   A:B.pooled     IoU* 0.119 c 0.102 seg  41.3 nodes  7.6 span  134s merges  18.7 upd   1.2 | vs A same L_min +0.008 [+0.003,+0.012] | vs A L_min 8 -0.030 [-0.037,-0.023]
+[ablate] qa Lmin=2  N=16  A:B.pooled     IoU* 0.154 c 0.138 seg  41.3 nodes 13.7 span   84s merges  11.2 upd   1.3 | vs A same L_min +0.010 [+0.006,+0.013] | vs A L_min 8 -0.042 [-0.050,-0.034]
+[ablate] qa Lmin=2  N=32  A:B.pooled     IoU* 0.180 c 0.163 seg  41.3 nodes 20.3 span   49s merges   4.6 upd   1.3 | vs A same L_min +0.010 [+0.005,+0.015] | vs A L_min 8 -0.045 [-0.053,-0.035]
+[ablate] qa Lmin=2  N=8   B.pooled:A     IoU* 0.107 c 0.090 seg  41.9 nodes  7.4 span  132s merges  17.7 upd   1.2 | vs A same L_min -0.004 [-0.010,+0.002] | vs A L_min 8 -0.042 [-0.050,-0.034]
+[ablate] qa Lmin=2  N=16  B.pooled:A     IoU* 0.133 c 0.116 seg  41.9 nodes 12.9 span   74s merges  10.8 upd   1.3 | vs A same L_min -0.012 [-0.021,-0.004] | vs A L_min 8 -0.064 [-0.074,-0.054]
+[ablate] qa Lmin=2  N=32  B.pooled:A     IoU* 0.150 c 0.134 seg  41.9 nodes 19.4 span   48s merges   4.9 upd   1.3 | vs A same L_min -0.020 [-0.030,-0.008] | vs A L_min 8 -0.074 [-0.085,-0.063]
+[ablate] qa Lmin=2  N=8   A:B.stream     IoU* 0.120 c 0.103 seg  41.3 nodes  7.6 span  130s merges  18.5 upd   1.4 | vs A same L_min +0.009 [+0.006,+0.012] | vs A L_min 8 -0.029 [-0.035,-0.022]
+[ablate] qa Lmin=2  N=16  A:B.stream     IoU* 0.151 c 0.134 seg  41.3 nodes 13.6 span   79s merges  10.9 upd   1.6 | vs A same L_min +0.006 [+0.003,+0.008] | vs A L_min 8 -0.046 [-0.053,-0.038]
+[ablate] qa Lmin=2  N=32  A:B.stream     IoU* 0.176 c 0.159 seg  41.3 nodes 20.1 span   49s merges   4.4 upd   1.7 | vs A same L_min +0.006 [+0.003,+0.008] | vs A L_min 8 -0.049 [-0.056,-0.041]
+[ablate] qa Lmin=2  N=8   B.stream:A     IoU* 0.108 c 0.090 seg  41.2 nodes  7.5 span  134s merges  18.0 upd   1.4 | vs A same L_min -0.003 [-0.010,+0.003] | vs A L_min 8 -0.041 [-0.050,-0.032]
+[ablate] qa Lmin=2  N=16  B.stream:A     IoU* 0.137 c 0.119 seg  41.2 nodes 13.2 span   83s merges  10.8 upd   1.5 | vs A same L_min -0.008 [-0.016,-0.001] | vs A L_min 8 -0.060 [-0.068,-0.050]
+[ablate] qa Lmin=2  N=32  B.stream:A     IoU* 0.159 c 0.142 seg  41.2 nodes 19.8 span   49s merges   4.5 upd   1.6 | vs A same L_min -0.011 [-0.020,-0.003] | vs A L_min 8 -0.065 [-0.075,-0.056]
+[ablate] qa Lmin=2  N=8   C:A            IoU* 0.141 c 0.127 seg  46.0 nodes  7.5 span  129s merges  19.0 upd   1.1 | vs A same L_min +0.030 [+0.022,+0.038] | vs A L_min 8 -0.008 [-0.016,+0.001]
+[ablate] qa Lmin=2  N=16  C:A            IoU* 0.174 c 0.161 seg  46.0 nodes 13.5 span   75s merges  12.0 upd   1.2 | vs A same L_min +0.029 [+0.020,+0.039] | vs A L_min 8 -0.022 [-0.033,-0.011]
+[ablate] qa Lmin=2  N=32  C:A            IoU* 0.197 c 0.183 seg  46.0 nodes 20.8 span   49s merges   5.6 upd   1.3 | vs A same L_min +0.027 [+0.014,+0.040] | vs A L_min 8 -0.027 [-0.039,-0.015]
+[ablate] qa Lmin=2  N=8   A:C            IoU* 0.140 c 0.123 seg  41.3 nodes  7.6 span  127s merges  18.9 upd   0.9 | vs A same L_min +0.029 [+0.024,+0.034] | vs A L_min 8 -0.009 [-0.016,-0.002]
+[ablate] qa Lmin=2  N=16  A:C            IoU* 0.170 c 0.153 seg  41.3 nodes 13.7 span   71s merges  11.2 upd   1.3 | vs A same L_min +0.025 [+0.020,+0.030] | vs A L_min 8 -0.027 [-0.035,-0.018]
+[ablate] qa Lmin=2  N=32  A:C            IoU* 0.187 c 0.170 seg  41.3 nodes 20.3 span   46s merges   4.5 upd   1.3 | vs A same L_min +0.017 [+0.011,+0.023] | vs A L_min 8 -0.038 [-0.048,-0.027]
+[ablate] qa signal A            within 0.533 local 0.518 pooled 0.484
+[ablate] qa signal As           within 0.547 local 0.514 pooled 0.502
+[ablate] qa signal B.gonly      within 0.537 local 0.546 pooled 0.515
+[ablate] qa signal B.pooled     within 0.517 local 0.547 pooled 0.572
+[ablate] qa signal B.pooled40   within 0.522 local 0.546 pooled 0.567
+[ablate] qa signal B.rank       within 0.529 local 0.554 pooled 0.542
+[ablate] qa signal B.scalars    within 0.507 local 0.532 pooled 0.475
+[ablate] qa signal B.shift      within 0.464 local 0.527 pooled 0.479
+[ablate] qa signal B.stream     within 0.538 local 0.546 pooled 0.514
+[ablate] qa signal B.tol2       within 0.536 local 0.541 pooled 0.505
+[ablate] qa signal C            within 0.955 local 0.905 pooled 0.966
+[ablate] qa signal Cr           within 1.000 local 0.969 pooled 1.000
+[ablate] qa signal E            within 0.533 local 0.536 pooled 0.531
+[ablate] qa signal c4           within 0.545 local 0.512 pooled 0.494
+[ablate] wrote /home2/amritha.vinod/selectstream-abl/outputs/full_ablate/ablate_norm/ablate_write.json (1446s)
