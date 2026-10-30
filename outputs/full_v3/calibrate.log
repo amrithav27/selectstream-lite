@@ -1,0 +1,79 @@
+[arm][WARN] A: no calibration file (None); using config values {}
+[env] GPUs: ['NVIDIA GeForce RTX 2080 Ti', 'NVIDIA GeForce RTX 2080 Ti', 'NVIDIA GeForce RTX 2080 Ti', 'NVIDIA GeForce RTX 2080 Ti']
+Loading weights:   0%|          | 0/729 [00:00<?, ?it/s]Loading weights:   0%|          | 1/729 [00:00<02:50,  4.26it/s]Loading weights:   1%|          | 6/729 [00:00<00:33, 21.53it/s]Loading weights:   4%|▍         | 28/729 [00:00<00:09, 76.70it/s]Loading weights:   5%|▌         | 40/729 [00:00<00:09, 70.47it/s]Loading weights:   7%|▋         | 52/729 [00:00<00:08, 81.06it/s]Loading weights:   9%|▉         | 66/729 [00:00<00:07, 89.08it/s]Loading weights:  11%|█         | 77/729 [00:01<00:07, 91.89it/s]Loading weights:  12%|█▏        | 88/729 [00:01<00:06, 96.02it/s]Loading weights:  14%|█▎        | 100/729 [00:01<00:07, 87.62it/s]Loading weights:  16%|█▌        | 113/729 [00:01<00:06, 97.41it/s]Loading weights:  17%|█▋        | 124/729 [00:01<00:07, 86.10it/s]Loading weights:  19%|█▉        | 137/729 [00:01<00:06, 91.76it/s]Loading weights:  20%|██        | 149/729 [00:01<00:06, 96.63it/s]Loading weights:  22%|██▏       | 160/729 [00:01<00:05, 97.07it/s]Loading weights:  24%|██▎       | 172/729 [00:02<00:05, 100.74it/s]Loading weights:  25%|██▌       | 184/729 [00:02<00:05, 94.68it/s] Loading weights:  27%|██▋       | 196/729 [00:02<00:05, 92.12it/s]Loading weights:  29%|██▊       | 208/729 [00:02<00:05, 91.28it/s]Loading weights:  30%|███       | 220/729 [00:02<00:05, 87.80it/s]Loading weights:  32%|███▏      | 232/729 [00:02<00:05, 95.06it/s]Loading weights:  33%|███▎      | 244/729 [00:02<00:05, 86.65it/s]Loading weights:  35%|███▌      | 256/729 [00:02<00:05, 91.32it/s]Loading weights:  37%|███▋      | 268/729 [00:03<00:05, 87.67it/s]Loading weights:  38%|███▊      | 280/729 [00:03<00:06, 73.97it/s]Loading weights:  40%|████      | 292/729 [00:03<00:05, 82.52it/s]Loading weights:  42%|████▏     | 304/729 [00:03<00:05, 71.50it/s]Loading weights:  43%|████▎     | 316/729 [00:03<00:05, 80.46it/s]Loading weights:  45%|████▌     | 329/729 [00:03<00:04, 90.72it/s]Loading weights:  58%|█████▊    | 424/729 [00:03<00:01, 296.94it/s]Loading weights:  71%|███████   | 517/729 [00:04<00:00, 457.83it/s]Loading weights:  84%|████████▎ | 609/729 [00:04<00:00, 572.24it/s]Loading weights:  99%|█████████▉| 721/729 [00:04<00:00, 714.06it/s]Loading weights: 100%|██████████| 729/729 [00:04<00:00, 168.78it/s]
+/home2/amritha.vinod/miniforge3/envs/venv/lib/python3.11/site-packages/torch/nn/modules/transformer.py:382: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  warnings.warn(
+[ckpt] loaded /home2/amritha.vinod/selectstream_ckpt/full_v3/R_A/weights.pt: 65 tensors, missing(non-backbone)=0, unexpected=0
+[scorer] loaded /home2/amritha.vinod/selectstream-lite/outputs/full_v3/scorer/scorer.pt (seed 42, dev AP 0.3148258249050078)
+[calib] stream 25/838 07eacb45-2a2b-40fb-b60d-2acb7e108f34 frames=480
+[calib] stream 50/838 10beec0f-0e23-4506-b446-b8389aabe0bb frames=931
+[calib] stream 75/838 1ab9d5f7-0181-458e-a5e7-72ce87501f3e frames=480
+[calib] stream 100/838 216e3f0e-ccb9-4d54-ba56-d275fedbf52f frames=480
+[calib] stream 125/838 2b5569df-5deb-4ebd-8a45-dd6524330eb8 frames=480
+[calib] stream 150/838 30805f57-8f23-4d41-91a0-19d248a62c1d frames=481
+[calib] stream 175/838 36bff607-9c5d-43f4-97d2-38ad79e5220c frames=960
+[calib] stream 200/838 3e287c36-44a8-4871-b090-dbd352392181 frames=480
+[calib] stream 225/838 438d4a92-1965-4854-969d-cf84f0eff028 frames=1200
+[calib] stream 250/838 4ce13c92-8094-48a2-9e81-2a597d992aad frames=847
+[calib] stream 275/838 557b69b3-71f2-4e25-9868-dc68b07dcd1f frames=1321
+[calib] stream 300/838 5cd80891-0370-4285-81e3-d78f5a649f82 frames=480
+[calib] stream 325/838 6306375a-1533-4f3c-843b-0cd51b4bf449 frames=276
+[calib] stream 350/838 6caf467a-a949-4b5c-b88b-b2ac6cbd9f36 frames=1410
+[calib] stream 375/838 743420f9-72e1-4219-bc56-f5a93644c0f4 frames=962
+[calib] stream 400/838 7ede3aa4-b631-4715-863e-83cd4ceab976 frames=480
+[calib] stream 425/838 85680688-edaa-4791-8e82-812e6a6d3736 frames=281
+[calib] stream 450/838 8d30335e-635c-43b6-b1e1-09fa12033416 frames=480
+[calib] stream 475/838 940ff963-ab1c-496f-991c-b23c29714f73 frames=378
+[calib] stream 500/838 9940a038-2bb1-4d2d-afeb-81f2798f815f frames=426
+[calib] stream 525/838 9e168f5a-cbbb-4065-850d-2d98bd74b7cf frames=1319
+[calib] stream 550/838 a5259841-c497-495d-ac9b-59cd5c234f73 frames=931
+[calib] stream 575/838 ae4f6a63-3163-4d98-82a7-ee7a8bcf6b15 frames=962
+[calib] stream 600/838 b5410470-6cb6-43ea-8233-4824ba6a27b0 frames=480
+[calib] stream 625/838 bd8f38cf-34a9-4d43-aa87-28e597c200a1 frames=312
+[calib] stream 650/838 c6da6ceb-5f40-436b-8c83-76458f46b3fb frames=480
+[calib] stream 675/838 ce6e48fb-55f3-471c-87a3-a5f3683dde52 frames=1200
+[calib] stream 700/838 d64679d7-71d9-48db-b3d3-8e5a8cf1231d frames=480
+[calib] stream 725/838 dbb150a2-a47c-42b0-82e4-b076b69f0fb2 frames=480
+[calib] stream 750/838 e579ef82-c68f-44dc-8b0f-7fe62e20974c frames=2161
+[calib] stream 775/838 eafada5b-3e7f-4996-aeff-e6b83e92ebfb frames=480
+[calib] stream 800/838 f178b211-e532-47ef-8b2b-28a7fa4c8e0f frames=962
+[calib] stream 825/838 fca39e16-1963-4910-9d23-2614be6c938a frames=424
+[calib] stream 838/838 ffd863cb-f06b-404e-a013-54acb61f1ed9 frames=480
+{
+ "A": {
+  "segments_per_stream": 28.163484486873507,
+  "frac_below_tau": 0.5,
+  "mean_segment_len": 24.018897784222737,
+  "lvm_saw_energy_budget": 8.0,
+  "lvm_tau_s": 0.06815026234835386,
+  "lvm_tau_r": 0.9896904706954956,
+  "nearest_cos_quantiles": {
+   "0.1": 0.9209003210067749,
+   "0.25": 0.9512510597705841,
+   "0.5": 0.9713704586029053,
+   "0.75": 0.9830599129199982,
+   "0.9": 0.9896904706954956,
+   "0.99": 0.9959494197368621
+  }
+ },
+ "D": {
+  "lvm_fixed_segment_len": 24,
+  "lvm_tau_r": 0.9896904706954956
+ },
+ "B": {
+  "lvm_saw_energy_budget": 10000.0,
+  "lvm_saw_quantile": 0.9365079879760743,
+  "segments_per_stream": 27.392601431980907,
+  "note": "spike quantile raised (energy budget off)",
+  "lvm_tau_r": 0.9896904706954956,
+  "lvm_tau_s": 0.5281239973422158
+ },
+ "C": {
+  "lvm_saw_energy_budget": 9.286155256519713,
+  "lvm_saw_quantile": 0.9,
+  "segments_per_stream": 28.163484486873507,
+  "note": "ok",
+  "lvm_tau_r": 0.9896904706954956,
+  "lvm_tau_s": 0.42338189937646464
+ }
+}

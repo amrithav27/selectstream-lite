@@ -1,0 +1,28 @@
+{
+ "clips": [
+  {
+   "clip_uid": "1ac94020-4aac-4913-b737-28e2c9d5469a",
+   "frames_online": 1201,
+   "frames_cache": 1201,
+   "encode_frame_ms": 114.39077854156494
+  },
+  {
+   "clip_uid": "343d25cc-e97a-435e-b1d8-2ba29afd43f3",
+   "frames_online": 481,
+   "frames_cache": 481,
+   "encode_frame_ms": 98.56623411178589
+  }
+ ],
+ "g_max_abs": 0.032895565032958984,
+ "g_min_cos": 0.9999790191650391,
+ "g_max_rel_l2": 0.00718196714296937,
+ "count_mismatch": 0,
+ "psnr_min": 168.13080360867912,
+ "psnr_mean": 168.13080360867912,
+ "hidden_rel_max": 0.0,
+ "hidden_rel_mean": 0.0,
+ "hidden_rel_next_frame_mean": 0.05426770918780849,
+ "jpeg_vs_next_frame_ratio": 0.0,
+ "frames_checked": 42,
+ "ok": true
+}
