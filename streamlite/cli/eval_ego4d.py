@@ -45,7 +45,8 @@ def main():
     ap.add_argument("--clean_dir", default="dataset/clean")
     ap.add_argument("--video_dir", required=True)
     ap.add_argument("--out_dir", required=True)
-    ap.add_argument("--max_clips", type=int, default=None, help="First N streams.")
+    ap.add_argument("--start", type=int, default=0, help="Skip the first K streams (with --max_clips, evaluates streams K..K+N-1).")
+    ap.add_argument("--max_clips", type=int, default=None, help="First N streams (after --start).")
     ap.add_argument("--min_frames", type=int, default=0, help="Keep only streams with at least this many frames (memory-budget ablation).")
     ap.add_argument("--num_slots", type=int, default=None, help="Override N (lvm_num_slots); slot_init is tiled from the checkpoint's.")
     ap.add_argument("--max_new_tokens", type=int, default=32)
@@ -107,6 +108,7 @@ def main():
         print(f"[eval] feature cache {args.feature_cache}: {len(ds.items)}/{n0} streams fully cached")
     if args.min_frames:
         ds.items = [i for i in ds.items if i.num_frames >= args.min_frames]
+    ds.items = ds.items[args.start:]
     if args.max_clips is not None:
         ds.items = ds.items[: args.max_clips]
     seen_participants = train_participants(args.clean_dir)
