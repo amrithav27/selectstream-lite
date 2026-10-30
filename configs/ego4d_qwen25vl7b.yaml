@@ -93,7 +93,7 @@ vismem:
   method_spar_redundancy_weight: 1.0
   method_redundancy_margin: 0.0
 
-# Per-arm thresholds. B and C come from `main.cli.calibrate_write` after Stage R (matched cut budget);
+# Per-arm thresholds. B and C come from `streamlite.cli.calibrate_write` after Stage R (matched cut budget);
 # the values below are placeholders equal to arm A's until calibration has run.
 arms:
   A: {}

@@ -39,11 +39,11 @@ for DT in ${DTYPES:-float16}; do
     OUT="$OUT_ROOT/${TAG:-pilot2}_${DT}"
     rm -rf "$OUT"
     echo "===== pilot dtype=$DT ====="
-    "$PY" -m main.cli.train_ego4d --stage R --arm A --torch_dtype "$DT" \
+    "$PY" -m streamlite.cli.train_ego4d --stage R --arm A --torch_dtype "$DT" \
         --video_dir "$VIDEO_DIR" --output_dir "$OUT" --clips_file "$SCRATCH/pilot_clips.txt" --max_clips 10 --epochs "${EPOCHS:-1}" \
         --trace_dir "$OUT/traces" --trace_clips 3 --save_every_clips 1000 \
         || echo "[pilot] dtype=$DT FAILED (see stderr)"
-    "$PY" -m main.cli.plot_ego4d --traces "$OUT/traces" --train_log "$OUT/train_log.jsonl" \
+    "$PY" -m streamlite.cli.plot_ego4d --traces "$OUT/traces" --train_log "$OUT/train_log.jsonl" \
         --config configs/ego4d_qwen25vl7b.yaml --out "$REPO_ROOT/outputs/${TAG:-pilot2}_${DT}/figs" || true
     mkdir -p "$REPO_ROOT/outputs/${TAG:-pilot2}_${DT}"
     cp "$OUT/train_log.jsonl" "$OUT/config.json" "$REPO_ROOT/outputs/${TAG:-pilot2}_${DT}/" 2>/dev/null || true

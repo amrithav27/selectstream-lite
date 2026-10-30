@@ -1,5 +1,5 @@
 #!/bin/bash
-# Stage 0: cache g_t + 1-fps frames for one shard of the clips (main/cli/cache_features.py). One GPU.
+# Stage 0: cache g_t + 1-fps frames for one shard of the clips (streamlite/cli/cache_features.py). One GPU.
 # Four shards fill the QoS (4 GPUs) and run side by side on one node:
 #   for i in 0 1 2 3; do SHARD=$i NUM_SHARDS=4 sbatch -w gnode061 scripts/ego4d_cache.sbatch; done
 # Pilot: SHARD=0 NUM_SHARDS=1 MAX_CLIPS=2 sbatch -w gnode061 --time=0-01:00:00 scripts/ego4d_cache.sbatch
@@ -21,7 +21,7 @@ source scripts/ego4d_env.sh || exit 1
 "$PY" -c "import torch; print('[cache] GPU:', torch.cuda.get_device_name(0))"
 CACHE_DIR="${CACHE_DIR:-$SCRATCH/feature_cache}"
 mkdir -p "$CACHE_DIR"
-"$PY" -m main.cli.cache_features --video_dir "$VIDEO_DIR" --out_dir "$CACHE_DIR" \
+"$PY" -m streamlite.cli.cache_features --video_dir "$VIDEO_DIR" --out_dir "$CACHE_DIR" \
     --shard "${SHARD:-0}" --num_shards "${NUM_SHARDS:-1}" --splits "${SPLITS:-train,val,test}" \
     --workers "${WORKERS:-6}" ${MAX_CLIPS:+--max_clips "$MAX_CLIPS"}
 STATUS=$?

@@ -27,10 +27,10 @@ EXTRA=()
 [ -n "${MAX_CLIPS:-}" ] && EXTRA+=(--max_clips "$MAX_CLIPS")
 
 if [ "${SKIP_STAGE:-0}" = 1 ]; then echo "[eval] SKIP_STAGE=1: using clips already in $VIDEO_DIR"; else stage_clips || exit 1; fi
-"$PY" -m main.cli.eval_ego4d --arm "$ARM" --ckpt "$CKPT" --track "$TRACK" --split "$SPLIT" \
+"$PY" -m streamlite.cli.eval_ego4d --arm "$ARM" --ckpt "$CKPT" --track "$TRACK" --split "$SPLIT" \
     --video_dir "$VIDEO_DIR" --out_dir "$OUT" --trace_dir "$OUT/traces" --trace_clips 3 "${EXTRA[@]}"
 STATUS=$?
 mkdir -p "$REPO_ROOT/outputs/$TAG"
 cp "$OUT/summary.json" "$OUT/predictions.jsonl" "$REPO_ROOT/outputs/$TAG/" 2>/dev/null || true
-"$PY" -m main.cli.plot_ego4d --traces "$OUT/traces" --summaries "$OUT/summary.json" --out "$REPO_ROOT/outputs/$TAG/figs" || true
+"$PY" -m streamlite.cli.plot_ego4d --traces "$OUT/traces" --summaries "$OUT/summary.json" --out "$REPO_ROOT/outputs/$TAG/figs" || true
 exit $STATUS

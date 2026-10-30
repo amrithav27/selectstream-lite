@@ -77,7 +77,7 @@ for TAG in $P4_EVAL_TARGETS; do
 
         echo ""
         echo "[P4 Batch Eval] >>> Evaluating $EVAL_TAG (arm=$ARM, track=$TRACK) at $(date) ..."
-        python3 -m main.cli.eval_ego4d \
+        python3 -m streamlite.cli.eval_ego4d \
             --config "$EVAL_CONFIG" \
             --arm "$ARM" \
             --ckpt "$CKPT" \

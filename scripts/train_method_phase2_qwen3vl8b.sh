@@ -1,4 +1,4 @@
-python -m main.cli.train_method_sft \
+python -m streamlite.cli.train_method_sft \
   --config configs/selectstream_qwen3vl8b_lvm_sft.yaml \
   --train_jsonl path_to_dataset.jsonl \
   --init_from outputs/qwen3vl8b_method_phase1/epoch0 \

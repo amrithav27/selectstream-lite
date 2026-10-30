@@ -37,7 +37,7 @@ read_eval() {  # read_eval <name> <eval flags...>
     local name="read_$1"; shift
     done_ "$name" && return 0
     echo "[ablate] ===== $name start $(date +%F_%T)"
-    "$PY" -m main.cli.eval_ego4d --arm A --ckpt "$W_A" --track qa --video_dir "$VIDEO_DIR" --feature_cache "$CACHE" --scorer "$SCORER" \
+    "$PY" -m streamlite.cli.eval_ego4d --arm A --ckpt "$W_A" --track qa --video_dir "$VIDEO_DIR" --feature_cache "$CACHE" --scorer "$SCORER" \
         --calibration "$CAL" --out_dir "$OUT/$name" --max_clips "$READ_STREAMS" "$@" \
         || { echo "[ablate][ERROR] $name failed"; FAILED=$((FAILED + 1)); return 1; }
     mkdir -p "$RUN_DIR/$name" && cp "$OUT/$name/summary.json" "$OUT/$name/predictions.jsonl" "$RUN_DIR/$name/"
@@ -64,7 +64,7 @@ read_eval blank_frame --blank_frame
 
 # CPU: offline read grid (training-free scores).
 if ! done_ ablate_read; then
-    "$PY" -m main.cli.ablate_read --feature_cache "$CACHE" --check2 "$RUN_DIR/replay/check2.json" \
+    "$PY" -m streamlite.cli.ablate_read --feature_cache "$CACHE" --check2 "$RUN_DIR/replay/check2.json" \
         --segment_center "$CK/R_A/segment_center.npy" --out_dir "$RUN_DIR/ablate_read" > "$RUN_DIR/ablate_read.log" 2>&1 \
         && mark ablate_read || { echo "[ablate][ERROR] ablate_read failed: $(tail -2 "$RUN_DIR/ablate_read.log")"; FAILED=$((FAILED + 1)); }
 fi
@@ -72,6 +72,6 @@ if [ -n "$WRITE_PID" ]; then
     wait "$WRITE_PID" || { echo "[ablate][ERROR] write-side grid failed: $(tail -2 "$RUN_DIR/ablate_write.log")"; FAILED=$((FAILED + 1)); }
 fi
 
-"$PY" -m main.cli.plot_ego4d --run_dir "$RUN_DIR" > "$RUN_DIR/plot_ablate.log" 2>&1; tail -1 "$RUN_DIR/plot_ablate.log"
+"$PY" -m streamlite.cli.plot_ego4d --run_dir "$RUN_DIR" > "$RUN_DIR/plot_ablate.log" 2>&1; tail -1 "$RUN_DIR/plot_ablate.log"
 echo "[ablate] finished $(date +%F_%T) with $FAILED failed step(s)"
 exit $((FAILED > 0))

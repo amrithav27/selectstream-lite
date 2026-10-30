@@ -66,7 +66,7 @@ if [ "${PILOT:-0}" = 1 ]; then
     CLIPS_FILE="$RUN_DIR/pilot_clips.txt"
     "$PY" - "$CLIPS_FILE" "$SCORER_STREAMS" <<'EOF'
 import sys
-from main.data.ego4d_qa import Ego4DStreamDataset
+from streamlite.data.ego4d_qa import Ego4DStreamDataset
 out, n = sys.argv[1], int(sys.argv[2])
 uids = []
 for split, src, part in (("train", "merged", "train"), ("train", "merged", "dev"), ("val", "nlq", "all"), ("val", "qaego4d", "all")):
@@ -77,7 +77,7 @@ open(out, "w").write("\n".join(dict.fromkeys(uids)) + "\n")
 print(f"[pipe] pilot clips: {len(set(uids))}")
 EOF
 fi
-report() { "$PY" -m main.cli.plot_ego4d --run_dir "$RUN_DIR" > "$RUN_DIR/plot.log" 2>&1; tail -1 "$RUN_DIR/plot.log"; }
+report() { "$PY" -m streamlite.cli.plot_ego4d --run_dir "$RUN_DIR" > "$RUN_DIR/plot.log" 2>&1; tail -1 "$RUN_DIR/plot.log"; }
 
 # Clips: a node outside NODES that got no copy from a home node fetches the missing ones from Drive.
 if [ -n "$CLIPS_FILE" ]; then
@@ -91,7 +91,7 @@ fi
 if ! done_ cache; then
     start cache
     for i in 0 1 2 3; do
-        CUDA_VISIBLE_DEVICES=$i "$PY" -m main.cli.cache_features --video_dir "$VIDEO_DIR" --out_dir "$CACHE" --shard $i --num_shards 4 \
+        CUDA_VISIBLE_DEVICES=$i "$PY" -m streamlite.cli.cache_features --video_dir "$VIDEO_DIR" --out_dir "$CACHE" --shard $i --num_shards 4 \
             --workers 3 $(opt --clips_file "$CLIPS_FILE") > "$RUN_DIR/cache_shard$i.log" 2>&1 &
     done
     wait
@@ -105,14 +105,14 @@ find "$CACHE" -maxdepth 1 -exec touch {} +  # keep the 7-day scratch eviction aw
 
 if ! done_ verify; then
     start verify
-    "$PY" -m main.cli.verify_cache --video_dir "$VIDEO_DIR" --cache_dir "$CACHE" --num_clips 2 --stride 40 --out "$RUN_DIR/verify_cache.json" \
+    "$PY" -m streamlite.cli.verify_cache --video_dir "$VIDEO_DIR" --cache_dir "$CACHE" --num_clips 2 --stride 40 --out "$RUN_DIR/verify_cache.json" \
         && mark verify || { echo "[pipe][ERROR] cache does not match the online path; stopping"; exit 1; }
 fi
 
 # ---- 1. Stage 1: scorer + Check 1 ----
 if ! done_ scorer; then
     start scorer
-    "$PY" -m main.cli.train_scorer --feature_cache "$CACHE" --out_dir "$RUN_DIR/scorer" --seeds "$SCORER_SEEDS" \
+    "$PY" -m streamlite.cli.train_scorer --feature_cache "$CACHE" --out_dir "$RUN_DIR/scorer" --seeds "$SCORER_SEEDS" \
         --diag_proj_dims "$SCORER_DIAG" $(opt --max_streams "$SCORER_STREAMS") && mark scorer || exit 1
     report
 fi
@@ -121,7 +121,7 @@ fi
 REPLAY_PID=""
 if ! done_ replay; then
     start replay
-    ( "$PY" -m main.cli.replay_write --feature_cache "$CACHE" --scorer "$SCORER" --out_dir "$RUN_DIR/replay" \
+    ( "$PY" -m streamlite.cli.replay_write --feature_cache "$CACHE" --scorer "$SCORER" --out_dir "$RUN_DIR/replay" \
         $(opt --max_streams "$REPLAY_STREAMS") > "$RUN_DIR/replay.log" 2>&1 && mark replay ) &
     REPLAY_PID=$!
 fi
@@ -131,11 +131,11 @@ train() {  # train <stage> <arm> <extra args...>
     local name="${st}_${arm}" o="$OUT/${st}_${arm}"
     done_ "$name" && return 0
     start "$name"
-    "$PY" -m main.cli.train_ego4d --stage "$st" --arm "$arm" --video_dir "$VIDEO_DIR" --output_dir "$o" --feature_cache "$CACHE" \
+    "$PY" -m streamlite.cli.train_ego4d --stage "$st" --arm "$arm" --video_dir "$VIDEO_DIR" --output_dir "$o" --feature_cache "$CACHE" \
         --scorer "$SCORER" --trace_dir "$o/traces" --trace_clips 2 --save_every_clips 10 "$@" || { echo "[pipe][ERROR] $name failed"; FAILED=$((FAILED + 1)); return 1; }
     mkdir -p "$CK/$name" "$RUN_DIR/$name"
     cp "$o/final/weights.pt" "$CK/$name/weights.pt" && cp "$o/train_log.jsonl" "$o/config.json" "$RUN_DIR/$name/"
-    "$PY" -m main.cli.plot_ego4d --traces "$o/traces" --train_log "$o/train_log.jsonl" \
+    "$PY" -m streamlite.cli.plot_ego4d --traces "$o/traces" --train_log "$o/train_log.jsonl" \
         --config configs/ego4d_qwen25vl7b.yaml --out "$RUN_DIR/$name/figs" || true
     mark "$name"
 }
@@ -145,11 +145,11 @@ evaluate() {  # evaluate <name> <arm> <ckpt|none> <track> <extra args...>
     local o="$OUT/$name"
     done_ "$name" && return 0
     start "$name"
-    "$PY" -m main.cli.eval_ego4d --arm "$arm" --ckpt "$ck" --track "$track" --video_dir "$VIDEO_DIR" --feature_cache "$CACHE" \
+    "$PY" -m streamlite.cli.eval_ego4d --arm "$arm" --ckpt "$ck" --track "$track" --video_dir "$VIDEO_DIR" --feature_cache "$CACHE" \
         --scorer "$SCORER" --out_dir "$o" --trace_dir "$o/traces" --trace_clips 2 --calibration "$CAL" "$@" || { echo "[pipe][ERROR] $name failed"; FAILED=$((FAILED + 1)); return 1; }
     mkdir -p "$RUN_DIR/$name"
     cp "$o/summary.json" "$o/predictions.jsonl" "$RUN_DIR/$name/"
-    "$PY" -m main.cli.plot_ego4d --traces "$o/traces" --summaries "$o/summary.json" --out "$RUN_DIR/$name/figs" || true
+    "$PY" -m streamlite.cli.plot_ego4d --traces "$o/traces" --summaries "$o/summary.json" --out "$RUN_DIR/$name/figs" || true
     mark "$name"
 }
 
@@ -161,7 +161,7 @@ train R A --epochs "$R_EPOCHS" $(opt --max_clips "$R_STREAMS") --calibration "$P
 # ---- 3. Calibrate arms B/C/D against arm A's segment count (trained writer, Stage-1 scorer) ----
 if ! done_ calibrate; then
     start calibrate
-    "$PY" -m main.cli.calibrate_write --ckpt "$CK/R_A" --scorer "$SCORER" --feature_cache "$CACHE" --video_dir "$VIDEO_DIR" \
+    "$PY" -m streamlite.cli.calibrate_write --ckpt "$CK/R_A" --scorer "$SCORER" --feature_cache "$CACHE" --video_dir "$VIDEO_DIR" \
         $(opt --num_clips "$CAL_STREAMS") --out "$CAL" > "$RUN_DIR/calibrate.log" 2>&1 && mark calibrate || { tail -20 "$RUN_DIR/calibrate.log"; exit 1; }
     tail -40 "$RUN_DIR/calibrate.log"
 fi
@@ -189,7 +189,7 @@ for arm in A B; do
         name="q2_${track}_$arm"
         if [ -f "$CK/W_$arm/weights.pt" ] && ! done_ "$name"; then
             start "$name"
-            "$PY" -m main.cli.eval_q2 --arm "$arm" --ckpt "$CK/W_$arm" --scorer "$SCORER" --track "$track" --ks 2,3 \
+            "$PY" -m streamlite.cli.eval_q2 --arm "$arm" --ckpt "$CK/W_$arm" --scorer "$SCORER" --track "$track" --ks 2,3 \
                 --video_dir "$VIDEO_DIR" --feature_cache "$CACHE" --calibration "$CAL" --out_dir "$RUN_DIR/$name" \
                 $(opt --max_clips "$Q2_STREAMS") && mark "$name" || { echo "[pipe][ERROR] $name failed"; FAILED=$((FAILED + 1)); }
         fi

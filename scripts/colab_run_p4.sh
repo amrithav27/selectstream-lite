@@ -86,7 +86,7 @@ train_stage_w() {
     fi
 
     echo "[P4 Runner] >>> Starting Stage W training for $tag (arm=$arm, seed=$seed, init=$init) ..."
-    python3 -m main.cli.train_ego4d \
+    python3 -m streamlite.cli.train_ego4d \
         --config "$config" \
         --stage W \
         --arm "$arm" \
@@ -132,7 +132,7 @@ eval_checkpoint() {
     fi
 
     echo "[P4 Runner] >>> Evaluating $eval_tag (track=$track, ckpt=$ckpt, max_clips=$EVAL_CLIPS) ..."
-    python3 -m main.cli.eval_ego4d \
+    python3 -m streamlite.cli.eval_ego4d \
         --config "$eval_config" \
         --arm "$arm" \
         --ckpt "$ckpt" \

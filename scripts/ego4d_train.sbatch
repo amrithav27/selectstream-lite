@@ -46,7 +46,7 @@ trap 'echo "[train] wall limit near (USR1)"; mirror_latest' USR1
 
 stage_clips || exit 1
 # Run in the background and wait, so the USR1 trap can fire while Python runs.
-"$PY" -m main.cli.train_ego4d --stage "$STAGE" --arm "$ARM" --video_dir "$VIDEO_DIR" --output_dir "$OUT" \
+"$PY" -m streamlite.cli.train_ego4d --stage "$STAGE" --arm "$ARM" --video_dir "$VIDEO_DIR" --output_dir "$OUT" \
     --trace_dir "$OUT/traces" --trace_clips 3 "${EXTRA[@]}" &
 PID=$!
 wait $PID; STATUS=$?
@@ -64,6 +64,6 @@ if [ "$STATUS" = 0 ] && [ -f "$OUT/final/weights.pt" ] && [ -z "${KEEP_HOME_LATE
 fi
 mkdir -p "$REPO_ROOT/outputs/${STAGE}_${ARM}"
 cp "$OUT/train_log.jsonl" "$REPO_ROOT/outputs/${STAGE}_${ARM}/" 2>/dev/null || true
-"$PY" -m main.cli.plot_ego4d --traces "$OUT/traces" --train_log "$OUT/train_log.jsonl" \
+"$PY" -m streamlite.cli.plot_ego4d --traces "$OUT/traces" --train_log "$OUT/train_log.jsonl" \
     --config configs/ego4d_qwen25vl7b.yaml --out "$REPO_ROOT/outputs/${STAGE}_${ARM}/figs" || true
 exit $STATUS

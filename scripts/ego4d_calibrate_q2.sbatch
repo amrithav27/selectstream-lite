@@ -23,12 +23,12 @@ if [ "${SKIP_STAGE:-0}" = 1 ]; then echo "[calq2] SKIP_STAGE=1: using clips alre
 mkdir -p "$REPO_ROOT/outputs"
 if [ "$TASK" = "calibrate" ]; then
     # No CKPT = pre-Stage-R probe: only arm A tau_s / tau_r are meaningful (frozen features only).
-    "$PY" -m main.cli.calibrate_write ${CKPT:+--ckpt "$CKPT"} --video_dir "$VIDEO_DIR" --num_clips "${NUM_CLIPS:-50}" \
+    "$PY" -m streamlite.cli.calibrate_write ${CKPT:+--ckpt "$CKPT"} --video_dir "$VIDEO_DIR" --num_clips "${NUM_CLIPS:-50}" \
         --out "$REPO_ROOT/outputs/calibration.json"
 else
     ARM="${ARM:-A}"
     K="${K:-2}"
     [ -n "$CKPT" ] || { echo "[calq2] TASK=q2 needs CKPT"; exit 1; }
-    "$PY" -m main.cli.eval_q2 --arm "$ARM" --ckpt "$CKPT" --k "$K" ${MAX_CLIPS:+--max_clips "$MAX_CLIPS"} --video_dir "$VIDEO_DIR" \
+    "$PY" -m streamlite.cli.eval_q2 --arm "$ARM" --ckpt "$CKPT" --k "$K" ${MAX_CLIPS:+--max_clips "$MAX_CLIPS"} --video_dir "$VIDEO_DIR" \
         --out_dir "$REPO_ROOT/outputs/q2_${ARM}_k${K}"
 fi

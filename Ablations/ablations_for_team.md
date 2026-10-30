@@ -64,7 +64,7 @@ Ordered by priority. "Code" says whether it can run today or needs code first.
 - **Code:** needs an eval flag (not written). Give Qwen2.5-VL the cached PNG frames as images:
   - *oracle frames:* up to 8 frames from the answer window;
   - *uniform frames:* 8 frames evenly spaced from stream start to t_q.
-  Frames come from `FrameCache.image(clip_uid, k)` (`main/data/frame_cache.py`).
+  Frames come from `FrameCache.image(clip_uid, k)` (`streamlite/data/frame_cache.py`).
 - **Cost:** ~1 h coding, ~30 min GPU each on 150 QA streams.
 - **Reading:** oracle frames high + oracle evidence low → the memory injection is the bottleneck.
   Both low → the metric / answer format is the problem.
@@ -85,10 +85,10 @@ Ordered by priority. "Code" says whether it can run today or needs code first.
 ### P6. Smaller backbone: Qwen2.5-VL-3B
 - **Question:** does a different backbone also ignore the memory? Is the method size-dependent?
 - **Code:** two small fixes first: hidden size 3584 is hard-coded in
-  `main/model/importance_scorer.py` (`load_scorer` default) and `main/cli/replay_write.py`
+  `streamlite/model/importance_scorer.py` (`load_scorer` default) and `streamlite/cli/replay_write.py`
   (`ImportanceScorer(3584, ...)`); read it from the model config instead. New config with
   `model_name_or_path: Qwen/Qwen2.5-VL-3B-Instruct`.
-- **Run:** the whole pipeline (new feature cache with `main.cli.cache_features`, scorer, Stage R,
+- **Run:** the whole pipeline (new feature cache with `streamlite.cli.cache_features`, scorer, Stage R,
   calibration, Stage W, evals). Run it on 4 streams first.
 - **Cost:** ~1.5 days on 4 × 2080 Ti (unmeasured on Colab). The new cache needs only `g/` + `meta/`
   (~7 GB at hidden size 2048); frames come from the clips via the fallback.
@@ -102,7 +102,7 @@ Ordered by priority. "Code" says whether it can run today or needs code first.
 ### P8. Q2 items the plan lists but the code doesn't have
 - A model-written split (the frozen Qwen splits the composite question, instead of the oracle split).
 - Native two-hop NLQ questions ("Where is X before / after Y?").
-- **Code:** needs adding to `main/cli/eval_q2.py`. See `docs/plan.md` §7.
+- **Code:** needs adding to `streamlite/cli/eval_q2.py`. See `docs/plan.md` §7.
 
 ---
 
@@ -154,7 +154,7 @@ Amritha's note]]; a different OpenCV build on Colab may differ slightly.
 **4. Run an eval** (e.g. P1, text-only):
 
 ```bash
-python -m main.cli.eval_ego4d --config configs/ego4d_colab.yaml --arm A \
+python -m streamlite.cli.eval_ego4d --config configs/ego4d_colab.yaml --arm A \
     --ckpt /content/ck/checkpoints/full_v3/W_A --track qa \
     --video_dir /content/clips --feature_cache /content/feature_cache \
     --scorer /content/ck/runs/full_v3/scorer/scorer.pt \
@@ -166,7 +166,7 @@ python -m main.cli.eval_ego4d --config configs/ego4d_colab.yaml --arm A \
 - `--arm` must match the checkpoint (`W_B` → `--arm B`).
 - Other switches: `--read_ablation {no_prior,no_cos,no_bias,cos_only,prior_only,no_hops,no_gar,coarse_only,random,oracle}`,
   `--evidence_k M`, `--no_open`, `--blank_frame`.
-- Stage W (P4, P5) from `checkpoints/full_v3/R_A`: `python -m main.cli.train_ego4d --stage W --arm A
+- Stage W (P4, P5) from `checkpoints/full_v3/R_A`: `python -m streamlite.cli.train_ego4d --stage W --arm A
   --init_from /content/ck/checkpoints/full_v3/R_A --max_steps 50 --calibration ... --scorer ...
   --feature_cache ... --video_dir ... --output_dir ...`
 - Colab sessions end; Stage W writes `latest/` every 10 streams and resumes from it, so put

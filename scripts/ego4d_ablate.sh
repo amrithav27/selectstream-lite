@@ -37,7 +37,7 @@ for spec in "${SCORERS[@]}"; do
     d="$OUT/scorers/$name"
     [ -f "$d/scorer.pt" ] && { echo "[ablate] scorer $name exists"; continue; }
     echo "[ablate] scorer $name: $flags ($(date +%H:%M))"
-    nice -n 10 "$PY" -m main.cli.train_scorer --feature_cache "$CACHE" --out_dir "$d" --seeds 1 --diag_proj_dims "" $SMALL $flags \
+    nice -n 10 "$PY" -m streamlite.cli.train_scorer --feature_cache "$CACHE" --out_dir "$d" --seeds 1 --diag_proj_dims "" $SMALL $flags \
         > "$d.log" 2>&1 || { echo "[ablate][ERROR] scorer $name failed: $(tail -2 "$d.log")"; FAILED=$((FAILED + 1)); }
 done
 
@@ -55,13 +55,13 @@ run_grid() {  # run_grid <dir> <extra flags>
     [ -f "$d/ablate_write.json" ] && { echo "[ablate] $d exists"; return; }
     mkdir -p "$d"
     echo "[ablate] grid $d ($(date +%H:%M))"
-    nice -n 10 "$PY" -m main.cli.ablate_write --feature_cache "$CACHE" --out_dir "$d" --scorers "$SC" --variants "$VARIANTS" \
+    nice -n 10 "$PY" -m streamlite.cli.ablate_write --feature_cache "$CACHE" --out_dir "$d" --scorers "$SC" --variants "$VARIANTS" \
         --l_mins "$L_MINS" --budgets "$BUDGETS" --workers "$WORKERS" $SMALL "$@" > "$d/ablate.log" 2>&1 \
         || { echo "[ablate][ERROR] grid $d failed: $(tail -2 "$d/ablate.log")"; FAILED=$((FAILED + 1)); }
 }
 run_grid ablate_raw
 run_grid ablate_norm --norm_value
 
-"$PY" -m main.cli.plot_ego4d --run_dir "$OUT" > "$OUT/plot_ablate.log" 2>&1; tail -1 "$OUT/plot_ablate.log"
+"$PY" -m streamlite.cli.plot_ego4d --run_dir "$OUT" > "$OUT/plot_ablate.log" 2>&1; tail -1 "$OUT/plot_ablate.log"
 echo "[ablate] finished $(date +%H:%M) with $FAILED failed step(s)"
 exit $((FAILED > 0))

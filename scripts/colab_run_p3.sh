@@ -53,7 +53,7 @@ mark() { touch "$LOG_DIR/done.p3_$1"; echo "[P3 Runner] ===== P3 $1 done at $(da
 # 1. Oracle Frames baseline (up to 8 frames from answer window)
 if ! done_ oracle; then
     echo "[P3 Runner] Running Oracle Frames baseline (max_clips=$MAX_CLIPS, resume=enabled) ..."
-    python3 -m main.cli.eval_ego4d \
+    python3 -m streamlite.cli.eval_ego4d \
         --config "$CONFIG" \
         --ckpt none \
         --track qa \
@@ -74,7 +74,7 @@ fi
 # 2. Uniform Frames baseline (8 frames evenly spaced from stream start to t_q)
 if ! done_ uniform; then
     echo "[P3 Runner] Running Uniform Frames baseline (max_clips=$MAX_CLIPS, resume=enabled) ..."
-    python3 -m main.cli.eval_ego4d \
+    python3 -m streamlite.cli.eval_ego4d \
         --config "$CONFIG" \
         --ckpt none \
         --track qa \
