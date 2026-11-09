@@ -384,7 +384,14 @@ class DynamicMemoryGraphReasoner(nn.Module):
         # Eq. (10): e_m = LN(W_e h_m). Only the retrieved nodes are exposed (no padding tokens).
         selected_evidence = self.evidence_ln(self.evidence_proj(refined[ev_pos]))
         evidence_tokens = selected_evidence
-
+        # Token-presence controls (red_flags RF-1): same nodes, same count, no content. Retrieval metrics are unchanged,
+        # so a flat answer score here means the reader only needs evidence tokens to exist, not to say anything.
+        if ab == "zero_evidence":
+            evidence_tokens = torch.zeros_like(selected_evidence)
+        elif ab == "noise_evidence":
+            g = torch.Generator(device=selected_evidence.device).manual_seed(0)
+            noise = torch.randn(selected_evidence.shape, generator=g, device=selected_evidence.device, dtype=torch.float32)
+            evidence_tokens = (noise * selected_evidence.float().std().clamp(min=1e-6)).to(selected_evidence.dtype)
         evidence_indices = sub_node_indices[ev_pos]
         sparsity_subgraph_loss = route_prob.sum().to(dtype=refined.dtype) / float(max(1, self.graph_budget))
         sparsity_redundancy_loss = self._evidence_redundancy_loss(selected_evidence)
