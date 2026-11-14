@@ -1,0 +1,9 @@
+clip failures: 0
+ref rc 0 40.7 min
+zero_evidence rc 0 54.3 min
+noise_evidence rc 0 38.6 min
+no_mark_read rc 0 39.6 min
+coarse_k4 rc 0 39.5 min
+topk8_none rc 0 39.5 min
+topk8_coarse rc 0 39.5 min
+QUEUE DONE

@@ -1,0 +1,39 @@
+2026-11-10 23:43:22
+clips: 327
+gpu MiB: 0 MiB
+dl: DONE qwen DONE features
+queue.log:
+08:45 streams 243 clips needed 327 missing ids 0
+08:48 clip failures: 0
+09:26 ref ref chunk start=50 rc 0 37.2 min
+10:02 ref ref chunk start=100 rc 0 36.3 min
+10:37 ref ref chunk start=150 rc 0 35.6 min
+11:10 ref ref chunk start=200 rc 0 32.3 min
+11:10 ref ref ALL CHUNKS DONE
+11:46 RF-15 coarse_k4 chunk start=50 rc 0 36.2 min
+12:23 RF-15 coarse_k4 chunk start=100 rc 0 36.5 min
+12:58 RF-15 coarse_k4 chunk start=150 rc 0 35.4 min
+13:30 RF-15 coarse_k4 chunk start=200 rc 0 32.5 min
+13:30 RF-15 coarse_k4 ALL CHUNKS DONE
+14:07 RF-15 topk8_none chunk start=50 rc 0 36.4 min
+14:43 RF-15 topk8_none chunk start=100 rc 0 36.5 min
+15:19 RF-15 topk8_none chunk start=150 rc 0 35.5 min
+15:51 RF-15 topk8_none chunk start=200 rc 0 32.5 min
+15:51 RF-15 topk8_none ALL CHUNKS DONE
+16:28 RF-16 no_mark_read chunk start=50 rc 0 36.4 min
+17:04 RF-16 no_mark_read chunk start=100 rc 0 36.7 min
+17:40 RF-16 no_mark_read chunk start=150 rc 0 35.6 min
+18:13 RF-16 no_mark_read chunk start=200 rc 0 32.6 min
+18:13 RF-16 no_mark_read ALL CHUNKS DONE
+19:02 RF-1 zero_evidence chunk start=50 rc 0 49.4 min
+19:50 RF-1 zero_evidence chunk start=100 rc 0 48.4 min
+20:38 RF-1 zero_evidence chunk start=150 rc 0 47.4 min
+21:22 RF-1 zero_evidence chunk start=200 rc 0 44.5 min
+21:22 RF-1 zero_evidence ALL CHUNKS DONE
+21:58 RF-1 noise_evidence chunk start=50 rc 0 35.9 min
+22:34 RF-1 noise_evidence chunk start=100 rc 0 36.0 min
+23:10 RF-1 noise_evidence chunk start=150 rc 0 35.2 min
+23:42 RF-1 noise_evidence chunk start=200 rc 0 32.0 min
+23:42 RF-1 noise_evidence ALL CHUNKS DONE
+23:42 QUEUE DONE
+current: noise_evidence_s200.log: streams 43/50 avg 44.1s | }

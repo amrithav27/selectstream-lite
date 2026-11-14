@@ -1,0 +1,75 @@
+[arm] A: calibrated values from /content/ck/runs/full_v3/calibration.json: {'lvm_tau_s': 0.06815026234835386, 'lvm_tau_r': 0.9896904706954956}
+[env] GPUs: ['NVIDIA L4']
+Loading weights:   0%|          | 0/729 [00:00<?, ?it/s]Loading weights:   0%|          | 1/729 [00:00<05:48,  2.09it/s]Loading weights:   0%|          | 2/729 [00:00<04:06,  2.95it/s]Loading weights:   4%|▍         | 28/729 [00:00<00:13, 51.64it/s]Loading weights:   6%|▌         | 41/729 [00:00<00:10, 66.21it/s]Loading weights:   7%|▋         | 52/729 [00:01<00:09, 70.15it/s]Loading weights:   9%|▉         | 65/729 [00:01<00:08, 80.12it/s]Loading weights:  10%|█         | 76/729 [00:01<00:08, 78.91it/s]Loading weights:  12%|█▏        | 89/729 [00:01<00:07, 87.22it/s]Loading weights:  14%|█▎        | 100/729 [00:01<00:07, 86.53it/s]Loading weights:  15%|█▌        | 112/729 [00:01<00:07, 80.65it/s]Loading weights:  17%|█▋        | 125/729 [00:01<00:06, 88.42it/s]Loading weights:  19%|█▊        | 136/729 [00:02<00:08, 73.94it/s]Loading weights:  21%|██        | 150/729 [00:02<00:06, 83.40it/s]Loading weights:  22%|██▏       | 160/729 [00:02<00:07, 74.46it/s]Loading weights:  25%|██▌       | 184/729 [00:02<00:05, 91.32it/s]Loading weights:  27%|██▋       | 197/729 [00:02<00:05, 95.31it/s]Loading weights:  29%|██▊       | 208/729 [00:02<00:05, 90.20it/s]Loading weights:  30%|███       | 221/729 [00:02<00:05, 95.61it/s]Loading weights:  32%|███▏      | 232/729 [00:03<00:05, 83.70it/s]Loading weights:  34%|███▎      | 246/729 [00:03<00:05, 90.61it/s]Loading weights:  35%|███▌      | 256/729 [00:03<00:05, 83.95it/s]Loading weights:  37%|███▋      | 270/729 [00:03<00:04, 93.36it/s]Loading weights:  38%|███▊      | 280/729 [00:03<00:05, 79.76it/s]Loading weights:  42%|████▏     | 304/729 [00:03<00:04, 95.52it/s]Loading weights:  43%|████▎     | 317/729 [00:04<00:04, 98.04it/s]Loading weights:  45%|████▍     | 328/729 [00:04<00:04, 92.44it/s]Loading weights:  52%|█████▏    | 379/729 [00:04<00:01, 185.97it/s]Loading weights:  66%|██████▋   | 484/729 [00:04<00:00, 395.72it/s]Loading weights:  82%|████████▏ | 595/729 [00:04<00:00, 577.97it/s]Loading weights:  95%|█████████▌| 693/729 [00:04<00:00, 683.60it/s]Loading weights: 100%|██████████| 729/729 [00:04<00:00, 156.74it/s]
+/content/sl/streamlite/model/query_builder.py:22: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+/content/sl/streamlite/model/lvm_memory.py:244: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  self.segment_encoder = nn.TransformerEncoder(seg_encoder_layer, num_layers=self.segment_encoder_layers)
+[ckpt] loaded /content/ck/checkpoints/full_v3/W_A/weights.pt: 65 tensors, missing(non-backbone)=0, unexpected=0
+[scorer] loaded /content/ck/runs/full_v3/scorer/scorer.pt (seed 42, dev AP 0.3148258249050078)
+[eval] feature cache /content/feature_cache: 243/243 streams fully cached
+[eval] arm=A track=qa split=val streams=50 missing_video=0
+/content/sl/streamlite/model/dmg_gar.py:244: UserWarning: index_reduce() is in beta and the API may change at any time. (Triggered internally at /pytorch/aten/src/ATen/native/cuda/Indexing.cu:1469.)
+  edge_bonus.index_reduce_(0, edge_src, edge_w, reduce="amax", include_self=True)
+[eval] stream 1/50 000cd456-ff8d-499b-b0c1-4acead128a8b clips=1 frames=480 queries=4 32s
+[eval] stream 2/50 0066ab25-04ad-41b2-89ab-283d2bfa1c4b clips=1 frames=480 queries=13 35s
+[eval] stream 3/50 03e90bbc-7d6b-423c-84d9-b5be3eff11c5 clips=2 frames=930 queries=24 65s
+[eval] stream 4/50 0475a0b9-9445-4083-8c6a-42f0171ff3e4 clips=1 frames=480 queries=5 27s
+[eval] stream 5/50 04994ce8-9d47-44d6-a7b0-42b395e69390 clips=1 frames=1200 queries=30 108s
+[eval] stream 6/50 055ba601-c243-4d4a-8a2c-694a5c88824c clips=1 frames=481 queries=12 28s
+[eval] stream 7/50 056db3f1-f957-46c8-b16b-c8fce22e78f9 clips=1 frames=480 queries=12 31s
+[eval] stream 8/50 06fb8090-16a4-42c3-819e-f0e95ddba24d clips=1 frames=480 queries=7 31s
+[eval] stream 9/50 07309684-1f6e-4977-ab74-f3e63c361f36 clips=1 frames=481 queries=13 34s
+[eval] stream 10/50 083b7556-9dff-40e2-9fad-bef3f82dbf37 clips=1 frames=360 queries=10 26s
+[eval] stream 11/50 0971527a-6cd3-4c82-9d94-09b3565f4505 clips=1 frames=481 queries=12 28s
+[eval] stream 12/50 0aec2b0c-18e1-453b-a6ed-e484698d41df clips=1 frames=1116 queries=5 81s
+[eval] stream 13/50 0c6ab491-c45e-4cbc-b6b2-a709cc856a9c clips=2 frames=961 queries=28 88s
+[eval] stream 14/50 0dbd615d-fde9-4936-a605-6f5659cd113e clips=1 frames=480 queries=4 27s
+[eval] stream 15/50 0de39e75-fb19-47d4-818d-fff874b05ab9 clips=1 frames=480 queries=7 33s
+[eval] stream 16/50 0ffc33a8-bbd4-47e2-8748-7069197a4e03 clips=1 frames=481 queries=14 33s
+[eval] stream 17/50 10a04147-ae19-4c5e-b13b-b0b7005938a2 clips=1 frames=481 queries=2 29s
+[eval] stream 18/50 115774b6-534d-444f-b7aa-d1b834eb0ee7 clips=5 frames=3060 queries=80 145s
+[eval] stream 19/50 12946f28-5f4a-4ba5-8296-c08cbeeca501 clips=1 frames=480 queries=15 36s
+[eval] stream 20/50 1330508f-8168-4408-a4df-79f69fb87c83 clips=1 frames=450 queries=6 25s
+[eval] stream 21/50 145881ef-5578-460d-bb5a-6fb80ef7d457 clips=2 frames=602 queries=19 27s
+[eval] stream 22/50 168f91fd-53c2-4eee-9d2d-e25e1ad73438 clips=1 frames=480 queries=16 33s
+[eval] stream 23/50 180b72fa-2102-414e-a6d5-2806e53f320c clips=1 frames=481 queries=20 41s
+[eval] stream 24/50 182dffe9-d2bf-4a7d-b1d8-137470f0143d clips=2 frames=961 queries=29 70s
+[eval] stream 25/50 18a3840b-7463-43c4-9aa9-b1d8e486fa84 clips=6 frames=2794 queries=96 224s
+[eval] stream 26/50 18e84829-901a-414d-8a2b-d1d2b3244db7 clips=3 frames=1292 queries=42 95s
+[eval] stream 27/50 1938c632-f575-49dd-8ae0-e48dbb467920 clips=1 frames=480 queries=13 37s
+[eval] stream 28/50 1c7426ad-b6ba-4494-897c-537dd4a201e9 clips=2 frames=961 queries=27 65s
+[eval] stream 29/50 1dcc108c-8bd4-42ad-b2c5-03662be62eda clips=2 frames=602 queries=20 47s
+[eval] stream 30/50 20400762-1e47-462d-a7d1-64a1b162b1f9 clips=1 frames=481 queries=13 32s
+[eval] stream 31/50 20525d50-586a-4792-bfdb-fd941ee64ea9 clips=1 frames=480 queries=7 30s
+[eval] stream 32/50 20cf795c-81da-42d8-829f-813cf68bb13c clips=1 frames=282 queries=4 17s
+[eval] stream 33/50 210b5b51-6dae-43b2-9cf8-28e04a785f18 clips=1 frames=442 queries=11 32s
+[eval] stream 34/50 216c7a1a-7ec3-4aa0-a465-e37e7b5fd2f3 clips=1 frames=1200 queries=30 64s
+[eval] stream 35/50 224c3de4-9683-462a-8eb4-224773425a7e clips=1 frames=480 queries=16 37s
+[eval] stream 36/50 225a1ffe-3e7e-4ff8-a47e-2e80989077fe clips=1 frames=481 queries=12 29s
+[eval] stream 37/50 235b49d2-b59c-4079-81cc-ad9c01dbd2df clips=1 frames=480 queries=13 39s
+[eval] stream 38/50 243e800d-fc75-473d-b944-a95844e13a78 clips=3 frames=1323 queries=35 84s
+[eval] stream 39/50 245cde61-d0a0-49c8-840d-e484b5f71a04 clips=1 frames=480 queries=15 39s
+[eval] stream 40/50 254029e5-fed4-40a7-bef1-12b9faff3202 clips=2 frames=960 queries=16 51s
+[eval] stream 41/50 256701cd-3317-47ee-b6e3-439dc2ad2bd5 clips=1 frames=481 queries=19 29s
+[eval] stream 42/50 25beabfc-48c0-4f81-b419-c47297aecf6f clips=1 frames=447 queries=13 37s
+[eval] stream 43/50 25e093a8-86d5-47e9-b09f-5a8afef85b74 clips=1 frames=480 queries=16 39s
+[eval] stream 44/50 262fd2ec-8eba-44d9-8082-4d0574f7a515 clips=1 frames=480 queries=5 27s
+[eval] stream 45/50 2763dbfc-8488-4264-b31f-4b12096c4c4b clips=1 frames=481 queries=14 30s
+[eval] stream 46/50 2876b375-e848-412c-8a6f-0664cbab6a33 clips=1 frames=480 queries=7 24s
+[eval] stream 47/50 28dca1ee-7675-47a2-be89-3fa5979789e1 clips=1 frames=480 queries=7 28s
+[eval] stream 48/50 292af6ad-aeac-453b-bc59-cdafa981dbfd clips=1 frames=480 queries=13 31s
+[eval] stream 49/50 2ac65951-49b0-4629-981e-edc34b8cdb0f clips=1 frames=481 queries=12 38s
+[eval] stream 50/50 2bd5c29e-ef5c-451c-aa2e-961d4257de9b clips=1 frames=480 queries=4 31s
+{
+ "n": 867,
+ "recall_at_m": 0.5051903114186851,
+ "t_overlap": 0.46021765231450895,
+ "evidence_precision": 0.02784003853073036,
+ "evidence_span_s": 199.08538392835834,
+ "evidence_survival": 1.0,
+ "best_iou": 0.18734621718870836,
+ "num_committed": 14.83275663206459,
+ "exact": 0.12572087658592848,
+ "contains": 0.19953863898500576
+}
