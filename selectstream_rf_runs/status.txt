@@ -1,0 +1,20 @@
+2026-11-06 21:33:40
+clips: 205
+gpu MiB: 0 MiB
+queue.log:
+clip failures: 0
+ref rc 0 40.7 min
+zero_evidence rc 0 54.3 min
+noise_evidence rc 0 38.6 min
+no_mark_read rc 0 39.6 min
+coarse_k4 rc 0 39.5 min
+topk8_none rc 0 39.5 min
+topk8_coarse rc 0 39.5 min
+QUEUE DONE
+coarse_k4.log: streams 50/50 avg 47.0s | }
+no_mark_read.log: streams 50/50 avg 47.0s | }
+noise_evidence.log: streams 50/50 avg 45.9s | }
+ref.log: streams 50/50 avg 47.2s | }
+topk8_coarse.log: streams 50/50 avg 46.9s | }
+topk8_none.log: streams 50/50 avg 47.0s | }
+zero_evidence.log: streams 50/50 avg 64.7s | }
