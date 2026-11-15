@@ -188,7 +188,18 @@ Same 150 streams, real frames. Retrieval is unchanged in the zero/noise rows, so
 | no evidence, blank frame (question only) | – | -0.098 [-0.117, -0.079] (0.002) | 0% |
 | reader's nodes, blank frame | 0.503 | -0.024 [-0.039, -0.009] (0.036) | 64.5% |
 
-> **WRITE THIS:** Interpretation paragraph (update the mid-submission E1–E4 text): Recall@M 0.93 vs 0.50 vs 0.02 gives the
+*Independent replication (Dedeepya, Colab, all 243 val QA streams, 3,751 questions; `selectstream_rf_runs_full/`): paired difference against her own reference run, 95% CI from her script (resampling unit not re-checked). Ada column: 150 streams, the read-side and evidence-control tables.*
+
+| Variant | Metric | Colab, 243 streams | Ada, 150 streams |
+|---|---|---|---|
+| no re-rank (coarse only) | ΔRecall@M | +0.041 [+0.027, +0.057] | +0.038 |
+| re-rank chooses 4 of 8 | ΔRecall@M | -0.003 [-0.012, +0.005] | -0.006 |
+| reads do not mark nodes | ΔRecall@M / Δbest IoU | -0.039 [-0.061, -0.019] / +0.010 | -0.053 / +0.013 |
+| content set to zero | Δcontains | -0.113 [-0.132, -0.095] | -0.126 |
+| content replaced by noise | Δcontains | -0.214 [-0.235, -0.193] | -0.219 |
+
+> **WRITE THIS:** Interpretation paragraph (update the mid-submission E1–E4 text). Also one sentence on the replication table: every
+> control replicates in direction and size on all 243 streams on different hardware. Recall@M 0.93 vs 0.50 vs 0.02 gives the
 > same answers (99.4% identical), so the answer does not depend on *which* moment is retrieved; out-of-distribution
 > tokens (zero, noise) are worse than no tokens; real visual tokens beat none by 0.091. One reading: the evidence tokens
 > set the answer's form (short phrases vs sentences) and the language prior supplies the content ("on the table" is 30%
@@ -245,6 +256,7 @@ margin. Retraining the writer for arm B, instead of reusing the writer trained w
 | B - A, seed 42 | -0.053 [-0.075, -0.032] | -0.024 [-0.033, -0.016] | -0.049 [-0.069, -0.030] | -0.030 [-0.039, -0.020] |
 | B - A, seed 43 | -0.042 [-0.066, -0.019] | -0.021 [-0.030, -0.012] | -0.035 [-0.057, -0.015] | -0.028 [-0.037, -0.019] |
 | B - A, seed 44 | -0.044 [-0.066, -0.021] | -0.023 [-0.031, -0.016] | -0.044 [-0.066, -0.022] | -0.030 [-0.038, -0.022] |
+| B - A, seed 43, Colab A100 (Keerthana, 50 streams, no CI) | -0.047 | -0.026 | -0.063 | -0.021 |
 | C - A | +0.062 [+0.029, +0.094] | +0.007 [-0.005, +0.018] | +0.060 [+0.035, +0.084] | +0.009 [-0.002, +0.021] |
 | D - A | -0.007 [-0.029, +0.015] | -0.023 [-0.033, -0.014] | -0.005 [-0.024, +0.014] | -0.019 [-0.028, -0.011] |
 | A - untrained | +0.034 [+0.018, +0.049] | -0.003 [-0.006, -0.001] | – | – |
