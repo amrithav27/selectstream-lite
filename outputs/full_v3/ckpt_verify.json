@@ -1,0 +1,45 @@
+{
+ "R_A": {
+  "scratch": "/ssd_scratch/amritha.vinod/selectstream/outputs/full_v3/R_A/final/weights.pt",
+  "exists": true,
+  "hub_sha256": "0e72cd541815ed205be20e193e07264cd7b20cb50a38d15892364d72f71410df",
+  "sha256": "0e72cd541815ed205be20e193e07264cd7b20cb50a38d15892364d72f71410df",
+  "match": true
+ },
+ "W_A": {
+  "scratch": "/ssd_scratch/amritha.vinod/selectstream/outputs/full_v3/W_A/final/weights.pt",
+  "exists": true,
+  "hub_sha256": "db594bf7534429250d0557afcb77a4f1bdbeac40f14a87d29fcfd314197d1397",
+  "sha256": "db594bf7534429250d0557afcb77a4f1bdbeac40f14a87d29fcfd314197d1397",
+  "match": true
+ },
+ "W_B": {
+  "scratch": "/ssd_scratch/amritha.vinod/selectstream/outputs/full_v3/W_B/final/weights.pt",
+  "exists": true,
+  "hub_sha256": "8f5897a38211afd66458c1e42b28013104aff84912900887d2696b0ed824fbc6",
+  "sha256": "8f5897a38211afd66458c1e42b28013104aff84912900887d2696b0ed824fbc6",
+  "match": true
+ },
+ "W_C": {
+  "scratch": "/ssd_scratch/amritha.vinod/selectstream/outputs/full_v3/W_C/final/weights.pt",
+  "exists": true,
+  "hub_sha256": "a1bcf2bb6479a3ba0470d8b28e5c587e9b2d6ed02f0a73635a8ca09c02eb560a",
+  "sha256": "a1bcf2bb6479a3ba0470d8b28e5c587e9b2d6ed02f0a73635a8ca09c02eb560a",
+  "match": true
+ },
+ "W_D": {
+  "scratch": "/ssd_scratch/amritha.vinod/selectstream/outputs/full_v3/W_D/final/weights.pt",
+  "exists": true,
+  "hub_sha256": "f845990fa07e328e939671149cf3f29053a11802022727f76051dcd6947123d6",
+  "sha256": "f845990fa07e328e939671149cf3f29053a11802022727f76051dcd6947123d6",
+  "match": true
+ },
+ "RF11_W_B_latest_vs_final": {
+  "keys_common": 65,
+  "only_latest": 0,
+  "only_final": 0,
+  "differing": [],
+  "n_differing": 0,
+  "step_latest": 51
+ }
+}

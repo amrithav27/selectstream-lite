@@ -56,11 +56,18 @@ def main():
     ap.add_argument("--feature_cache", default=None, help="Stage-0 cache dir: write path reads g_t, queries read the cached frame.")
     ap.add_argument("--scorer", default=None, help="Stage-1 scorer (train_scorer.py); required for arm B.")
     ap.add_argument("--read_ablation", default="none",
-                    choices=["none", "no_prior", "no_cos", "no_bias", "cos_only", "prior_only", "no_hops", "no_gar", "coarse_only", "random", "oracle"],
+                    choices=["none", "no_prior", "no_cos", "no_bias", "cos_only", "prior_only", "no_hops", "no_gar", "coarse_only", "random", "oracle",
+                             "zero_evidence", "noise_evidence", "oracle_wrong"],
                     help="Read-side ablation at eval time (dmg_gar.py; docs/plan.md §13.5).")
     ap.add_argument("--evidence_k", type=int, default=None, help="Evidence tokens M at read (0 = answer without memory).")
     ap.add_argument("--no_open", action="store_true", help="The read sees committed nodes only, not the open segment.")
     ap.add_argument("--blank_frame", action="store_true", help="Query-conditioning ablation: ask over a black frame of the same size.")
+    ap.add_argument("--no_mark_read", action="store_true",
+                    help="Reads do not bump read_count, so they cannot change keep/evict priority in later writes (RF-16). "
+                         "Off by default to stay comparable with earlier runs.")
+    ap.add_argument("--seed_topk", type=int, default=None,
+                    help="Override the number of GAR seed nodes (config method_seed_topk). With seed_topk == M the hop / GAR / re-rank "
+                         "ablations collapse into one (RF-15); set it above M to give the re-rank something to choose from.")
     ap.add_argument("--frames_baseline", choices=["none", "oracle", "uniform"], default="none",
                     help="P3 baseline (plain Qwen without memory): sample oracle frames (from answer window) or uniform frames (0 to t_q).")
     ap.add_argument("--num_frames", type=int, default=8, help="Number of frames to sample for --frames_baseline (default: 8).")
@@ -85,6 +92,8 @@ def main():
             raise ValueError("--segment_center is for --ckpt none; a checkpoint carries its own segment_center")
         model.lvm_short_former.set_segment_center(torch.from_numpy(np.load(args.segment_center)))
     model.graph_reasoner.read_ablation = args.read_ablation
+    if args.seed_topk is not None:
+        model.graph_reasoner.seed_topk = args.seed_topk
     model.eval()
     sample_fps = float(dcfg.get("sample_fps", 1.0))
     cache = FrameCache(args.feature_cache, args.video_dir, sample_fps, int(dcfg.get("frame_max_side", 448))) if args.feature_cache else None
@@ -224,12 +233,12 @@ def main():
                     t_read = None if args.no_open else t
                     if args.track == "qa":
                         pred, aux = model.answer_with_memory(img_q, format_prompt(q.query), state, max_new_tokens=args.max_new_tokens,
-                                                             t_now=t_read, evidence_k=args.evidence_k)
+                                                             t_now=t_read, evidence_k=args.evidence_k, mark_read=not args.no_mark_read)
                     else:
                         inputs = model.prepare_inputs([img_q], [format_prompt(q.query)])
                         out = model.base_model(**inputs, output_hidden_states=True)
                         _, aux = model.read_evidence(out.hidden_states[-1], inputs["input_ids"], inputs.get("attention_mask"), state,
-                                                     t_now=t_read, evidence_k=args.evidence_k)
+                                                     t_now=t_read, evidence_k=args.evidence_k, mark_read=not args.no_mark_read)
                         pred = None
                     row = {
                         "query_id": q.query_id,
@@ -267,6 +276,11 @@ def main():
             print(f"[eval] stream {ci + 1}/{len(ds)} {item.stream_id} clips={len(item.pieces)} frames={n_frames} queries={len(item.queries)} {time.time() - t0:.0f}s", flush=True)
     keys = ["recall_at_m", "t_overlap", "evidence_precision", "evidence_span_s", "evidence_survival", "best_iou", "num_committed", "exact", "contains"]
     groups = {"overall": rows}
+    # "<0s" questions are asked before their answer window ends (window runs past the last frame); keep them in "overall"
+    # so earlier runs stay comparable, and report the same metrics without them next to it.
+    non_neg = [r for r in rows if r["delay_bucket"] != "<0s"]
+    if non_neg and len(non_neg) < len(rows):
+        groups["overall_excl_neg_delay"] = non_neg
     for name, fn in (
         ("delay", lambda r: r["delay_bucket"]),
         ("evidence", lambda r: r["evidence_location"]),
@@ -286,6 +300,7 @@ def main():
         "ckpt": args.ckpt,
         "streams": len(ds),
         "read": {"ablation": args.read_ablation, "evidence_k": args.evidence_k, "open_node": not args.no_open, "blank_frame": args.blank_frame,
+                 "mark_read": not args.no_mark_read, "seed_topk": model.graph_reasoner.seed_topk,
                  "frames_baseline": args.frames_baseline, "num_frames": args.num_frames},
         "groups": {g: summarize(rs, keys) for g, rs in groups.items()},
         "config": cfg_dict,

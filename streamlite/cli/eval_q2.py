@@ -60,6 +60,21 @@ def read(model, img, question, state, k_evidence, t_now):
     spans = aux.get("evidence_time_spans", torch.empty(0, 2)).float().cpu()
     scores = aux.get("node_scores")
     return spans, float(scores.max()) if scores is not None and scores.numel() else float("-inf")
+def boot(rows, key_fn, n_boot=1000, seed=0):
+    """Mean of key_fn(row) over rows (a row may give a value or a list of values), 95% CI from resampling videos (stream_id)."""
+    by = {}
+    for r in rows:
+        v = key_fn(r)
+        v = [v] if np.isscalar(v) else list(v)
+        if v:
+            by.setdefault(r["stream_id"], []).extend(float(x) for x in v)
+    if not by:
+        return None
+    s = np.array([np.sum(v) for v in by.values()])
+    c = np.array([len(v) for v in by.values()])
+    idx = np.random.default_rng(seed).integers(0, len(s), (n_boot, len(s)))
+    b = s[idx].sum(1) / c[idx].sum(1)
+    return {"mean": float(s.sum() / c.sum()), "lo": float(np.quantile(b, 0.025)), "hi": float(np.quantile(b, 0.975)), "n": int(c.sum()), "videos": len(by)}
 def hit(spans, window):
     return float(spans.numel() > 0 and _temporal_overlap(spans, [window], 1.0) > 0.0)
 def main():
@@ -163,6 +178,19 @@ def main():
         for arm in ("single", "decomposed", "unmatched", "survival"):
             ent[f"{arm}_subhit"] = float(np.mean([h for r in rs for h in r[f"{arm}_hits"]]))
             ent[f"{arm}_allhit"] = float(np.mean([float(all(r[f"{arm}_hits"])) for r in rs]))
+        # 95% CIs over videos; paired = same items, decomposed (or unmatched) minus single
+        ci = {}
+        for arm in ("single", "decomposed", "unmatched", "survival"):
+            ci[f"{arm}_subhit"] = boot(rs, lambda r, a=arm: r[f"{a}_hits"])
+            ci[f"{arm}_allhit"] = boot(rs, lambda r, a=arm: float(all(r[f"{a}_hits"])))
+        for arm in ("decomposed", "unmatched"):
+            ci[f"{arm}_minus_single_subhit"] = boot(rs, lambda r, a=arm: float(np.mean(r[f"{a}_hits"]) - np.mean(r["single_hits"])))
+            ci[f"{arm}_minus_single_allhit"] = boot(rs, lambda r, a=arm: float(all(r[f"{a}_hits"])) - float(all(r["single_hits"])))
+        if args.track == "qa":
+            ci["single_contains"] = boot(rs, lambda r: r["single_contains"])
+            ci["decomposed_contains"] = boot(rs, lambda r: r["decomposed_contains"])
+            ci["decomposed_minus_single_contains"] = boot(rs, lambda r: float(np.mean(r["decomposed_contains"]) - np.mean(r["single_contains"])))
+        ent["ci95_over_videos"] = ci
         if k == 2:
             ok = [r for r in rs if r.get("order_pred_first") is not None]
             ent["order_acc_decomposed"] = float(np.mean([r["order_pred_first"] == r["order_true_first"] for r in ok])) if ok else None

@@ -1,5 +1,11 @@
 # Read-side ablations for selectstream-lite on Ego4D (evaluation only, no training)
 
+> **Superseded for reporting** by the 150-stream run of the same variants on Ada
+> (`outputs/full_v3/read_*`, tests in `outputs/full_v3/collected_results.md`). Its 50 streams are the first
+> 50 of those 150, so it is a subset on different hardware (A100), not an independent replication. No
+> significant difference changes sign between the two; 6 of 34 (variant, metric) pairs differ in whether
+> the 95% CI excludes 0 (blank_frame contains, random / no_prior / no_bias Recall@M, no_gar contains).
+
 Generated 2026-10-30. Everything here evaluates the already-trained arm-A model (`W_A`, run `full_v3`); no weights were changed.
 
 ## What was run

@@ -1,0 +1,18 @@
+# Versions of the Ada env (~/miniforge3/envs/venv, Python 3.11.15) that produced outputs/full_v3.
+# torch from the CUDA 11.8 wheel index: pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/cu118
+torch==2.7.1
+transformers==5.5.4
+huggingface_hub==1.11.0   # must stay < 2.0: transformers 5.5.4 does not import with 2.x (scripts/ego4d_env.sh checks)
+accelerate==1.14.0
+safetensors==0.7.0
+qwen-vl-utils==0.0.14
+av==17.1.0
+opencv-python==4.13.0.92
+pillow==12.2.0
+imageio==2.37.3
+numpy==2.4.6
+scipy==1.17.1
+scikit-learn==1.8.0
+matplotlib==3.10.8
+pyyaml==6.0.3
+tqdm==4.67.3

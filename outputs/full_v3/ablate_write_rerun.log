@@ -1,0 +1,11 @@
+[ablate] scorer stream: --loss stream_bce (10:16)
+[ablate] scorer rank: --loss rank_local (10:23)
+[ablate] scorer gonly: --loss stream_bce --input_mask g (10:30)
+[ablate] scorer scalars: --loss stream_bce --input_mask scalars (10:36)
+[ablate] scorer tol2: --loss stream_bce --time_tolerance 2 (10:40)
+[ablate] scorer shift: --loss stream_bce --label_shift (10:46)
+[ablate] scorer pooled40: --loss bce --max_epochs 40 --patience 5 (10:49)
+[ablate] grid /home2/amritha.vinod/selectstream-lite/outputs/full_v3/ablate_write_rerun/ablate_raw (11:05)
+[ablate] grid /home2/amritha.vinod/selectstream-lite/outputs/full_v3/ablate_write_rerun/ablate_norm (11:28)
+[plot] run figures in /home2/amritha.vinod/selectstream-lite/outputs/full_v3/ablate_write_rerun/figures: 6 png
+[ablate] finished 11:53 with 0 failed step(s)

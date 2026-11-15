@@ -1,0 +1,292 @@
+{
+ "arm": "B",
+ "track": "qa",
+ "M": 4,
+ "min_gap_s": 30.0,
+ "per_video": 3,
+ "ckpt": "/home2/amritha.vinod/selectstream_ckpt/full_v3/W_B",
+ "by_k": {
+  "2": {
+   "items": 694,
+   "streams": 237,
+   "single_subhit": 0.3595100864553314,
+   "single_allhit": 0.13976945244956773,
+   "decomposed_subhit": 0.22910662824207492,
+   "decomposed_allhit": 0.06628242074927954,
+   "unmatched_subhit": 0.40634005763688763,
+   "unmatched_allhit": 0.1844380403458213,
+   "survival_subhit": 0.9992795389048992,
+   "survival_allhit": 0.9985590778097982,
+   "order_acc_decomposed": 0.5864553314121037,
+   "evidence_check_curve": [
+    {
+     "threshold_quantile": 0.0,
+     "threshold": -11.32551097869873,
+     "coverage": 1.0,
+     "unsupported_rate": 0.770893371757925
+    },
+    {
+     "threshold_quantile": 0.1,
+     "threshold": -10.706213474273682,
+     "coverage": 0.8998559077809798,
+     "unsupported_rate": 0.7750200160128102
+    },
+    {
+     "threshold_quantile": 0.2,
+     "threshold": -10.532789611816407,
+     "coverage": 0.7997118155619597,
+     "unsupported_rate": 0.7756756756756756
+    },
+    {
+     "threshold_quantile": 0.3,
+     "threshold": -10.433048915863036,
+     "coverage": 0.6995677233429395,
+     "unsupported_rate": 0.7796086508753862
+    },
+    {
+     "threshold_quantile": 0.4,
+     "threshold": -10.328540802001953,
+     "coverage": 0.6001440922190202,
+     "unsupported_rate": 0.7707082833133253
+    },
+    {
+     "threshold_quantile": 0.5,
+     "threshold": -10.23005485534668,
+     "coverage": 0.5,
+     "unsupported_rate": 0.7694524495677233
+    },
+    {
+     "threshold_quantile": 0.6,
+     "threshold": -10.126925659179687,
+     "coverage": 0.39985590778097985,
+     "unsupported_rate": 0.7639639639639639
+    },
+    {
+     "threshold_quantile": 0.7,
+     "threshold": -10.00732488632202,
+     "coverage": 0.3004322766570605,
+     "unsupported_rate": 0.762589928057554
+    },
+    {
+     "threshold_quantile": 0.8,
+     "threshold": -9.860186576843262,
+     "coverage": 0.20028818443804033,
+     "unsupported_rate": 0.737410071942446
+    },
+    {
+     "threshold_quantile": 0.9,
+     "threshold": -9.639050579071045,
+     "coverage": 0.10014409221902017,
+     "unsupported_rate": 0.7553956834532374
+    }
+   ],
+   "single_contains": 0.09726224783861671,
+   "decomposed_contains": 0.22838616714697407,
+   "single_all_correct": 0.005763688760806916,
+   "decomposed_all_correct": 0.04610951008645533
+  },
+  "3": {
+   "items": 633,
+   "streams": 218,
+   "single_subhit": 0.3412322274881517,
+   "single_allhit": 0.053712480252764615,
+   "decomposed_subhit": 0.16956292785676672,
+   "decomposed_allhit": 0.00631911532385466,
+   "unmatched_subhit": 0.4054765666140074,
+   "unmatched_allhit": 0.07424960505529225,
+   "survival_subhit": 0.9994734070563455,
+   "survival_allhit": 0.9984202211690363,
+   "evidence_check_curve": [
+    {
+     "threshold_quantile": 0.0,
+     "threshold": -11.22674560546875,
+     "coverage": 1.0,
+     "unsupported_rate": 0.8304370721432333
+    },
+    {
+     "threshold_quantile": 0.1,
+     "threshold": -10.6818452835083,
+     "coverage": 0.8999473407056345,
+     "unsupported_rate": 0.8332358104154476
+    },
+    {
+     "threshold_quantile": 0.2,
+     "threshold": -10.51321029663086,
+     "coverage": 0.7998946814112691,
+     "unsupported_rate": 0.8294930875576036
+    },
+    {
+     "threshold_quantile": 0.3,
+     "threshold": -10.401159858703613,
+     "coverage": 0.6998420221169036,
+     "unsupported_rate": 0.8306997742663657
+    },
+    {
+     "threshold_quantile": 0.4,
+     "threshold": -10.317463493347168,
+     "coverage": 0.5997893628225381,
+     "unsupported_rate": 0.8287971905179983
+    },
+    {
+     "threshold_quantile": 0.5,
+     "threshold": -10.21422290802002,
+     "coverage": 0.5002632964718273,
+     "unsupported_rate": 0.8252631578947368
+    },
+    {
+     "threshold_quantile": 0.6,
+     "threshold": -10.117791175842285,
+     "coverage": 0.4002106371774618,
+     "unsupported_rate": 0.8263157894736842
+    },
+    {
+     "threshold_quantile": 0.7,
+     "threshold": -10.006807327270508,
+     "coverage": 0.3001579778830964,
+     "unsupported_rate": 0.8263157894736842
+    },
+    {
+     "threshold_quantile": 0.8,
+     "threshold": -9.846132469177245,
+     "coverage": 0.2001053185887309,
+     "unsupported_rate": 0.8184210526315789
+    },
+    {
+     "threshold_quantile": 0.9,
+     "threshold": -9.599540328979492,
+     "coverage": 0.10005265929436545,
+     "unsupported_rate": 0.8052631578947368
+    }
+   ],
+   "single_contains": 0.08004212743549237,
+   "decomposed_contains": 0.21642969984202212,
+   "single_all_correct": 0.001579778830963665,
+   "decomposed_all_correct": 0.01263823064770932
+  }
+ },
+ "config": {
+  "model": {
+   "model_name_or_path": "Qwen/Qwen2.5-VL-7B-Instruct",
+   "torch_dtype": "float16",
+   "device_map": "auto",
+   "trust_remote_code": true,
+   "max_memory": {
+    "0": "1GiB",
+    "1": "10GiB",
+    "2": "10GiB",
+    "3": "10GiB"
+   }
+  },
+  "vismem": {
+   "short_invoke_token": "<ms_I>",
+   "short_end_token": "<ms_E>",
+   "long_invoke_token": "<ml_I>",
+   "long_end_token": "<ml_E>",
+   "query_len": 8,
+   "short_mem_len": 8,
+   "long_mem_len": 16,
+   "query_builder": {
+    "num_layers": 1,
+    "num_heads": 8,
+    "dropout": 0.0,
+    "ff_mult": 4
+   },
+   "former_backend": "lvm_sft",
+   "visual_feature_source": "projected",
+   "trainable_dtype": "float32",
+   "trainable_device": "cuda:0",
+   "lvm_num_slots": 16,
+   "method_graph_budget": 8,
+   "method_seed_topk": 4,
+   "method_evidence_tokens": 4,
+   "lvm_segment_len": 32,
+   "lvm_tau_r": 0.9896904706954956,
+   "lvm_tau_s": 0.5281239973422158,
+   "lvm_gate_hidden": 256,
+   "lvm_normalize_slot": true,
+   "lvm_eviction_policy": "fifo",
+   "lvm_readout_policy": "recent",
+   "lvm_delta_t_scale": 32.0,
+   "lvm_enable_graph_merge": true,
+   "lvm_merge_similarity_weight": 1.0,
+   "lvm_merge_surprise_weight": 0.5,
+   "lvm_merge_access_weight": 0.25,
+   "lvm_merge_recency_weight": 0.25,
+   "lvm_segment_encoder_layers": 1,
+   "lvm_segment_encoder_heads": 4,
+   "lvm_segment_time_pos": true,
+   "lvm_build_long_former": false,
+   "lvm_use_saw": true,
+   "lvm_saw_lambda_attn": 0.0,
+   "lvm_saw_ema_decay": 0.9,
+   "lvm_saw_l_min": 8,
+   "lvm_saw_l_max": 64,
+   "lvm_saw_energy_budget": 10000.0,
+   "lvm_saw_recent_window": 64,
+   "lvm_saw_quantile": 0.9365079879760743,
+   "lvm_saw_attn_groups": 32,
+   "lvm_saw_use_attn_proxy": false,
+   "lvm_write_signal": "learned",
+   "lvm_use_importance_scorer": true,
+   "lvm_scorer_proj_dim": 16,
+   "lvm_fixed_segment_len": 16,
+   "method_enable_dmg_gar": true,
+   "method_num_hops": 2,
+   "method_eta_surprise_boost": 0.2,
+   "method_span_penalty_weight": 0.05,
+   "method_merge_penalty_weight": 0.05,
+   "method_route_edge_weight": 0.1,
+   "method_route_temperature": 1.0,
+   "method_ret_logit_scale": 14.2857,
+   "method_ret_logit_scale_learnable": true,
+   "method_score_bias_learnable": true,
+   "method_prior_weight": 1.0,
+   "method_route_threshold": 0.0,
+   "method_sim_topk": 4,
+   "method_temporal_weight_c": 1.0,
+   "method_gar_layers": 2,
+   "method_spar_subgraph_weight": 1.0,
+   "method_spar_redundancy_weight": 1.0,
+   "method_redundancy_margin": 0.0
+  },
+  "arms": {
+   "A": {},
+   "B": {
+    "lvm_saw_energy_budget": 8.0,
+    "lvm_tau_s": 0.066
+   },
+   "C": {
+    "lvm_saw_energy_budget": 8.0,
+    "lvm_tau_s": 0.066
+   },
+   "D": {
+    "lvm_fixed_segment_len": 16
+   }
+  },
+  "data": {
+   "sample_fps": 1.0,
+   "frame_max_side": 448,
+   "query_time_mode": "uniform",
+   "dev_frac": 0.1
+  },
+  "training": {
+   "seed": 42,
+   "epochs": 3,
+   "lr": 0.0002,
+   "weight_decay": 0.0,
+   "grad_accum": 4,
+   "max_grad_norm": 1.0,
+   "beta_ret": 0.1,
+   "gamma_spar": 0.05,
+   "time_tolerance": 0.5,
+   "scorer_weight": 1.0
+  },
+  "arm_values": {
+   "arm": "B",
+   "lvm_saw_energy_budget": 10000.0,
+   "lvm_tau_s": 0.5281239973422158,
+   "lvm_saw_quantile": 0.9365079879760743,
+   "lvm_tau_r": 0.9896904706954956
+  }
+ }
+}

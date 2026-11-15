@@ -1,0 +1,46 @@
+flowchart LR
+    %% SelectStream-lite. Paste into Lucidchart: Insert > Diagram as code > Mermaid.
+    %% Grey = frozen, blue = trained, orange = Q1 scorer (arm B only), green = memory/data.
+
+    subgraph WRITE["Write path (every frame t)"]
+        direction LR
+        F["Video frame t<br/>(1 fps)"] --> V["Qwen2.5-VL vision part<br/>FROZEN"]
+        V --> G["Frame feature g_t<br/>(3,584-d)"]
+        G --> S["Surprise<br/>(feature change)"]
+        G --> SC["Q1 importance scorer<br/>18 → 64 → 1<br/>TRAINED, arm B only"]
+        S --> W{"Write signal<br/>A: surprise · B: scorer<br/>C: oracle · D: fixed length"}
+        SC --> W
+        W -->|"cut?"| OS["Open segment"]
+        OS --> SE["Segment encoder<br/>TRAINED"]
+        SE --> GT{"Gate + write MLP<br/>update node or new node<br/>TRAINED"}
+        GT --> MEM[("Memory graph<br/>N = 16 nodes<br/>merge lowest-priority pair when full")]
+    end
+
+    subgraph READ["Read path (every question)"]
+        direction LR
+        Q["Question"] --> QE["Question encoder<br/>TRAINED"]
+        Q --> P["Question prior<br/>(fixed similarity, ours)"]
+        QE --> CS["Score every node<br/>+ learned temperature (ours)"]
+        P --> CS
+        CS --> HOP["Expand best nodes<br/>to graph neighbours"]
+        HOP --> RR["Re-rank<br/>TRAINED"]
+        RR --> TOP["Top M = 4 nodes"]
+        TOP --> WE["Evidence projection<br/>TRAINED"]
+        WE --> EV["4 evidence tokens"]
+    end
+
+    MEM --> CS
+    OS --> CS
+    EV --> LM["Qwen2.5-VL-7B language model<br/>FROZEN"]
+    CF["Current frame"] --> LM
+    Q --> LM
+    LM --> A["Answer"]
+
+    classDef frozen fill:#e0e0e0,stroke:#555,color:#000
+    classDef trained fill:#cfe2ff,stroke:#1f4e9c,color:#000
+    classDef scorer fill:#ffd8a8,stroke:#c25e00,color:#000
+    classDef data fill:#d3f9d8,stroke:#2b8a3e,color:#000
+    class V,LM frozen
+    class SE,GT,QE,RR,WE trained
+    class SC scorer
+    class MEM,OS,EV,G data

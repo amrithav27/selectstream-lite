@@ -14,6 +14,9 @@ export PATH="$HOME/bin:$PATH"  # rclone: only ada-gw1 has it installed; ~/bin/rc
 export RCLONE_REMOTE="${RCLONE_REMOTE:-gdrive}"
 export DRIVE_CLIPS_PATH="${DRIVE_CLIPS_PATH:-ego4d_nlq/clips}"
 export HF_HOME="$SCRATCH/hf_cache"
+# The login token lives in the default ~/.cache/huggingface, not in HF_HOME on scratch: without this, private
+# Hub repos return 401 from compute nodes (job 74554 failed on it).
+export HF_TOKEN_PATH="${HF_TOKEN_PATH:-$HOME/.cache/huggingface/token}"
 export HF_HUB_OFFLINE=1
 export PYTHONUNBUFFERED=1
 export TOKENIZERS_PARALLELISM=false
@@ -79,6 +82,52 @@ if [ ! -f "$MODEL_MARKER" ]; then
         && touch "$MODEL_MARKER" || { echo "[env][ERROR] model download failed"; return 1 2>/dev/null || exit 1; }
 fi
 find "$HF_HOME" -type f -exec touch {} +  # keep the 7-day scratch eviction away
+
+check_deps() {
+    # RF-10b: an interactive `hf auth login` upgraded huggingface_hub to 2.x under a running pipeline, and
+    # transformers 5.5.4 refuses to import with it. Fail fast at job start instead of mid-pipeline.
+    "$PY" - <<'EOF' || { echo "[env][ERROR] dependency check failed (see above); fix the venv before running"; return 1; }
+import sys
+from importlib.metadata import version
+hub, tf = version("huggingface_hub"), version("transformers")
+print(f"[env] huggingface_hub {hub}, transformers {tf}")
+if int(hub.split(".")[0]) >= 2:
+    sys.exit(f"[env][ERROR] huggingface_hub {hub} >= 2.0 breaks transformers {tf}; pip install --no-deps 'huggingface_hub==1.11.0'")
+import transformers  # noqa: F401  (the import itself is the check)
+EOF
+}
+
+safe_copy() {  # safe_copy <src> <dst> [sha256 record]: copy, verify byte-for-byte, record the hash; delete on mismatch.
+    local src=$1 dst=$2 rec=${3:-}
+    if ! cp "$src" "$dst.tmp" || ! cmp -s "$src" "$dst.tmp"; then
+        rm -f "$dst.tmp"; echo "[env][ERROR] copy $src -> $dst failed or differs (disk full?)"; return 1
+    fi
+    mv "$dst.tmp" "$dst" || return 1
+    [ -n "$rec" ] && sha256sum "$dst" | awk -v p="$(basename "$dst")" '{print $1"  "p}' > "$rec"
+    return 0
+}
+
+fetch_ckpt() {  # fetch_ckpt <run> <stage_arm> <dest dir>: Hub copy of a checkpoint when it is not on this node.
+    local run=$1 name=$2 dest=$3
+    [ -f "$dest/weights.pt" ] && return 0
+    mkdir -p "$dest"
+    echo "[env] fetching checkpoints/$run/$name from the Hub into $dest"
+    HF_HUB_OFFLINE=0 "$PY" - "$run" "$name" "$dest" <<'EOF' || { echo "[env][ERROR] could not fetch $run/$name"; return 1; }
+import os, shutil, sys
+from huggingface_hub import hf_hub_download
+run, name, dest = sys.argv[1:]
+repo = os.environ.get("HF_CKPT_REPO", "amritha27/selectstream-lite-ego4d")
+for f in ("weights.pt", "segment_center.npy"):
+    try:
+        p = hf_hub_download(repo, f"checkpoints/{run}/{name}/{f}", local_dir=os.path.join(dest, ".hub"))
+    except Exception as e:
+        if f == "weights.pt":
+            raise
+        continue
+    shutil.move(p, os.path.join(dest, f))
+print(f"[env] {dest}: {sorted(os.listdir(dest))}")
+EOF
+}
 
 stage_clips() {
     # Usage: stage_clips [file-with-clip-uids]. Without a list, mirrors the whole Drive folder.

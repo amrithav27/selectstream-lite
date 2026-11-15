@@ -1,0 +1,18 @@
+[read] nlq N=16|open=in|M=4|bias                                   Recall 0.272 [0.260,0.285] n=4552
+[read] nlq N=16|open=in|M=4|prior+bias                             Recall 0.452 [0.438,0.466] n=4552
+[read] nlq N=16|open=in|M=4|prior: object                          Recall 0.477 [0.462,0.491] n=4261
+[read] nlq N=16|open=in|M=4|prior: question                        Recall 0.464 [0.451,0.478] n=4552
+[read] nlq N=16|open=in|M=4|prior: question+stopwords              Recall 0.424 [0.409,0.438] n=4552
+[read] nlq N=16|open=in|M=4|prior: question, uncentred             Recall 0.465 [0.451,0.480] n=4552
+[read] nlq N=16|open=in|M=4|random                                 Recall 0.397 [0.392,0.403] n=4552
+[read] nlq N=16|open=in|M=4|random (same questions)                Recall 0.397 [0.392,0.403] n=4552
+[read] nlq done (62s)
+[read] qa N=16|open=in|M=4|bias                                   Recall 0.264 [0.250,0.278] n=3751
+[read] qa N=16|open=in|M=4|prior+bias                             Recall 0.441 [0.427,0.457] n=3751
+[read] qa N=16|open=in|M=4|prior: object                          Recall 0.469 [0.453,0.487] n=3181
+[read] qa N=16|open=in|M=4|prior: question                        Recall 0.453 [0.438,0.469] n=3751
+[read] qa N=16|open=in|M=4|prior: question+stopwords              Recall 0.403 [0.387,0.420] n=3751
+[read] qa N=16|open=in|M=4|prior: question, uncentred             Recall 0.455 [0.440,0.471] n=3751
+[read] qa N=16|open=in|M=4|random                                 Recall 0.387 [0.381,0.394] n=3751
+[read] qa N=16|open=in|M=4|random (same questions)                Recall 0.387 [0.381,0.394] n=3751
+[read] qa done (108s)

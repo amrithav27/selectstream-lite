@@ -1,8 +1,24 @@
 colab/
-dataset/
+# dataset/ handled below
 __pycache__/
 source_trial/
 .claude/
-docs/
-scripts/
 /demo
+scripts/demo.sbatch
+logs/
+# Feature/memory animations are large; they live on the HF Hub (runs/<run>/<stage>/figs/).
+outputs/**/*.gif
+# Only the final report is committed from docs/; plans, run logs and red-flag notes stay local.
+docs/*
+!docs/report.md
+!docs/report_overleaf/
+# Ego4D-derived annotations are licensed: commit the build scripts and README, not the data.
+!dataset/
+dataset/*
+!dataset/README.md
+!dataset/clean/
+dataset/clean/*
+!dataset/clean/*.py
+!dataset/qaego4d/
+dataset/qaego4d/*
+!dataset/qaego4d/download_qaego4d.py

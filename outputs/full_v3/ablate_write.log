@@ -1,0 +1,11 @@
+[ablate] scorer stream exists
+[ablate] scorer rank exists
+[ablate] scorer gonly exists
+[ablate] scorer scalars exists
+[ablate] scorer tol2 exists
+[ablate] scorer shift exists
+[ablate] scorer pooled40 exists
+[ablate] /home2/amritha.vinod/selectstream-lite/outputs/full_v3/ablate_raw exists
+[ablate] /home2/amritha.vinod/selectstream-lite/outputs/full_v3/ablate_norm exists
+[plot] run figures in /home2/amritha.vinod/selectstream-lite/outputs/full_v3/figures: 34 png
+[ablate] finished 21:09 with 0 failed step(s)

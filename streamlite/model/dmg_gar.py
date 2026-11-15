@@ -369,6 +369,12 @@ class DynamicMemoryGraphReasoner(nn.Module):
             hit = (graph.node_time_end + 0.5 >= ws - 0.5) & (graph.node_time_start - 0.5 <= we + 0.5)
             # Overlapping nodes first, the tightest (shortest) of them on top; ties broken by the model's score.
             score_bias = hit.to(score_bias.dtype) * 1e3 - hit.to(score_bias.dtype) * span_len.to(score_bias.dtype)
+        elif ab == "oracle_wrong" and self.oracle_window is not None:
+            ws, we = self.oracle_window
+            hit = (graph.node_time_end + 0.5 >= ws - 0.5) & (graph.node_time_start - 0.5 <= we + 0.5)
+            # Content control (RF-1): the tightest nodes that do NOT overlap the window, same stream and count.
+            miss = (~hit).to(score_bias.dtype)
+            score_bias = miss * 1e3 - miss * span_len.to(score_bias.dtype)
         raw_score = cos_term + score_bias
         # Routing uses edge supports in [0, 1]: similarity edges map cos to (1 + cos) / 2.
         route_support = torch.where(
@@ -398,13 +404,22 @@ class DynamicMemoryGraphReasoner(nn.Module):
         sub_span_len = span_len[selected]
         refined_score = (scale.to(refined.dtype) * (refined_norm @ q) if ab not in ("no_cos", "prior_only") else 0.0) \
             + score_bias[selected].to(dtype=refined.dtype)
-        if ab in ("random", "oracle", "coarse_only"):
+        if ab in ("random", "oracle", "oracle_wrong", "coarse_only"):
             refined_score = raw_score[selected].to(refined.dtype)  # keep the coarse order (oracle/random fixed it)
         m = min(self.evidence_tokens if evidence_k is None else int(evidence_k), refined.size(0))
         ev_pos = torch.topk(refined_score, k=m, largest=True).indices
         # Eq. (10): e_m = LN(W_e h_m). Only the retrieved nodes are exposed (no padding tokens).
         selected_evidence = self.evidence_ln(self.evidence_proj(refined[ev_pos]))
         evidence_tokens = selected_evidence
+        # Token-presence controls (RF-1): same nodes and count, no content, so retrieval metrics are unchanged.
+        # A flat answer score under these means the reader needs evidence tokens to exist, not to say anything.
+        if ab == "zero_evidence":
+            evidence_tokens = torch.zeros_like(selected_evidence)
+        elif ab == "noise_evidence":
+            g = torch.Generator(device=selected_evidence.device).manual_seed(0)
+            noise = torch.randn(selected_evidence.shape, generator=g, device=selected_evidence.device, dtype=torch.float32)
+            # Matched to the real tokens' overall scale so the reader sees tokens of the usual magnitude.
+            evidence_tokens = (noise * selected_evidence.float().std().clamp(min=1e-6)).to(selected_evidence.dtype)
         evidence_indices = sub_node_indices[ev_pos]
         sparsity_subgraph_loss = route_prob.sum().to(dtype=refined.dtype) / float(max(1, self.graph_budget))
         sparsity_redundancy_loss = self._evidence_redundancy_loss(selected_evidence)

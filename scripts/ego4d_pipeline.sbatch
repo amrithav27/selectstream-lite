@@ -23,7 +23,10 @@
 #SBATCH --error=logs/%x-%j.err
 
 set -uo pipefail  # no -e: one failed stage is logged and its dependents are skipped, the rest still run
+# RF-10: 45099 exited right after "[train] done" with no [pipe][ERROR] line; log every exit with its code and line.
+trap 'echo "[pipe] exit code $? at $(date +%F_%T)"' EXIT
 source scripts/ego4d_env.sh || exit 1
+check_deps || exit 1
 RUN="${RUN:?set RUN (tag for this run)}"
 if [ "${PILOT:-0}" = 1 ]; then
     : "${R_STREAMS:=4}" "${R_EPOCHS:=1}" "${CAL_STREAMS:=4}" "${W_STEPS:=1}" "${EVAL_STREAMS:=2}" "${Q2_STREAMS:=2}"
@@ -134,7 +137,10 @@ train() {  # train <stage> <arm> <extra args...>
     "$PY" -m streamlite.cli.train_ego4d --stage "$st" --arm "$arm" --video_dir "$VIDEO_DIR" --output_dir "$o" --feature_cache "$CACHE" \
         --scorer "$SCORER" --trace_dir "$o/traces" --trace_clips 2 --save_every_clips 10 "$@" || { echo "[pipe][ERROR] $name failed"; FAILED=$((FAILED + 1)); return 1; }
     mkdir -p "$CK/$name" "$RUN_DIR/$name"
-    cp "$o/final/weights.pt" "$CK/$name/weights.pt" && cp "$o/train_log.jsonl" "$o/config.json" "$RUN_DIR/$name/"
+    # RF-10: a failed or truncated copy (e.g. $HOME quota) must not be marked done and used downstream.
+    safe_copy "$o/final/weights.pt" "$CK/$name/weights.pt" "$RUN_DIR/$name/weights.sha256" \
+        && cp "$o/train_log.jsonl" "$o/config.json" "$RUN_DIR/$name/" \
+        || { echo "[pipe][ERROR] $name: checkpoint copy failed; stage not marked"; FAILED=$((FAILED + 1)); return 1; }
     "$PY" -m streamlite.cli.plot_ego4d --traces "$o/traces" --train_log "$o/train_log.jsonl" \
         --config configs/ego4d_qwen25vl7b.yaml --out "$RUN_DIR/$name/figs" || true
     mark "$name"
@@ -148,7 +154,8 @@ evaluate() {  # evaluate <name> <arm> <ckpt|none> <track> <extra args...>
     "$PY" -m streamlite.cli.eval_ego4d --arm "$arm" --ckpt "$ck" --track "$track" --video_dir "$VIDEO_DIR" --feature_cache "$CACHE" \
         --scorer "$SCORER" --out_dir "$o" --trace_dir "$o/traces" --trace_clips 2 --calibration "$CAL" "$@" || { echo "[pipe][ERROR] $name failed"; FAILED=$((FAILED + 1)); return 1; }
     mkdir -p "$RUN_DIR/$name"
-    cp "$o/summary.json" "$o/predictions.jsonl" "$RUN_DIR/$name/"
+    cp "$o/summary.json" "$o/predictions.jsonl" "$RUN_DIR/$name/" \
+        || { echo "[pipe][ERROR] $name: copying results failed; stage not marked"; FAILED=$((FAILED + 1)); return 1; }
     "$PY" -m streamlite.cli.plot_ego4d --traces "$o/traces" --summaries "$o/summary.json" --out "$RUN_DIR/$name/figs" || true
     mark "$name"
 }
@@ -156,7 +163,7 @@ evaluate() {  # evaluate <name> <arm> <ckpt|none> <track> <extra args...>
 # ---- 2. Stage R: reader + writer, arm A, thresholds from the pre-Stage-R probe ----
 # SEG_CENTER=train_mean subtracts the train mean g_t before the segment encoder (none = the paper; docs/plan.md §5).
 train R A --epochs "$R_EPOCHS" $(opt --max_clips "$R_STREAMS") --calibration "$PROBE_CAL" --segment_center "${SEG_CENTER:-train_mean}" || exit 1
-[ -f "$OUT/R_A/segment_center.npy" ] && cp "$OUT/R_A/segment_center.npy" "$CK/R_A/"
+if [ -f "$OUT/R_A/segment_center.npy" ]; then cp "$OUT/R_A/segment_center.npy" "$CK/R_A/" || { echo "[pipe][ERROR] segment_center copy failed"; exit 1; }; fi
 
 # ---- 3. Calibrate arms B/C/D against arm A's segment count (trained writer, Stage-1 scorer) ----
 if ! done_ calibrate; then
