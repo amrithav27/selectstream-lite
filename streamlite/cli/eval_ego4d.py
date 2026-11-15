@@ -63,11 +63,11 @@ def main():
     ap.add_argument("--no_open", action="store_true", help="The read sees committed nodes only, not the open segment.")
     ap.add_argument("--blank_frame", action="store_true", help="Query-conditioning ablation: ask over a black frame of the same size.")
     ap.add_argument("--no_mark_read", action="store_true",
-                    help="Reads do not bump read_count, so they cannot change keep/evict priority in later writes (RF-16). "
+                    help="Reads do not bump read_count, so they cannot change keep/evict priority in later writes. "
                          "Off by default to stay comparable with earlier runs.")
     ap.add_argument("--seed_topk", type=int, default=None,
                     help="Override the number of GAR seed nodes (config method_seed_topk). With seed_topk == M the hop / GAR / re-rank "
-                         "ablations collapse into one (RF-15); set it above M to give the re-rank something to choose from.")
+                         "ablations collapse into one; set it above M to give the re-rank something to choose from.")
     ap.add_argument("--frames_baseline", choices=["none", "oracle", "uniform"], default="none",
                     help="P3 baseline (plain Qwen without memory): sample oracle frames (from answer window) or uniform frames (0 to t_q).")
     ap.add_argument("--num_frames", type=int, default=8, help="Number of frames to sample for --frames_baseline (default: 8).")

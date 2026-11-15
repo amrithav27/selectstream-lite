@@ -60,7 +60,7 @@ repo, folder = sys.argv[1], sys.argv[2]
 api = HfApi()
 print("[hf] as", api.whoami()["name"], flush=True)
 api.create_repo(repo, repo_type="model", private=True, exist_ok=True)
-# RF-20: never pass delete_patterns. A pattern matches nested paths and deleted checkpoints/full/R_A on 2026-10-30.
+# Never pass delete_patterns. A pattern matches nested paths and deleted checkpoints/full/R_A on 2026-10-30.
 api.upload_folder(repo_id=repo, repo_type="model", folder_path=folder,
                   commit_message="Add W_D, Q2, memory-budget and read ablations")
 files = api.list_repo_files(repo)

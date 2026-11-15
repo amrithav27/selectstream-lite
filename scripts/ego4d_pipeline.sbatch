@@ -23,7 +23,7 @@
 #SBATCH --error=logs/%x-%j.err
 
 set -uo pipefail  # no -e: one failed stage is logged and its dependents are skipped, the rest still run
-# RF-10: 45099 exited right after "[train] done" with no [pipe][ERROR] line; log every exit with its code and line.
+# Job 45099 exited right after "[train] done" with no [pipe][ERROR] line; log every exit with its code and line.
 trap 'echo "[pipe] exit code $? at $(date +%F_%T)"' EXIT
 source scripts/ego4d_env.sh || exit 1
 check_deps || exit 1
@@ -137,7 +137,7 @@ train() {  # train <stage> <arm> <extra args...>
     "$PY" -m streamlite.cli.train_ego4d --stage "$st" --arm "$arm" --video_dir "$VIDEO_DIR" --output_dir "$o" --feature_cache "$CACHE" \
         --scorer "$SCORER" --trace_dir "$o/traces" --trace_clips 2 --save_every_clips 10 "$@" || { echo "[pipe][ERROR] $name failed"; FAILED=$((FAILED + 1)); return 1; }
     mkdir -p "$CK/$name" "$RUN_DIR/$name"
-    # RF-10: a failed or truncated copy (e.g. $HOME quota) must not be marked done and used downstream.
+    # A failed or truncated copy (e.g. $HOME quota) must not be marked done and used downstream.
     safe_copy "$o/final/weights.pt" "$CK/$name/weights.pt" "$RUN_DIR/$name/weights.sha256" \
         && cp "$o/train_log.jsonl" "$o/config.json" "$RUN_DIR/$name/" \
         || { echo "[pipe][ERROR] $name: checkpoint copy failed; stage not marked"; FAILED=$((FAILED + 1)); return 1; }

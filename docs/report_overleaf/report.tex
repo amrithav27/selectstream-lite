@@ -1,5 +1,5 @@
-% LMA group project, final report (8 pages). Compile with pdfLaTeX on Overleaf.
-% Red "WRITE THIS" boxes are notes for the authors: replace each with prose, then delete the box.
+% LMA group project, final report. Compile with pdfLaTeX on Overleaf.
+% Main body: Abstract to Conclusions (8 pages). References and appendices (detailed tables, extra figures, figure index) follow.
 % Every number comes from outputs/full_v3/collected_results.{md,json} (scripts/collect_results.py).
 \documentclass[11pt,a4paper]{article}
 
@@ -13,6 +13,9 @@
 \usepackage{xcolor}
 \usepackage{enumitem}
 \usepackage{float}
+\usepackage{multicol}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
 \usepackage[hidelinks]{hyperref}
 
 \setlist{nosep,leftmargin=*}
@@ -21,6 +24,11 @@
 
 \newcommand{\ci}[2]{$[#1,\,#2]$}
 \newcommand{\file}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\repo}{https://github.com/amrithav27/selectstream-lite}
+\newcommand{\figurl}[1]{\repo/blob/main/outputs/full_v3/figures/\detokenize{#1}.png}
+% figlink: clickable figure name pointing at the PNG in the repository
+\newcommand{\figlink}[1]{\href{\figurl{#1}}{\file{#1}}}
+\newcommand{\why}[1]{\textit{Why:} #1}
 
 % \fig{file}{width}{caption}{label}; placeholder box when figures/<file> is missing.
 \newcommand{\fig}[4]{%
@@ -30,10 +38,6 @@
     {\fbox{\parbox[c][3cm][c]{0.85\linewidth}{\centering\sffamily Missing figure: \file{#1}}}}
   \caption{#3}\label{#4}
   \end{figure}}
-
-% Author note: delete every \writeme before submitting.
-\newcommand{\writeme}[1]{\par\smallskip\noindent\fcolorbox{red}{red!4}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{\small
-  \textcolor{red}{\textbf{WRITE THIS:}} #1}}\par\smallskip}
 
 \begin{document}
 
@@ -48,14 +52,15 @@ Checkpoints and outputs: \url{https://huggingface.co/lma-project/selectstream-li
 \end{center}
 
 \begin{abstract}
-\writeme{Update the mid-submission abstract. Facts to carry:
-\begin{itemize}
-\item Setting: streaming memory of fixed size, SelectStream~\cite{selectstream} rebuilt from the paper, frozen Qwen2.5-VL-7B, Ego4D NLQ + QaEgo4D, all 1,686 annotated clips, causal.
-\item Q1: learned importance score loses to surprise on \emph{three} training seeds, both tracks: QA Recall@$M$ $-0.042$ to $-0.053$, best IoU $-0.021$ to $-0.024$, every $p_\text{holm}\le0.0014$.
-\item Q2: splitting at the same evidence budget lowers AllHit in all 8 cells ($p_\text{holm}\le0.0005$); giving each sub-question its own budget helps pairs (+0.04 to +0.06).
-\item The answer step needs real visual tokens but not the right ones: wrong-window evidence (Recall@$M$ 0.02) gives the same answers as the reader's own (0.50); so memories are compared by retrieval.
-\item Statistics: 95\% bootstrap CI over videos, paired permutation $p$, Holm-corrected.
-\end{itemize}}
+A streaming video memory of fixed size has to decide what to keep before it knows what will be asked. We rebuilt
+SelectStream~\cite{selectstream}, which keeps a small graph of memory nodes and answers with a frozen Qwen2.5-VL-7B, and
+ran it strictly in time order on every annotated clip of Ego4D NLQ and QaEgo4D. We asked two questions. Can an importance
+score learned from past questions decide what to keep better than SelectStream's surprise signal (Q1)? Does splitting a
+question about several moments into sub-questions help retrieval when the evidence budget stays the same (Q2)? Both answers
+are no. The learned score keeps and retrieves the answer moment less often than surprise, on three training seeds and two
+question sets. Splitting a question only helps when each part is given extra evidence, so the gain comes from the larger
+budget, not from the split. Along the way we found that the frozen model's answers do not change with which moment it is
+shown, so memories have to be compared by what they retrieve, not by the answers they lead to.
 \end{abstract}
 
 % =============================================================================================
@@ -69,177 +74,429 @@ no later step can bring it back.
 SelectStream~\cite{selectstream} makes this decision with one number per moment, its surprise: how much the
 scene just changed. Surprising moments get their own memory slot and are protected from merging. Surprise and
 importance are not the same thing, though. A sudden turn of the head is surprising but rarely asked
-about; putting keys in a drawer is calm, and is exactly what someone asks about later.
+about; putting keys in a drawer is calm, and is exactly what someone asks about later. This gap is what motivates our two
+questions.
 
 \begin{description}
-\item[Q1 (write side).] With the same memory budget ($N$ nodes) and the same number of segments, does a
-  write signal learned from NLQ training questions keep more of the needed evidence than surprise? Is that
-  evidence retrieved, and does it lead to better answers?
-\item[Q2 (read side).] For each video, composite questions are built from that video's own questions.
-  Does splitting them into sub-questions, with an evidence check for each, beat a single retrieval at the
-  same evidence budget $M$?
+\item[Q1 (write side).] With the same memory size and the same number of stored segments, does a write signal learned
+  from training questions keep more of the needed evidence than surprise? We hold size and segment count fixed so that a
+  learned signal can only win by choosing \emph{better}, not by storing \emph{more}.
+\item[Q2 (read side).] Questions often ask about two or three moments at once. Does splitting such a question into
+  sub-questions, each with its own retrieval and evidence check, beat one retrieval when the total evidence budget is the
+  same? Fixing the budget separates the effect of splitting from the effect of simply reading more.
 \end{description}
-Q1 acts on the write side and Q2 on the read side, so together they form a $2\times2$ design
-(write arm A/B $\times$ single/split retrieval).
+Q1 changes only how the memory is written and Q2 only how it is read, so the two can be studied independently.
 
-\writeme{One short paragraph of contributions / findings (4 items): (1) a causal re-implementation with three
-retrieval fixes that make the paper's reader learn (Recall@$M$ 0.33 $\to$ 0.52); (2) Q1 negative on 3 seeds;
-(3) Q2 negative at a matched budget, with the unmatched arm showing the loss is the halved budget;
-(4) evidence controls showing answers do not depend on evidence content.}
+We found that neither idea helps in our setting, and that answer accuracy cannot tell two memories apart with a frozen
+backbone. Our contributions are a causal rebuild of SelectStream with the retrieval changes it needed to learn at all, a
+negative result for Q1 that holds across seeds, a negative result for Q2 with a control that explains it, and a set of
+evidence controls that show which metrics can and cannot be trusted for this kind of memory.
 
 % =============================================================================================
 \section{Literature Review}\label{sec:lit}
 
-\writeme{New section (about 0.5 page). Suggested structure; check every citation's details before submitting
-(the entries were added from memory, not checked against the papers):
-\begin{itemize}
-\item \emph{Streaming / long-video memory for VLMs:} MovieChat~\cite{moviechat} (merges similar adjacent frame tokens into a fixed
-  long-term memory), MA-LMM~\cite{malmm} (memory bank compressed by merging similar features), Flash-VStream~\cite{flashvstream}
-  (real-time memory for streams). All decide what to keep by feature similarity, none by what will be asked.
-\item \emph{Surprise / event segmentation as a memory signal:} SelectStream~\cite{selectstream} (surprise-driven graph memory,
-  the system we rebuild); EM-LLM~\cite{emllm} (surprise-based event boundaries for long LLM context).
-\item \emph{Egocentric episodic memory benchmarks:} Ego4D NLQ~\cite{ego4d} (temporal windows), QaEgo4D~\cite{qaego4d} (written answers); NLQ grounding baselines such as VSLNet~\cite{vslnet}.
-\item \emph{Question decomposition (Q2):} least-to-most prompting~\cite{leasttomost}, self-ask~\cite{selfask}: decomposition helps multi-step text QA; we test it for retrieval from a fixed memory.
-\item Gap we address: whether a \emph{learned, question-aware} write signal beats surprise under a matched budget, measured causally.
-\end{itemize}}
+\textbf{Streaming video memory.} SelectStream~\cite{selectstream} has four stages: surprise-driven windowing (when to write),
+a latent memory graph (what to keep), graph-attention reasoning (how to read) and latent evidence injection into a frozen
+model. StreamMem~\cite{streammem}, InfiniPot-V~\cite{infinipot} and CoRDS~\cite{cords} compress the KV cache or select
+frames without training, and a baseline that keeps only the last few frames is surprisingly strong~\cite{simplebaseline}.
+All of these decide what to keep with hand-set or training-free rules.
+
+\textbf{Question-conditioned selection.} FrameOracle~\cite{frameoracle} learns which frames to look at and how many, but it
+needs the question first, so it cannot decide what to keep before the question is known.
+
+\textbf{Learned importance.} In text, TRIM-KV~\cite{trimkv} learns which tokens to retain and A-MAC~\cite{amac} tunes
+admission to an agent's memory; Episodic Memory Reader~\cite{emr} learned what to remember for later questions on
+streaming text. A study of learned importance for KV-cache compression, however, found no gain from a small learned scorer
+over simple rules~\cite{limits}. For a fixed-budget video memory, learned importance had not been tested; Q1 does that.
+
+\textbf{Question decomposition and data.} Least-to-most prompting~\cite{leasttomost} and self-ask~\cite{selfask} split hard
+questions into simpler ones for text QA; Q2 asks whether this helps retrieval when every sub-question shares one evidence
+budget. Ego4D NLQ~\cite{ego4d} gives human-written queries with exact answer windows, and QaEgo4D~\cite{qaego4d} adds
+free-text answers to many of them.
 
 % =============================================================================================
 \section{Dataset}\label{sec:data}
 
 \begin{table}[t]\centering\small
-\caption{Ego4D NLQ~\cite{ego4d} and QaEgo4D~\cite{qaego4d}, all clips. QaEgo4D in brackets: linked to an NLQ question.
-The unannotated NLQ test split (333 clips) has no answer windows and is never used.}\label{tab:data}
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{lrrrrrrl}
+\caption{Ego4D NLQ~\cite{ego4d} and QaEgo4D~\cite{qaego4d}, all annotated clips. The official NLQ test split has no answer
+windows, so the validation split serves as our test set.}\label{tab:data}
+\begin{tabular}{lrrrrl}
 \toprule
-Split & Clips & Videos (= streams) & Hours & Frames (1\,fps) & NLQ questions & QaEgo4D & Use \\
+Split & Clips & Videos & Hours & Questions (NLQ / QaEgo4D) & Use \\
 \midrule
-train & 1,271 & 924 & 174.3 & 627,624 & 13,846 & 10,665 (9,714) & train-fit (838 streams) + dev (participant split) \\
-val   & 415   & 300 & 57.6  & 207,395 & 4,552  & 3,751 (3,396)  & test (reported) \\
+train & 1,271 & 924 & 174.3 & 13,846 / 10,665 & training (838 videos) + dev \\
+val   & 415   & 300 & 57.6  & 4,552 / 3,751  & test \\
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \end{table}
 
-We use Ego4D NLQ because every question comes with the time window that answers it, so we can check
-directly whether the memory still holds that window and whether the reader retrieved it. QaEgo4D adds a
-written answer to most of the same questions. Together they let us score the memory, the retrieval and
-the answer on one question, and every retrieval number is a plain overlap of time windows, with no model
-acting as judge.
+\textbf{Why these datasets.} Ego4D NLQ marks the exact time window that answers each question. That lets us check two
+things directly, with no model acting as judge: whether the memory still holds the window when the question is asked, and
+whether the reader retrieved it. QaEgo4D adds a written answer to most of the same questions, so the answer can be scored
+on the same item. We report two question sets, QA (243 videos with answer text) and NLQ (300 videos, windows only), and
+never mix them: they share videos, and reading a video for one set would change its memory for the other.
 
-\begin{itemize}
-\item Training questions: 14,797 (NLQ and QaEgo4D train combined, duplicates removed). Dev: 10\% of the 301
-  known train participants (seed 42).
-\item Evaluation tracks: QA (243 streams, 3,751 questions, answer text) and NLQ (300 streams, 4,552
-  questions, answer windows only). They are never merged, since shared streams would couple read counts.
-\item Streams: median 480\,s, longest 3,330\,s. Each question is asked at a time drawn uniformly from the end of its
-  answer window to the end of the stream; the model sees frame $t$ only at step $t$, so evaluation is causal.
-\item No stage subsamples clips: all 1,686 annotated clips are cached once (one feature per frame, lossless PNG frames,
-  cosine 0.99998 to on-the-fly features).
-\end{itemize}
-Ego4D records no age, gender or ethnicity of the wearers. Clips are uneven across collection sites (two sites make
-up over 40\% of clips) and activities (cooking on 23.7\% of videos), so results may not carry over to other settings.
+\textbf{Why streaming with fixed ask times.} Each video's clips are joined into one stream and played once, one frame per
+second; the model sees frame $t$ only at step $t$. Each question is asked at a time drawn between the end of its answer
+window and the end of the stream. This is what makes the task a memory test: the answer has already gone by, and the
+delay varies from seconds to tens of minutes.
+
+\textbf{Why every clip, cached once.} Early runs had to use 50--300 videos because the vision encoder ran on every pass. We
+computed each frame's feature once for all 1,686 clips, saved frames losslessly (JPEG compression shifted the features more
+than one real frame step does), and checked that cached and live features agree. After that no stage needed to subsample.
+
+Ego4D records no age, gender or ethnicity of the wearers, and clips are uneven across sites and activities (cooking alone is
+on about a quarter of the videos), so results may not carry over to other settings.
 
 % =============================================================================================
 \section{Methodology}\label{sec:method}
 
 \fig{architecture.png}{0.95}{SelectStream-lite. Top: the write path, run once per frame. Bottom: the read path,
-run once per question. Grey parts are frozen, blue parts are trained; the orange scorer is used only in arm B.}{fig:arch}
+run once per question. Grey parts are frozen, blue parts are trained; the orange scorer is used only by the Learned rule.}{fig:arch}
 
 \textbf{Write side.} As each frame arrives the memory makes three decisions: whether to close the current
 segment, whether a finished segment updates an existing node or becomes a new one, and, once all
-$N=16$ nodes are full, which two nodes to merge. In SelectStream all three follow surprise, which we
-measure as how much the frame features change (the paper's second, attention-based term is switched off).
-In arm B a learned score takes the place of surprise in all three decisions. Arm C uses the true labels
-in place of the score, as an upper bound, and arm D cuts every 24 frames. Thresholds are calibrated per arm
-so every arm writes the same number of segments. The read side is the same in every arm, so any difference
-between arms comes from how the memory was written.
+$N=16$ nodes are full, which two nodes to merge. SelectStream bases all three on surprise, measured as how much the frame
+features change. Q1 is a comparison of two write rules:
+\begin{itemize}
+\item \textbf{Surprise}: the paper's rule.
+\item \textbf{Learned}: a score learned from training questions takes the place of surprise in all three decisions.
+\end{itemize}
+To make the comparison easier to read we also ran two reference rules. \textbf{Oracle} uses the true answer windows, so it
+shows how much \emph{any} write signal could gain. \textbf{Fixed} simply cuts every 24 frames, so it shows whether surprise
+is better than no signal at all. All four rules are calibrated to write the same number of segments per video.
+\why{a rule that cuts more often gets more, finer memory; without calibration the learned rule could win or lose by its
+budget rather than its choices.}
 
-\textbf{Q1 scorer.} A small network (18 inputs $\to$ 64 $\to$ 1) scores each frame from its surprise values and a
-compressed copy of its features. A training frame counts as important if it lies inside the answer window of some
-training question; the important ones are weighted up because they are rare.
+\textbf{The learned score.} A small network scores each frame from its surprise values and a compressed copy of its
+features. A training frame counts as important if it lies inside some training question's answer window. We score frames
+rather than segments because the memory decides where to cut frame by frame, and we weight important frames up because
+they are rare.
 
-\textbf{Read side.} For a question, every node gets a score; the best few are expanded to their
-neighbours in the graph; a small module re-ranks them; and the top $M=4$ become four tokens that go into
-the language model together with the current frame.
+\textbf{Read side.} For a question, every node gets a score; the best few are expanded to their neighbours in the graph; a
+small module re-ranks them; and the top $M=4$ become four tokens that go into the language model together with the current
+frame.
 
-\textbf{Our changes.} Three retrieval changes are ours, not the paper's: a learned temperature on the node score,
-centred segment features, and a fixed question--node similarity prior with learned biases. Without them the paper's
-retrieval did not learn (retrieval loss at chance, Recall@$M$ 0.33 after 7 GPU-hours). SelectStream has no public
-code or weights, so we rebuilt it from the paper, and our numbers are not comparable with the published ones.
+\textbf{Changes we had to make.} Our first full training run followed the paper's reader as written. After seven
+GPU-hours its retrieval loss was still at chance and it found the answer window in only a third of questions. We traced
+this to three causes and added one fix for each: a learned temperature, because the raw scores were too close together to
+rank; centring the segment features, because frame features within a video are nearly identical and their shared part
+drowned out the differences; and a fixed question--node similarity prior, so the reader starts from a sensible ranking
+instead of noise. With these the reader learned. SelectStream has no public code or weights, so we rebuilt it from the paper
+(Table~\ref{tab:lite}), and our numbers are not comparable with the published ones.
 
 \begin{table}[t]\centering\small
-\caption{Model and training setup.}\label{tab:method}
-\begin{tabular}{lp{0.74\linewidth}}
+\caption{SelectStream versus SelectStream-lite. Changes follow from compute (11\,GB GPUs instead of 8 A100s) and the lack of
+public code or weights.}\label{tab:lite}
+\begin{tabular}{p{0.15\linewidth}p{0.37\linewidth}p{0.4\linewidth}}
 \toprule
-Part & Detail \\
+Stage & SelectStream~\cite{selectstream} & SelectStream-lite (ours) \\
 \midrule
-Backbone & Qwen2.5-VL-7B~\cite{qwen25vl}, frozen, fp16 (the cluster's GPUs have no native bf16) \\
-Trainable & segment encoder, gate + write MLP, question encoder, re-ranker, evidence projection: 436.1M params, fp32 \\
-Memory & $N=16$ nodes, 8-node search budget, 4 starting nodes, $M=4$ evidence tokens \\
-Loss & answer loss $+\ 0.1\times$ retrieval loss $+\ 0.05\times$ sparsity loss, as in the paper \\
-Stage R & reader + writer, arm A, 838 streams $\times$ 2 epochs, 419 optimiser steps \\
-Stage W & reader frozen, writer retrained per arm, same 50 steps $\times$ 4 streams, same stream order \\
-Q2 & T1 conjunction ($k=2,3$), T2 order ($k=2$), built from each video's own questions, windows $\ge$30\,s apart, $\le$3 per video per template; single retrieval ($M$), split matched ($\lfloor M/k\rfloor$ each), split unmatched ($M$ each) \\
+Windowing & surprise from attention shift and feature change & feature-change surprise only (attention term off, since we do not compute attention maps) \\
+Memory write & learned gated update; priority from surprise, read count, recency & same structure; the write signal is surprise or the learned score \\
+Retrieval & question similarity + surprise bonus, graph attention & adds learned temperature, centred features and a question prior \\
+Answering & calibrated latent evidence tokens & evidence tokens from a trained projection; backbone frozen \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Metrics and statistics.} Recall@$M$: any of the $M$ evidence nodes overlaps the answer window. Best IoU:
-the best-fitting node in memory at ask time. Precision: share of evidence time inside the window. Contains / exact:
-answer text (QA only). AllHit (Q2): every sub-question's window retrieved. The stream is the resampling unit:
-95\% CI from 2,000 bootstrap resamples over streams, two-sided sign-flip permutation $p$ over streams (10,000),
-Holm-corrected within each (reference, metric) family. Every comparison is reported, nulls included.
+\textbf{Training in two stages.} The backbone, Qwen2.5-VL-7B~\cite{qwen25vl}, stays frozen; 436M parameters around it are
+trained with the paper's loss (answer loss plus smaller retrieval and sparsity terms). Stage R trains reader and writer
+together with the Surprise rule. Stage W then freezes the reader and retrains only the writer, once per rule, on the same
+videos in the same order for the same number of steps. \why{a shared, frozen reader means the rules differ only in how
+memory was written, and retraining the writer per rule means the learned rule is not handicapped by a writer that learned to
+work with surprise.} The backbone runs in fp16 because our GPUs have no native bf16; emulated bf16 was 2.3$\times$ slower in
+a pilot.
+
+\textbf{Q2 design.} Composite questions are built from each video's own questions, with answer windows at least 30\,s
+apart: ``answer each of these'' for two or three moments, and ``which happened first'' for two. We compare one retrieval on
+the whole question against splitting it, in two versions. \emph{Same budget}: the four evidence tokens are shared among the
+sub-questions, which tests splitting at equal cost. \emph{Extra budget}: each sub-question gets four tokens of its own.
+\why{if only the extra-budget version helps, the gain comes from reading more, not from splitting.}
+
+\textbf{Metrics and statistics.} Recall@$M$ asks whether any retrieved node overlaps the answer window. It is lenient,
+because nodes span minutes and windows a few seconds, so we always report best IoU (how tightly the best node in memory fits
+the window) next to it. Questions from the same video share one memory, so they are not independent; we therefore resample
+whole videos for 95\% intervals and use paired permutation tests over videos. Because some families contain over twenty
+comparisons, p-values are Holm-corrected within each family. Every comparison is reported, including the ones that show no
+difference.
 
 % =============================================================================================
 \section{Experiment runs}\label{sec:runs}
 
-All runs on 4\,$\times$ RTX 2080 Ti (11\,GB), the 7B model split across the four GPUs.
+All runs used one node with 4 RTX 2080 Ti GPUs (11\,GB each), with the 7B model split across the four.
+Figure~\ref{fig:pipe} shows the stages in order; Table~\ref{tab:runs} in Appendix~\ref{app:tables} lists every run and its
+cost.
 
-\begin{table}[t]\centering\small
-\caption{Runs behind this report (run \file{full_v3}).}\label{tab:runs}
-\begin{tabular}{l l l}
-\toprule
-Run & Data & GPU time \\
-\midrule
-Feature cache & 1,686 clips, 835,019 frames & 7.2\,h \\
-Scorer (Q1) & all train-fit frames, dev for early stopping & CPU \\
-Stage R & 838 streams $\times$ 2 epochs & 6.9\,h \\
-Stage W, arms A--D, seed 42 & same streams and steps per arm & \textasciitilde50\,min / arm \\
-Stage W, arms A, B, seeds 43, 44 & as above, only the seed changes & \textasciitilde45\,min / run \\
-Evaluation & all val streams, both tracks, every arm and seed (18 runs) & 31--46\,min / run \\
-Read ablations + evidence controls & first 150 val QA streams, 2,338 questions (24 runs) & \textasciitilde25\,min / run \\
-Memory budget $N=64, 128$ & all 243 val QA streams & \textasciitilde40\,min / run \\
-Q2 & 285 NLQ / 237 QA videos, $k=2,3$, arms A, B & 51--77\,min / run \\
-Write-side grid & offline replay, val & CPU; rerun reproduced all 8,592 numbers \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{figure}[t]\centering
+\begin{tikzpicture}[
+  st/.style={draw, rounded corners=2pt, fill=blue!6, align=center, font=\scriptsize, minimum height=1.05cm, text width=2.55cm},
+  ev/.style={st, fill=orange!10},
+  ar/.style={-{Stealth[length=2mm]}, thick, gray!70!black},
+  node distance=0.45cm]
+\node[st] (c)  {\textbf{Stage 0: cache}\\ one feature per frame, all 1,686 clips};
+\node[st, right=of c] (s)  {\textbf{Stage 1: scorer}\\ learned importance score from training questions};
+\node[st, right=of s] (r)  {\textbf{Stage R}\\ reader + writer, Surprise rule};
+\node[st, right=of r] (k)  {\textbf{Calibrate}\\ equal segment count for every rule};
+\node[st, below=0.55cm of k] (w)  {\textbf{Stage W}\\ one writer per rule; Surprise and Learned at three seeds};
+\node[ev, left=of w] (e)  {\textbf{Evaluate}\\ QA and NLQ val, every rule and seed};
+\node[ev, left=of e] (a)  {\textbf{Ablations}\\ read side, evidence controls, memory size, Q2};
+\node[ev, left=of a] (o)  {\textbf{Statistics}\\ intervals, permutation tests, Holm};
+\draw[ar] (c) -- (s); \draw[ar] (s) -- (r); \draw[ar] (r) -- (k); \draw[ar] (k) -- (w);
+\draw[ar] (w) -- (e); \draw[ar] (e) -- (a); \draw[ar] (a) -- (o);
+\draw[ar, dashed] (s.south) .. controls +(0,-0.9) and +(0,0.9) .. (w.north west);
+\end{tikzpicture}
+\caption{Pipeline of run \file{full_v3} (\file{scripts/ego4d_pipeline.sbatch}, \file{scripts/ego4d_controls.sbatch}).
+Blue: training; orange: evaluation. The dashed arrow: the scorer feeds the Learned rule's writer.}\label{fig:pipe}
+\end{figure}
 
-\fig{train_W_arms.png}{0.8}{Stage W, seed 42: retrieval and answer loss with the writer retrained per arm, same streams and
-steps, reader frozen from Stage R.}{fig:trainW}
-
-\writeme{2--3 sentences: what Stage R and W training show (Fig.~\ref{fig:trainW}); that seeds 43/44 retrain only Stage W
-(Stage R is 7\,h per seed, so it and the scorer stay at seed 42); that checkpoints were verified by sha256 against the
-Hugging Face copies before evaluation.}
+After the main run we added a second set of runs to close the weak points a reviewer would raise:
+\begin{itemize}
+\item \textbf{Two more Stage W seeds for Surprise and Learned.} \why{a single training run cannot show that the gap is more
+  than luck.} Stage R and the scorer stayed at one seed, because Stage R costs seven GPU-hours per seed and Q1 is about the
+  writer.
+\item \textbf{Memory size on all 243 QA videos.} \why{the first version used the 9 longest videos, too few for a test.}
+\item \textbf{Evidence controls with real frames} (\S\ref{sec:evid}). \why{the first answer-side results looked
+  suspicious, and the earlier controls used blank frames.}
+\item \textbf{Checks on the run itself.} A full disk had once truncated a checkpoint copy, and one checkpoint came from a
+  scratch copy of a failed job. We compared every checkpoint with its published copy by hash before evaluating, and reran
+  the offline write-side grid from scratch; both matched exactly.
+\end{itemize}
+Two teammates repeated parts of the study on Colab GPUs with different hardware and software: a second seed-43 training
+(Keerthana) and the read-side controls on all 243 QA videos (Dedeepya). Both agree with the cluster runs
+(Appendix~\ref{app:tables}).
 
 % =============================================================================================
 \section{Ablations}\label{sec:abl}
 
 \subsection{Read side}\label{sec:read}
-Arm A, 150 val QA streams, 2,338 questions; reference Recall@$M$ 0.503, contains 0.225. Holm over the 23 variants.
+\textbf{Why.} Before comparing write rules we needed to know which parts of the reader actually do the work, and whether
+the reader is good enough for differences between memories to show. Each variant removes or replaces one part and re-reads
+the same memory on 150 QA videos (Figure~\ref{fig:read}).
+
+\fig{read_ablation.png}{1.0}{All 23 read-side variants against the full reader (Surprise rule, 150 val QA videos): paired
+change in each metric with 95\% interval over videos, grouped by what each variant removes or replaces.}{fig:read}
+
+\textbf{What we found.} No single scoring term matters on its own after correcting for the number of comparisons; the
+question prior comes closest. The paper's graph re-rank step slightly \emph{lowers} retrieval, and giving it more
+candidates to choose from does not fix that. Retrieval rises steeply with the number of evidence tokens, as expected.
+
+One variant needs explaining. In SelectStream, how often a node is read counts towards keeping it. So reading changes the
+memory: often-read nodes survive and grow wide. Turning this off makes retrieval hits rarer but the stored nodes tighter, and
+the effect is strongest for questions about the distant past. Both write rules mark reads in the same way, so this does not
+bias Q1, but it means Recall@$M$ partly rewards this side effect, which is another reason we always report best IoU next to it.
+
+\subsection{Evidence controls}\label{sec:evid}
+\textbf{Why.} In the main runs, the Surprise and Learned memories retrieved different evidence for almost every question
+yet gave the same answer 99.4\% of the time. Even giving the model the true answer moments changed almost no answers. Either
+the write rules truly do not matter, or the model is not using the evidence. These controls separate the two. Each keeps
+retrieval fixed and changes only what the language model receives (Table~\ref{tab:evid} in Appendix~\ref{app:tables}).
+
+\textbf{What we found.} Showing the model the right moments, random moments, or moments that are all outside the answer
+window gives the same answers. The evidence tokens are not ignored: removing them changes every answer, and filling them with
+zeros or noise is worse than removing them. One reading is that the tokens tell the model \emph{how} to answer (a short
+phrase rather than a sentence) while its language prior supplies \emph{what} to answer; ``on the table'' alone is 30\% of
+all QA answers. Dedeepya's rerun on all 243 videos on different hardware gives the same picture. The consequence for this
+report is direct: answer accuracy cannot compare memories on this backbone, so Q1 and Q2 are judged on retrieval.
+
+\subsection{Write side and memory size}\label{sec:write}
+\textbf{Why.} Before the expensive training runs we replayed the memory offline (no language model) to see whether any write
+signal had room to beat surprise. Later we varied memory size at evaluation to see whether the memory or the reader is the
+bottleneck.
+
+\textbf{What we found.} Offline, even the Oracle rule barely beats surprise in how tightly the memory holds the answer.
+Every learned variant we tried (other losses, other inputs, using the score only to rank rather than to cut) stayed level
+with or below surprise. Retraining the Learned rule's writer, instead of reusing the one trained for surprise, made no
+difference, so the learned rule does not lose because of a mismatched writer. Giving the memory 64 or 128 nodes instead of
+16 makes each node cover less time, so the memory holds the moment more tightly, but the reader, trained with 16 nodes,
+finds it less often (Figure~\ref{fig:budget}). The memory can keep the moment; the reader cannot pick it out from more,
+smaller nodes.
+
+% =============================================================================================
+\section{Evaluations}\label{sec:eval}
+
+\subsection{Q1: learned write signal}\label{sec:q1}
 
 \begin{table}[t]\centering\small
-\caption{Read-side ablations against the full reader. ``Same'': share of answers identical to the reference.}\label{tab:read}
+\caption{Main results, val, seed 42. Recall@$M$: a retrieved node overlaps the answer window. Best IoU: how tightly the best
+node in memory fits it. Answer accuracy is the same for every rule (0.22). The plots label the rules A (Surprise), B
+(Learned), C (Oracle) and D (Fixed). Paired intervals and the other seeds are in Table~\ref{tab:diff}.}\label{tab:main}
+\begin{tabular}{llcccc}
+\toprule
+Write rule & Role & QA Recall@$M$ & QA best IoU & NLQ Recall@$M$ & NLQ best IoU \\
+\midrule
+Surprise (paper) & reference & 0.518 & 0.192 & 0.522 & 0.220 \\
+Learned & \textbf{Q1} & 0.465 & 0.168 & 0.473 & 0.190 \\
+Oracle & upper bound & 0.579 & 0.199 & 0.582 & 0.229 \\
+Fixed & no signal & 0.510 & 0.169 & 0.517 & 0.200 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\fig{eval_seeds_B_minus_A.png}{0.85}{Q1 across Stage W seeds: Learned minus Surprise (B $-$ A in the plot) on both question
+sets, paired by question, 95\% interval over videos. Left of zero means the learned score is worse. Only the writer's
+training seed changes.}{fig:seeds}
+
+The learned score does worse than surprise (Table~\ref{tab:main}). Its memory retrieves the answer window about five points
+less often and holds it less tightly, on both question sets. Figure~\ref{fig:seeds} shows this is not luck: every interval
+is below zero for all three seeds, and the spread between seeds is much smaller than the gap. Keerthana's independent run
+agrees.
+
+Why does it fail? Within a single video the learned score separates answer frames from the rest no better than surprise
+does, and that within-video ranking is what decides where cuts go. A score that mostly learns which \emph{videos} get many
+questions cannot place cuts better. The Oracle rule helps the reader land on the right node, but its memory does not hold
+the window much more tightly; so even perfect labels leave little room, which matches the offline replay. The Fixed rule
+retrieves about as often as surprise but holds windows less tightly, so surprise does carry some useful information.
+Finally, most of the reader's improvement over the paper's version came from our three retrieval changes, not from
+training: the trained reader is only modestly better than the same model with untrained modules.
+
+\subsection{Q2: composite questions}\label{sec:q2}
+
+Splitting a composite question into sub-questions \emph{lowers} retrieval when the evidence budget is shared: the share of
+items where every sub-question's moment is retrieved drops in every setting we tried (both write rules, both question sets,
+two and three sub-questions). With an extra budget for each sub-question, splitting helps for pairs, and each sub-question
+is found more often. So the benefit comes from reading more evidence, not from the act of splitting (Table~\ref{tab:q2} and
+Figure~\ref{fig:q2}).
+
+Two further observations. Splitting does raise answer accuracy even though it retrieves less; given \S\ref{sec:evid}, the
+likely reason is that the model handles one short question at a time better, not that it sees better evidence. And the
+per-sub-question evidence check, meant to make the model say ``I can't tell'' when support is weak, does not separate
+supported from unsupported answers, so it does not work as a safety filter. We had planned a split written by the model and
+native two-hop questions. We dropped them: the oracle split is the best case for splitting and already loses, and two-hop
+questions have no annotated window for the second hop, so they could not be scored.
+
+\subsection{Failure modes}\label{sec:qual}
+Of the QA questions the Surprise memory gets right, half had no retrieved node overlapping the answer window, which again
+points at the language prior. The main failure modes:
+\begin{itemize}
+\item \textbf{Answer collapse.} ``On the table'' and ``on the floor'' together answer 43\% of QA questions, whatever the
+  evidence.
+\item \textbf{Strict scoring.} The answer metric needs the reference text inside the prediction, so ``on the floor'' against
+  ``at the floor'' scores zero.
+\item \textbf{Fresh evidence is harder to find.} Moments still in the open, not yet written segment are retrieved less
+  often (Figure~\ref{fig:slices}).
+\item \textbf{Wide nodes.} A node spans two to three minutes against a four-second answer window, so even a correct hit
+  carries little of the moment.
+\end{itemize}
+
+% =============================================================================================
+\section{Limitations}\label{sec:lim}
+
+\begin{itemize}
+\item \textbf{Answers do not use the memory's content} with this backbone, so we cannot show whether a better memory leads to
+  better answers. Our claims about Q1 and Q2 are claims about retrieval.
+\item \textbf{The retrieval metric is lenient}, because nodes are much wider than answer windows. We pair it with best IoU,
+  which is stricter, and both point the same way for Q1.
+\item \textbf{Reads change the memory}, so read-side ablations are not purely read-side.
+\item \textbf{Seeds.} Stage W has three seeds; Stage R and the scorer have one, for cost reasons.
+\item \textbf{Test set.} The official validation split is our test set, because the test split has no answer windows.
+\item \textbf{One backbone.} Qwen2.5-VL-7B in fp16 on 11\,GB GPUs. A port to a newer model was planned but did not fit the
+  remaining compute.
+\item \textbf{Scope cuts from the proposal}: OVO-Bench answer accuracy, the 3B model, and the training-free baselines
+  (InfiniPot-V- and CoRDS-style selection, FIFO, uniform, random, last frames) were not run.
+\item \textbf{Not comparable with the paper}, which has no public code; ours is a rebuild with different scale, data and
+  training. Ego4D has no age information, so nothing here supports a claim about older users.
+\end{itemize}
+
+% =============================================================================================
+\section{Conclusions}\label{sec:conc}
+
+A score learned from training questions does not decide what to keep better than surprise. The learned memory retrieves
+and holds answer moments less well, consistently across seeds and question sets, and even oracle labels leave little room
+to improve on surprise. Splitting composite questions does not help retrieval at the same cost; it only helps when each part
+is allowed more evidence. The finding with the widest consequence is about evaluation: with a frozen backbone, the answer
+does not depend on which moment is retrieved, so answer accuracy cannot be used to compare video memories, and retrieval
+metrics have to carry the comparison. Two changes could alter this: training in which the current frame is sometimes
+hidden, so the model must rely on its memory, and a backbone whose answers depend on the evidence it is given. A compact
+memory of this kind could support a wearable camera that answers ``where did I put my keys?''; reviewing wearable-camera
+images has helped people with Alzheimer's disease recall recent events~\cite{woodberry}, but we make no clinical claim.
+
+\paragraph{Reproducibility.} Code, run scripts and every result file:
+\url{https://github.com/amrithav27/selectstream-lite} (branch \file{main}; \file{README.md}). Checkpoints:
+\url{https://huggingface.co/lma-project/selectstream-lite-ego4d}. All numbers:
+\file{python scripts/collect_results.py outputs/full_v3 outputs/full_v3/collected_results.json}.
+Detailed tables are in Appendix~\ref{app:tables}; all 46 run figures are linked in Appendix~\ref{app:index}.
+
+% =============================================================================================
+\begin{thebibliography}{99}\small
+\bibitem{selectstream} H.~Ge, Y.~Wang, H.~Wu, Y.~Cai. What Should a Streaming Video Model Remember? arXiv:2606.16353, 2026.
+\bibitem{ego4d} K.~Grauman et al. Ego4D: Around the World in 3,000 Hours of Egocentric Video. CVPR 2022.
+\bibitem{qaego4d} L.~B\"armann, A.~Waibel. Where did I leave my keys? Episodic-Memory-Based Question Answering on Egocentric Videos. CVPR Workshops 2022.
+\bibitem{qwen25vl} S.~Bai et al. Qwen2.5-VL Technical Report. arXiv:2502.13923, 2025.
+\bibitem{streammem} Y.~Yang, Z.~Zhao, S.~N.~Shukla, A.~Singh, S.~K.~Mishra, L.~Zhang, M.~Ren. StreamMem: Query-Agnostic KV Cache Memory for Streaming Video Understanding. arXiv:2508.15717, 2025.
+\bibitem{infinipot} M.~Kim, K.~Shim, J.~Choi, S.~Chang. InfiniPot-V: Memory-Constrained KV Cache Compression for Streaming Video Understanding. NeurIPS 2025.
+\bibitem{cords} CoRDS: Coreset-based Representative and Diverse Selection for Streaming Video Understanding. arXiv:2605.14310, 2026.
+\bibitem{simplebaseline} A Simple Baseline for Streaming Video Understanding. arXiv:2604.02317, 2026.
+\bibitem{frameoracle} FrameOracle: Learning What to See and How Much to See in Videos. ICML 2026.
+\bibitem{trimkv} Cache What Lasts: Token Retention for Memory-Bounded KV Cache in LLMs (TRIM-KV). arXiv:2512.03324.
+\bibitem{amac} Adaptive Memory Admission Control for LLM Agents. arXiv:2603.04549, 2026.
+\bibitem{emr} M.~Han, M.~Kang, H.~Jung, S.~J.~Hwang. Episodic Memory Reader: Learning What to Remember for Question Answering from Streaming Data. ACL 2019.
+\bibitem{limits} On the Limits of Learned Importance Scoring for KV Cache Compression. arXiv:2601.14279, 2026.
+\bibitem{leasttomost} D.~Zhou et al. Least-to-Most Prompting Enables Complex Reasoning in Large Language Models. ICLR 2023.
+\bibitem{selfask} O.~Press et al. Measuring and Narrowing the Compositionality Gap in Language Models. Findings of EMNLP 2023.
+\bibitem{woodberry} E.~Woodberry et al. The Use of a Wearable Camera Improves Autobiographical Memory in Patients with Alzheimer's Disease. Memory, 23, 2015.
+\end{thebibliography}
+
+% =============================================================================================
+\clearpage
+\appendix
+\section{Detailed results}\label{app:tables}
+Intervals are 95\% bootstrap over videos; $p_\text{holm}$ is a paired permutation test over videos, Holm-corrected within
+each family. ``Same'': share of answers identical to the reference.
+
+\begin{table}[H]\centering\small
+\caption{Runs behind this report (run \file{full_v3}, 4 $\times$ RTX 2080 Ti).}\label{tab:runs}
+\begin{tabular}{l l l}
+\toprule
+Run & Data & GPU time \\
+\midrule
+Feature cache & 1,686 clips, 835,019 frames & 7.2\,h \\
+Scorer & all training frames, dev for early stopping & CPU \\
+Stage R & 838 videos $\times$ 2 epochs, 419 optimiser steps & 6.9\,h \\
+Stage W, all four rules, seed 42 & 50 steps $\times$ 4 videos per rule & \textasciitilde50\,min / rule \\
+Stage W, Surprise and Learned, seeds 43, 44 & as above, only the seed changes & \textasciitilde45\,min / run \\
+Evaluation & all val videos, both question sets, every rule and seed (18 runs) & 31--46\,min / run \\
+Read ablations + evidence controls & first 150 val QA videos, 2,338 questions (24 runs) & \textasciitilde25\,min / run \\
+Memory size $N=64, 128$ & all 243 val QA videos & \textasciitilde40\,min / run \\
+Q2 & 285 NLQ / 237 QA videos, 2 and 3 sub-questions, both write rules & 51--77\,min / run \\
+Write-side grid & offline replay, val & CPU; rerun matched all 8,592 numbers \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]\centering\small
+\caption{Q1: paired differences. Learned $-$ Surprise: every $p_\text{holm}\le0.0014$.}\label{tab:diff}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+Comparison & QA $\Delta$Recall@$M$ & QA $\Delta$best IoU & NLQ $\Delta$Recall@$M$ & NLQ $\Delta$best IoU \\
+\midrule
+Learned $-$ Surprise, seed 42 & $-0.053$ \ci{-0.075}{-0.032} & $-0.024$ \ci{-0.033}{-0.016} & $-0.049$ \ci{-0.069}{-0.030} & $-0.030$ \ci{-0.039}{-0.020} \\
+Learned $-$ Surprise, seed 43 & $-0.042$ \ci{-0.066}{-0.019} & $-0.021$ \ci{-0.030}{-0.012} & $-0.035$ \ci{-0.057}{-0.015} & $-0.028$ \ci{-0.037}{-0.019} \\
+Learned $-$ Surprise, seed 44 & $-0.044$ \ci{-0.066}{-0.021} & $-0.023$ \ci{-0.031}{-0.016} & $-0.044$ \ci{-0.066}{-0.022} & $-0.030$ \ci{-0.038}{-0.022} \\
+Learned $-$ Surprise, seed 43, Colab (Keerthana, 50 videos, no CI) & $-0.047$ & $-0.026$ & $-0.063$ & $-0.021$ \\
+\midrule
+Oracle $-$ Surprise & $+0.062$ \ci{+0.029}{+0.094} & $+0.007$ \ci{-0.005}{+0.018} & $+0.060$ \ci{+0.035}{+0.084} & $+0.009$ \ci{-0.002}{+0.021} \\
+Fixed $-$ Surprise & $-0.007$ \ci{-0.029}{+0.015} & $-0.023$ \ci{-0.033}{-0.014} & $-0.005$ \ci{-0.024}{+0.014} & $-0.019$ \ci{-0.028}{-0.011} \\
+Surprise $-$ untrained modules & $+0.034$ \ci{+0.018}{+0.049} & $-0.003$ \ci{-0.006}{-0.001} & -- & -- \\
+\midrule
+Surprise, seed 43 / 44 $-$ seed 42 & $-0.001$ / $+0.015$ & $-0.001$ / $+0.001$ & $+0.001$ / $+0.020$ & $+0.000$ / $+0.002$ \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\begin{table}[H]\centering\small
+\caption{Read-side ablations, Surprise rule, 150 val QA videos (reference Recall@$M$ 0.503). Holm over the 23 variants.}\label{tab:read}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{llll}
 \toprule
-Variant & $\Delta$Recall@$M$ [95\% CI] ($p_\text{holm}$) & $\Delta$best IoU & Same \\
+Variant & $\Delta$Recall@$M$ ($p_\text{holm}$) & $\Delta$best IoU & Same \\
 \midrule
 no question prior & $-0.074$ \ci{-0.136}{-0.013} (0.34; raw $p$ 0.034) & $+0.003$ & 99.5\% \\
 prior only & $-0.006$ \ci{-0.024}{+0.015} (1.0) & $+0.001$ & 99.7\% \\
 cosine only / no cosine / no biases & $+0.011$ / $-0.017$ / $-0.006$ (all 1.0) & $\le$0.006 & $\ge$99.6\% \\
-no re-rank (= no graph expansion, = no GAR) & $+0.038$ \ci{+0.022}{+0.056} (0.003) & $+0.002$ & 92--99\% \\
-re-rank chooses 4 of 8 seeds & $-0.006$ \ci{-0.019}{+0.006} (1.0) & $-0.000$ & 99.8\% \\
+no re-rank (= no graph expansion) & $+0.038$ \ci{+0.022}{+0.056} (0.003) & $+0.002$ & 92--99\% \\
+re-rank chooses 4 of 8 candidates & $-0.006$ \ci{-0.019}{+0.006} (1.0) & $-0.000$ & 99.8\% \\
 no open segment & $-0.022$ \ci{-0.036}{-0.008} (0.028) & $+0.000$ & 99.5\% \\
 reads do not mark nodes & $-0.053$ \ci{-0.084}{-0.026} (0.003) & $+0.013$ \ci{+0.007}{+0.018} (0.002) & 99.7\% \\
 $M=1$ / 2 / 8 (trained at 4) & $-0.354$ / $-0.223$ / $+0.314$ (all 0.002) & $\le$0.004 & 76 / 86 / 88\% \\
@@ -247,21 +504,11 @@ $M=1$ / 2 / 8 (trained at 4) & $-0.354$ / $-0.223$ / $+0.314$ (all 0.002) & $\le
 \end{tabular}}
 \end{table}
 
-Within retrieval, no single scoring term is distinguishable from the full reader after correction: removing the question
-prior costs 0.074 Recall@$M$, but $p_\text{holm}=0.34$. The paper's re-rank step lowers Recall@$M$ by 0.038, and
-letting it choose 4 of 8 starting nodes does not recover it.
-
-\writeme{2 sentences on ``reads do not mark nodes'': read counts feed keep/evict, so reading keeps wide, often-read nodes
-(Recall@$M$ $+0.053$, best IoU $-0.013$ with marking). Both A and B mark reads the same way, so the A/B comparison is not affected.}
-
-\subsection{Evidence controls}\label{sec:evid}
-Same 150 streams, real frames. Retrieval is unchanged in the zero/noise rows, so only the tokens' content changes.
-
-\begin{table}[t]\centering\small
-\caption{What the answer step depends on. Reference: the reader's own evidence (Recall@$M$ 0.503, contains 0.225).}\label{tab:evid}
+\begin{table}[H]\centering\small
+\caption{Evidence controls, Surprise rule, 150 val QA videos, real frames (reference answer accuracy 0.225).}\label{tab:evid}
 \begin{tabular}{llll}
 \toprule
-Evidence given to the language model & Recall@$M$ & $\Delta$contains [95\% CI] ($p_\text{holm}$) & Same \\
+Evidence given to the language model & Recall@$M$ & $\Delta$accuracy ($p_\text{holm}$) & Same \\
 \midrule
 oracle nodes (answer window) & 0.934 & $-0.000$ \ci{-0.002}{+0.001} (1.0) & 99.4\% \\
 wrong nodes (all outside the window) & 0.022 & $+0.000$ \ci{+0.000}{+0.001} (1.0) & 99.4\% \\
@@ -275,195 +522,134 @@ reader's nodes, blank frame & 0.503 & $-0.024$ \ci{-0.039}{-0.009} (0.036) & 64.
 \end{tabular}
 \end{table}
 
-\writeme{Interpretation paragraph (update the mid-submission E1--E4 text): Recall@$M$ 0.93 vs 0.50 vs 0.02 gives the
-same answers (99.4\% identical), so the answer does not depend on \emph{which} moment is retrieved; out-of-distribution
-tokens (zero, noise) are worse than no tokens; real visual tokens beat none by 0.091. One reading: the evidence tokens
-set the answer's form (short phrases vs sentences) and the language prior supplies the content (``on the table'' is 30\%
-of QA answers). Consequence: Q1 and Q2 are judged on retrieval metrics. These are real-frame replications of Dedeepya's
-Colab controls (blank / g-vector frames), which agree.}
+\begin{table}[H]\centering\small
+\caption{Independent replication (Dedeepya, Colab, all 243 val QA videos), interval from her script. Cluster column: 150
+videos, Tables~\ref{tab:read}--\ref{tab:evid}. Marking reads, by delay (Colab): Recall@$M$ 0.542 with marking vs 0.290
+without for questions asked $\ge$1024\,s after the moment.}\label{tab:repl}
+\begin{tabular}{llll}
+\toprule
+Variant & Metric & Colab, 243 videos & Cluster, 150 videos \\
+\midrule
+no re-rank & $\Delta$Recall@$M$ & $+0.041$ \ci{+0.027}{+0.057} & $+0.038$ \\
+re-rank chooses 4 of 8 & $\Delta$Recall@$M$ & $-0.003$ \ci{-0.012}{+0.005} & $-0.006$ \\
+reads do not mark nodes & $\Delta$Recall@$M$ / $\Delta$best IoU & $-0.039$ \ci{-0.061}{-0.019} / $+0.010$ & $-0.053$ / $+0.013$ \\
+content set to zero & $\Delta$accuracy & $-0.113$ \ci{-0.132}{-0.095} & $-0.126$ \\
+content replaced by noise & $\Delta$accuracy & $-0.214$ \ci{-0.235}{-0.193} & $-0.219$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\subsection{Write side and memory budget}\label{sec:write}
-
-\begin{table}[t]\centering\small
-\caption{Left: write-side ablations (offline replay, val NLQ, best-node IoU, $N=16$). Right: memory size at evaluation,
-arm A, all 243 val QA streams, paired with $N=16$ (trained), $p_\text{holm}=0.0002$ for every $\Delta$.}\label{tab:write}
+\begin{table}[H]\centering\small
+\caption{Left: write-side offline replay (val NLQ, best-node IoU, $N=16$). Right: memory size at evaluation, Surprise rule,
+all 243 val QA videos, change against $N=16$ ($p_\text{holm}=0.0002$ for each).}\label{tab:write}
 \begin{minipage}{0.55\linewidth}\centering\footnotesize
 \begin{tabular}{ll}
 \toprule
 Ablation & Result \\
 \midrule
-oracle C $-$ surprise A & $+0.006$ \ci{-0.006}{+0.018} \\
+Oracle $-$ Surprise & $+0.006$ \ci{-0.006}{+0.018} \\
 min segment length $8\to4\to2$ & $0.236\to0.219\to0.175$ \\
 scorer with within-video losses & IoU $-0.003$ to $-0.046$ \\
 cut by surprise, rank by scorer & $+0.004$ \ci{+0.002}{+0.007} \\
 event-boundary cut signal & $-0.003$ \ci{-0.009}{+0.002} \\
-B writer retrained vs Stage R writer & $\Delta$Rec.\ $+0.007$ \ci{-0.004}{+0.018} \\
+Learned writer retrained vs reused & $\Delta$Rec.\ $+0.007$ \ci{-0.004}{+0.018} \\
 \bottomrule
 \end{tabular}
 \end{minipage}\hfill
 \begin{minipage}{0.43\linewidth}\centering\footnotesize
 \begin{tabular}{ccc}
 \toprule
-$N$ & Recall@$M$ & best IoU \\
+$N$ & $\Delta$Recall@$M$ & $\Delta$best IoU \\
 \midrule
-16 & 0.518 & 0.192 \\
-64 & 0.409 & 0.238 \\
- & $-0.109$ \ci{-0.134}{-0.081} & $+0.046$ \ci{+0.034}{+0.057} \\
-128 & 0.395 & 0.244 \\
- & $-0.123$ \ci{-0.156}{-0.088} & $+0.052$ \ci{+0.036}{+0.069} \\
+64 & $-0.109$ \ci{-0.134}{-0.081} & $+0.046$ \ci{+0.034}{+0.057} \\
+128 & $-0.123$ \ci{-0.156}{-0.088} & $+0.052$ \ci{+0.036}{+0.069} \\
 \bottomrule
 \end{tabular}
 \end{minipage}
 \end{table}
 
-Every write-side check points the same way: no version of the learned score beats surprise by a useful
-margin. Retraining the writer for arm B, instead of reusing the writer trained with surprise, changes retrieval by $+0.007$
-(interval includes zero), so B does not lose simply because its writer was trained for surprise.
-
-\writeme{Budget paragraph: the mid-submission 9-stream case study now holds on all 243 streams with tests. More nodes $\to$
-each node covers less time $\to$ best IoU rises (+0.046/+0.052) but the reader (trained at $N=16$) finds the window less
-often ($-0.109/-0.123$). The memory can hold the moment; the reader cannot pick it out. Answers unchanged (99.3\%).}
-
-% =============================================================================================
-\section{Evaluations}\label{sec:eval}
-
-\subsection{Q1: learned write signal}\label{sec:q1}
-
-\begin{table}[t]\centering\small
-\caption{Val, all streams, seed 42. Contains is the same for every trained arm (0.219--0.220).}\label{tab:main}
-\begin{tabular}{llcccc}
+\begin{table}[H]\centering\small
+\caption{Q2: share of items with every sub-question's moment retrieved. Same budget: 4 tokens shared; extra budget: 4 per
+sub-question. Same budget $-$ single: every $p_\text{holm}\le0.0005$. Extra budget $-$ single: $+0.039$ to $+0.057$ for
+two sub-questions ($p_\text{holm}\le0.025$), not significant for three.}\label{tab:q2}
+\begin{tabular}{lllcccc}
 \toprule
-Run & Role & QA Recall@$M$ & QA best IoU & NLQ Recall@$M$ & NLQ best IoU \\
+Write rule & Set & $k$ & single & split, same budget & $\Delta$ & split, extra budget \\
 \midrule
-untrained modules & baseline & 0.484 & 0.195 & -- & -- \\
-A surprise (paper) & reference & 0.518 & 0.192 & 0.522 & 0.220 \\
-B learned scorer & \textbf{Q1} & 0.465 & 0.168 & 0.473 & 0.190 \\
-C oracle labels & upper bound & 0.579 & 0.199 & 0.582 & 0.229 \\
-D fixed length & baseline & 0.510 & 0.169 & 0.517 & 0.200 \\
+Surprise & QA  & 2 & 0.167 & 0.066 & $-0.101$ \ci{-0.135}{-0.068} & 0.219 \\
+Surprise & QA  & 3 & 0.095 & 0.005 & $-0.090$ \ci{-0.116}{-0.066} & 0.096 \\
+Surprise & NLQ & 2 & 0.182 & 0.077 & $-0.105$ \ci{-0.133}{-0.075} & 0.220 \\
+Surprise & NLQ & 3 & 0.096 & 0.008 & $-0.088$ \ci{-0.116}{-0.062} & 0.113 \\
+Learned & QA  & 2 & 0.140 & 0.066 & $-0.073$ \ci{-0.102}{-0.045} & 0.184 \\
+Learned & QA  & 3 & 0.054 & 0.006 & $-0.047$ \ci{-0.068}{-0.027} & 0.074 \\
+Learned & NLQ & 2 & 0.136 & 0.061 & $-0.075$ \ci{-0.101}{-0.048} & 0.193 \\
+Learned & NLQ & 3 & 0.061 & 0.003 & $-0.058$ \ci{-0.080}{-0.038} & 0.073 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begin{table}[t]\centering\small
-\caption{Paired differences, 95\% CI over videos. B $-$ A per Stage W seed: every $p_\text{holm}\le0.0014$.}\label{tab:diff}
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{lcccc}
-\toprule
-Comparison & QA $\Delta$Recall@$M$ & QA $\Delta$best IoU & NLQ $\Delta$Recall@$M$ & NLQ $\Delta$best IoU \\
-\midrule
-B $-$ A, seed 42 & $-0.053$ \ci{-0.075}{-0.032} & $-0.024$ \ci{-0.033}{-0.016} & $-0.049$ \ci{-0.069}{-0.030} & $-0.030$ \ci{-0.039}{-0.020} \\
-B $-$ A, seed 43 & $-0.042$ \ci{-0.066}{-0.019} & $-0.021$ \ci{-0.030}{-0.012} & $-0.035$ \ci{-0.057}{-0.015} & $-0.028$ \ci{-0.037}{-0.019} \\
-B $-$ A, seed 44 & $-0.044$ \ci{-0.066}{-0.021} & $-0.023$ \ci{-0.031}{-0.016} & $-0.044$ \ci{-0.066}{-0.022} & $-0.030$ \ci{-0.038}{-0.022} \\
-\midrule
-C $-$ A & $+0.062$ \ci{+0.029}{+0.094} & $+0.007$ \ci{-0.005}{+0.018} & $+0.060$ \ci{+0.035}{+0.084} & $+0.009$ \ci{-0.002}{+0.021} \\
-D $-$ A & $-0.007$ \ci{-0.029}{+0.015} & $-0.023$ \ci{-0.033}{-0.014} & $-0.005$ \ci{-0.024}{+0.014} & $-0.019$ \ci{-0.028}{-0.011} \\
-A $-$ untrained & $+0.034$ \ci{+0.018}{+0.049} & $-0.003$ \ci{-0.006}{-0.001} & -- & -- \\
-\midrule
-A seed 43 / 44 $-$ seed 42 & $-0.001$ / $+0.015$ & $-0.001$ / $+0.001$ & $+0.001$ / $+0.020$ & $+0.000$ / $+0.002$ \\
-\bottomrule
-\end{tabular}}
-\end{table}
+\clearpage
+\section{Additional figures}\label{app:figs}
+In the plots, A = Surprise, B = Learned, C = Oracle, D = Fixed.
 
-\fig{eval_qa_vs_A.png}{0.85}{Paired $\Delta$ vs arm A, val QA track, seed 42, 95\% CI over videos.}{fig:vsA}
+\fig{train_W_arms.png}{0.85}{Stage W, seed 42: retrieval and answer loss with the writer retrained per rule, same videos and
+steps, reader frozen from Stage R.}{fig:trainW}
 
-The learned score does worse than surprise. On both tracks arm B finds the answer window less often
-and its best node fits the window less tightly, and this now holds on all three Stage W seeds.
-Within a single video the scorer separates answer frames from the rest about as well as surprise
-does (AUC 0.549 against 0.543). Oracle labels (arm C) help the reader find a node that overlaps the window but do not
-make that node fit the window more tightly. One reading is that better write labels change which node the reader lands
-on more than how well the memory is cut.
+\fig{eval_qa_vs_A.png}{0.85}{Every rule minus Surprise on the val QA set, seed 42: paired change with 95\% interval over videos.}{fig:vsA}
 
-\writeme{Seeds: the seed-to-seed spread of A (up to $+0.020$, significant for seed 44) is smaller than the B $-$ A gap
-($\ge$0.035 in every seed), so the Q1 result is not a seed artefact. Excluding the 50 QA / 78 NLQ questions asked before
-their window ends changes no difference by more than 0.002. Training adds little: A $-$ untrained $+0.034$; most of
-0.33 $\to$ 0.52 comes from our retrieval changes.}
+\fig{eval_budget_N.png}{0.8}{Memory size at evaluation, Surprise rule, all 243 val QA videos (trained at $N=16$); band = 95\% interval over videos.}{fig:budget}
 
-\subsection{Q2: composite questions}\label{sec:q2}
+\fig{q2_qa_A.png}{1.0}{Q2, Surprise rule, val QA: retrieval by strategy, the evidence-check curve, and answer accuracy.}{fig:q2}
 
-\begin{table}[t]\centering\small
-\caption{AllHit by retrieval strategy (95\% CI over videos). Split, matched shares $M=4$ tokens across sub-questions;
-unmatched gives each its own 4. $\Delta$ = matched $-$ single, every $p_\text{holm}\le0.0005$.}\label{tab:q2}
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{lllcccc}
-\toprule
-Arm & Track & $k$ & single & split, matched & $\Delta$ matched $-$ single & split, unmatched \\
-\midrule
-A & QA  & 2 & 0.167 & 0.066 & $-0.101$ \ci{-0.135}{-0.068} & 0.219 \\
-A & QA  & 3 & 0.095 & 0.005 & $-0.090$ \ci{-0.116}{-0.066} & 0.096 \\
-A & NLQ & 2 & 0.182 & 0.077 & $-0.105$ \ci{-0.133}{-0.075} & 0.220 \\
-A & NLQ & 3 & 0.096 & 0.008 & $-0.088$ \ci{-0.116}{-0.062} & 0.113 \\
-B & QA  & 2 & 0.140 & 0.066 & $-0.073$ \ci{-0.102}{-0.045} & 0.184 \\
-B & QA  & 3 & 0.054 & 0.006 & $-0.047$ \ci{-0.068}{-0.027} & 0.074 \\
-B & NLQ & 2 & 0.136 & 0.061 & $-0.075$ \ci{-0.101}{-0.048} & 0.193 \\
-B & NLQ & 3 & 0.061 & 0.003 & $-0.058$ \ci{-0.080}{-0.038} & 0.073 \\
-\bottomrule
-\end{tabular}}
-\end{table}
+\fig{eval_qa_slices.png}{0.95}{Rules by question family, by whether the wearer was seen in training, and by where the evidence
+sits when the question is asked; val QA set.}{fig:slices}
 
-Splitting a composite question does not help retrieval at the same budget: AllHit drops in all eight cells. Only when
-each sub-question gets its own four tokens does splitting beat a single retrieval, so the gain comes from more evidence,
-not from the split.
+\clearpage
+\section{Figure index}\label{app:index}
+Every figure produced for run \file{full_v3} (\file{python -m streamlite.cli.plot_ego4d --run_dir outputs/full_v3});
+each name links to the PNG in the repository (\file{outputs/full_v3/figures/}). A = Surprise, B = Learned, C = Oracle,
+D = Fixed.
 
-\writeme{Q2 numbers to add: unmatched $-$ single AllHit $+0.039$ to $+0.057$ for $k=2$ ($p_\text{holm}\le0.025$), not
-significant for $k=3$ ($+0.002$ to $+0.021$); sub-hit $+0.039$ to $+0.064$ in all 8 cells ($p_\text{holm}\le0.026$).
-Order questions (T2): 0.57--0.60 (chance 0.5). Split raises QA contains by $+0.13$ to $+0.14$ ($p_\text{holm}\le0.0005$)
-while retrieving less, which by \S\ref{sec:evid} is the effect of asking one short question at a time. The evidence check
-does not filter: unsupported rate 0.72--0.76 (pairs) at every coverage. Planned model-made split and native two-hop
-questions were not run: the oracle split is the best case and already loses, and two-hop has no annotated second window.}
-
-\subsection{Qualitative examples and failure modes}\label{sec:qual}
-Of the 826 QA questions arm A gets right, 408 had no retrieved node overlapping the answer window.
+\begin{multicols}{2}\small
+\textbf{Evaluation, Q1}
 \begin{itemize}
-\item \textbf{Answer collapse.} ``On the table'' is the answer to 1,118 of 3,751 QA questions (30\%),
-  whatever the evidence; ``on the floor'' is another 505.
-\item \textbf{Strict scoring.} Contains needs the reference text inside the prediction, so ``on the floor''
-  against ``at the floor'' scores zero.
-\item \textbf{Fresh evidence is harder to find.} Removing the open, not yet written segment from retrieval costs 0.022 Recall@$M$.
-\item \textbf{Wide nodes.} A node spans about 120--150\,s against a 4\,s answer window (evidence precision 0.03--0.05).
+\item \figlink{eval_qa_overview}, \figlink{eval_nlq_overview}: all rules, six metrics
+\item \figlink{eval_qa_vs_A}, \figlink{eval_nlq_vs_A}: each rule minus Surprise
+\item \figlink{eval_seeds_B_minus_A}: Learned $-$ Surprise per seed
+\item \figlink{eval_qa_slices}, \figlink{eval_nlq_slices}: by family, wearer, location
+\item \figlink{eval_qa_delay}, \figlink{eval_nlq_delay}: by question delay
+\item \figlink{eval_budget_N}: memory size $N$
 \end{itemize}
-
-% =============================================================================================
-\section{Limitations}\label{sec:lim}
-
-\writeme{Bullets to turn into prose:
+\textbf{Read side}
 \begin{itemize}
-\item Answers do not depend on evidence content on this backbone, so answer-level claims for Q1/Q2 cannot be tested; claims rest on retrieval.
-\item Stage R and the scorer are one seed (42); only Stage W has three seeds.
-\item Recall@$M$ is lenient (any overlap; nodes \textasciitilde30$\times$ wider than windows); best IoU and precision are reported next to it.
-\item Read ablations change the memory slightly, because read counts feed keep/evict (\S\ref{sec:read}).
-\item The official val split is the test set; the NLQ test split has no windows.
-\item One backbone (Qwen2.5-VL-7B, fp16 on 2080 Ti); a Qwen3.5 port was planned but not run in time.
-\item Not comparable with SelectStream's published numbers: rebuilt from the paper, different scale, data and training.
-\item No age data in Ego4D; no claim about older users.
-\end{itemize}}
-
-% =============================================================================================
-\section{Conclusions}\label{sec:conc}
-
-\writeme{One paragraph: Q1 answer (no, on 3 seeds, both tracks); Q2 answer (no at matched budget; budget, not
-decomposition, drives the unmatched gain); the evidence-content finding and what it means for memory evaluation with
-frozen VLMs; what would change it (retraining that hides the current frame so the model must use memory; a backbone whose
-answers depend on evidence). Applications sentence (wearable recall~\cite{woodberry}) only with the no-clinical-claim caveat.}
-
-\paragraph{Reproducibility.} Code, run scripts and every result file:
-\url{https://github.com/amrithav27/selectstream-lite} (branch \file{main}; \file{README.md}). Checkpoints:
-\url{https://huggingface.co/lma-project/selectstream-lite-ego4d}. All numbers:
-\file{python scripts/collect_results.py outputs/full_v3 outputs/full_v3/collected_results.json}.
-
-% =============================================================================================
-\begin{thebibliography}{99}\small
-\bibitem{selectstream} H.~Ge, Y.~Wang, H.~Wu, Y.~Cai. What Should a Streaming Video Model Remember? arXiv:2606.16353, 2026.
-\bibitem{ego4d} K.~Grauman et al. Ego4D: Around the World in 3,000 Hours of Egocentric Video. CVPR 2022.
-\bibitem{qaego4d} L.~B\"armann, A.~Waibel. Where did I leave my keys? Episodic-Memory-Based Question Answering on Egocentric Videos. CVPR Workshops 2022.
-\bibitem{qwen25vl} S.~Bai et al. Qwen2.5-VL Technical Report. arXiv:2502.13923, 2025.
-\bibitem{moviechat} E.~Song et al. MovieChat: From Dense Token to Sparse Memory for Long Video Understanding. CVPR 2024.
-\bibitem{malmm} B.~He et al. MA-LMM: Memory-Augmented Large Multimodal Model for Long-Term Video Understanding. CVPR 2024.
-\bibitem{flashvstream} H.~Zhang et al. Flash-VStream: Memory-Based Real-Time Understanding for Long Video Streams. arXiv:2406.08085, 2024.
-\bibitem{emllm} Z.~Fountas et al. Human-like Episodic Memory for Infinite Context LLMs. arXiv:2407.09450, 2024.
-\bibitem{vslnet} H.~Zhang, A.~Sun, W.~Jing, J.~T.~Zhou. Span-based Localizing Network for Natural Language Video Localization. ACL 2020.
-\bibitem{leasttomost} D.~Zhou et al. Least-to-Most Prompting Enables Complex Reasoning in Large Language Models. ICLR 2023.
-\bibitem{selfask} O.~Press et al. Measuring and Narrowing the Compositionality Gap in Language Models. Findings of EMNLP 2023.
-\bibitem{woodberry} E.~Woodberry et al. The Use of a Wearable Camera Improves Autobiographical Memory in Patients with Alzheimer's Disease. Memory, 23, 2015.
-\end{thebibliography}
+\item \figlink{read_ablation}: all 23 read variants
+\item \figlink{read_evidence_M}: evidence tokens $M$
+\item \figlink{read_offline}: training-free retrieval grid
+\end{itemize}
+\textbf{Q2}
+\begin{itemize}
+\item \figlink{q2_qa_A}, \figlink{q2_qa_B}, \figlink{q2_nlq_A}, \figlink{q2_nlq_B}
+\end{itemize}
+\textbf{Write side and scorer}
+\begin{itemize}
+\item \figlink{ablate_norm_nlq}, \figlink{ablate_norm_qa}, \figlink{ablate_norm_signals}
+\item \figlink{ablate_raw_nlq}, \figlink{ablate_raw_qa}, \figlink{ablate_raw_signals}
+\item \figlink{check1_signal}, \figlink{check1_stream}: scorer check
+\item \figlink{check2_delay}, \figlink{check2_headroom}: write headroom
+\end{itemize}
+\textbf{Training}
+\begin{itemize}
+\item \figlink{train_R_A_learning}, \figlink{train_R_A_health}
+\item \figlink{train_W_arms}: Stage W, all rules
+\item \figlink{train_W_A_learning}, \figlink{train_W_A_health}
+\item \figlink{train_W_B_learning}, \figlink{train_W_B_health}
+\item \figlink{train_W_C_learning}, \figlink{train_W_C_health}
+\item \figlink{train_W_D_learning}, \figlink{train_W_D_health}
+\item \figlink{train_W_A_seed43_learning}, \figlink{train_W_A_seed43_health}
+\item \figlink{train_W_A_seed44_learning}, \figlink{train_W_A_seed44_health}
+\item \figlink{train_W_B_seed43_learning}, \figlink{train_W_B_seed43_health}
+\item \figlink{train_W_B_seed44_learning}, \figlink{train_W_B_seed44_health}
+\end{itemize}
+\end{multicols}
 
 \end{document}

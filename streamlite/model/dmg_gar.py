@@ -372,7 +372,7 @@ class DynamicMemoryGraphReasoner(nn.Module):
         elif ab == "oracle_wrong" and self.oracle_window is not None:
             ws, we = self.oracle_window
             hit = (graph.node_time_end + 0.5 >= ws - 0.5) & (graph.node_time_start - 0.5 <= we + 0.5)
-            # Content control (RF-1): the tightest nodes that do NOT overlap the window, same stream and count.
+            # Content control: the tightest nodes that do NOT overlap the window, same stream and count.
             miss = (~hit).to(score_bias.dtype)
             score_bias = miss * 1e3 - miss * span_len.to(score_bias.dtype)
         raw_score = cos_term + score_bias
@@ -411,7 +411,7 @@ class DynamicMemoryGraphReasoner(nn.Module):
         # Eq. (10): e_m = LN(W_e h_m). Only the retrieved nodes are exposed (no padding tokens).
         selected_evidence = self.evidence_ln(self.evidence_proj(refined[ev_pos]))
         evidence_tokens = selected_evidence
-        # Token-presence controls (RF-1): same nodes and count, no content, so retrieval metrics are unchanged.
+        # Token-presence controls: same nodes and count, no content, so retrieval metrics are unchanged.
         # A flat answer score under these means the reader needs evidence tokens to exist, not to say anything.
         if ab == "zero_evidence":
             evidence_tokens = torch.zeros_like(selected_evidence)

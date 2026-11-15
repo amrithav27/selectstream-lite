@@ -278,8 +278,8 @@ def load_evals(run_dir: str, track: str) -> Dict[str, dict]:
     out = {}
     for d in sorted(glob.glob(os.path.join(run_dir, f"eval_{track}_*"))):
         name = os.path.basename(d)[len(f"eval_{track}_"):]
-        if re.search(r"_N\d+$", name) or not os.path.exists(os.path.join(d, "predictions.jsonl")):
-            continue
+        if re.search(r"_N\d+$|_seed\d+$", name) or not os.path.exists(os.path.join(d, "predictions.jsonl")):
+            continue  # budget runs and extra Stage W seeds have their own figures
         out[arm_key(name)] = {"rows": read_jsonl(os.path.join(d, "predictions.jsonl")), "summary": json.load(open(os.path.join(d, "summary.json")))}
     return out
 def arm_footer(evals: Dict[str, dict], extra: Optional[dict] = None) -> Dict[str, Dict]:
@@ -410,8 +410,13 @@ def plot_eval_slices(evals: Dict[str, dict], track: str, out_dir: str) -> None:
     save(fig, os.path.join(out_dir, f"eval_{track}_slices.png"), top_in=1.45)
 def plot_budget(run_dir: str, out_dir: str) -> None:
     runs = {}
-    for d in glob.glob(os.path.join(run_dir, "eval_qa_A_N*")):
-        n = int(re.search(r"_N(\d+)$", d).group(1))
+    all_streams = bool(glob.glob(os.path.join(run_dir, "budget_qa_A_N*", "predictions.jsonl")))
+    dirs = glob.glob(os.path.join(run_dir, "budget_qa_A_N*" if all_streams else "eval_qa_A_N*"))
+    if all_streams:
+        dirs.append(os.path.join(run_dir, "eval_qa_A"))  # the trained budget, N = 16
+    for d in dirs:
+        m = re.search(r"_N(\d+)$", d)
+        n = int(m.group(1)) if m else 16
         if os.path.exists(os.path.join(d, "predictions.jsonl")):
             runs[n] = {"rows": read_jsonl(os.path.join(d, "predictions.jsonl")), "summary": json.load(open(os.path.join(d, "summary.json")))}
     runs = {n: r for n, r in runs.items() if r["rows"]}  # an N run with no stream long enough has no questions
@@ -430,10 +435,47 @@ def plot_budget(run_dir: str, out_dir: str) -> None:
     ax.set_ylabel("mean over questions (0–1)")
     ax.legend(loc="upper left", bbox_to_anchor=(1.005, 1.0))
     q = len(runs[Ns[0]]["rows"])
-    suptitle(fig, "Memory budget · arm A · longest val streams", f"{q} questions on {len({r['stream_id'] for r in runs[Ns[0]]['rows']})} streams; band = 95% CI over videos")
+    suptitle(fig, "Memory budget · arm A · " + ("all val QA streams" if all_streams else "longest val streams"), f"{q} questions on {len({r['stream_id'] for r in runs[Ns[0]]['rows']})} streams; band = 95% CI over videos")
     footer(fig, cfg_groups(runs[Ns[0]]["summary"]["config"], {"Memory": {"N": ", ".join(map(str, Ns)) + " (eval only)"}}), reserve_in=0.55)
     fig.subplots_adjust(right=0.78)
     save(fig, os.path.join(out_dir, "eval_budget_N.png"))
+def plot_seeds(run_dir: str, out_dir: str) -> None:
+    """B − A per Stage W seed (seed 42 = eval_<track>_{A,B}; others = eval_<track>_{A,B}_seed<s>), paired by question."""
+    seeds = sorted({int(m.group(1)) for d in glob.glob(os.path.join(run_dir, "eval_*_B_seed*")) for m in [re.search(r"_seed(\d+)$", d)] if m})
+    if not seeds:
+        return
+    seeds = [42] + seeds
+    def rows(track, arm, s):
+        p = os.path.join(run_dir, f"eval_{track}_{arm}" + ("" if s == 42 else f"_seed{s}"), "predictions.jsonl")
+        return read_jsonl(p) if os.path.exists(p) else None
+    tracks = [t for t in ("qa", "nlq") if rows(t, "A", 42) is not None]
+    metrics = [("recall_at_m", "Recall@M"), ("best_iou", "best-node IoU at t_q")]
+    fig, axes = plt.subplots(1, len(metrics), figsize=(12, 4.8), sharey=True)
+    fig.subplots_adjust(wspace=0.08, left=0.1)
+    off = {t: o for t, o in zip(tracks, np.linspace(-0.15, 0.15, len(tracks)))}
+    tcol = {"qa": SERIES[0], "nlq": SERIES[6]}
+    for ax, (key, lab) in zip(axes, metrics):
+        for t in tracks:
+            for i, s in enumerate(seeds):
+                a, b = rows(t, "A", s), rows(t, "B", s)
+                d = paired_diff(a, b, key) if a and b else None
+                if d is None:
+                    continue
+                y = i + off[t]
+                ax.plot([d[1], d[2]], [y, y], color=tcol[t], lw=2, solid_capstyle="round")
+                ax.plot(d[0], y, "o", ms=7, color=tcol[t], mec="#fcfcfb", mew=1.2, label=f"val {t.upper()}" if i == 0 else None)
+                ax.text(d[2], y, f"  {d[0]:+.3f}", va="center", fontsize=8, color=INK_2)
+        ax.axvline(0, color=AXIS, lw=1.2)
+        ax.set_title(lab, fontsize=10.5)
+        ax.set_xlabel("B − A (metric units; 95% CI over videos)")
+    axes[0].set_yticks(range(len(seeds)), [f"Stage W seed {s}" for s in seeds])
+    axes[0].invert_yaxis()
+    axes[-1].legend(loc="lower right", fontsize=8.5)
+    suptitle(fig, "Q1 across Stage W seeds: learned scorer (B) minus surprise (A)",
+             "same Stage R reader (seed 42) and scorer; only the writer's training seed changes; left of 0 = B worse")
+    any_sum = json.load(open(os.path.join(run_dir, "eval_qa_A", "summary.json")))
+    footer(fig, cfg_groups(any_sum["config"], {"Training": {"Stage W seeds": ", ".join(map(str, seeds)), "steps": "50 x 4 streams per arm"}}), reserve_in=0.55)
+    save(fig, os.path.join(out_dir, "eval_seeds_B_minus_A.png"))
 def plot_summaries(paths: List[str], out_dir: str) -> None:
     """Back-compatible single-run plot from summary.json files (no CIs: summaries carry means only)."""
     sums = [json.load(open(p)) for p in paths]
@@ -695,12 +737,19 @@ def plot_ablate(run_dir: str, out_dir: str) -> None:
         save(fig, os.path.join(out_dir, f"{tag}_signals.png"))
 READ_GROUPS = [  # (prefix, group label, colour): read_<name> dirs from scripts/ego4d_ablate_read.sbatch
     ("score_", "Eq. 6 score terms", SERIES[0]), ("graph_", "graph reasoning", SERIES[2]), ("bound_", "bounds", SERIES[3]),
-    ("M", "evidence budget M", SERIES[1]), ("no_open", "open segment", SERIES[6]), ("blank_frame", "query conditioning", SERIES[4])]
+    ("seed_topk", "graph reasoning", SERIES[2]), ("M", "evidence budget M", SERIES[1]), ("no_open", "open segment", SERIES[6]),
+    ("blank_frame", "query conditioning", SERIES[4]), ("text_only", "query conditioning", SERIES[4]),
+    ("zero_evidence", "evidence content", SERIES[7]), ("noise_evidence", "evidence content", SERIES[7]), ("oracle_wrong", "evidence content", SERIES[7]),
+    ("no_mark_read", "reads change memory", SERIES[5])]
 READ_LABEL = {"score_no_prior": "− zero-shot prior", "score_no_cos": "− learned cosine", "score_no_bias": "− surprise/span/merge terms",
               "score_cos_only": "learned cosine only", "score_prior_only": "zero-shot prior only", "graph_no_hops": "no hop expansion (seeds only)",
               "graph_no_gar": "no relational GAR layers", "graph_coarse_only": "coarse order (no refined re-rank)", "bound_random": "random nodes",
               "bound_oracle": "oracle: nodes overlapping the window", "M0": "M = 0 (no memory)", "M1": "M = 1", "M2": "M = 2", "M8": "M = 8",
-              "no_open": "committed nodes only (no open segment)", "blank_frame": "question over a black frame"}
+              "no_open": "committed nodes only (no open segment)", "blank_frame": "question over a black frame",
+              "seed_topk8": "re-rank picks 4 of 8 seeds", "seed_topk8_coarse": "8 seeds, coarse order",
+              "text_only": "question only (M = 0, black frame)", "zero_evidence": "evidence content set to zero",
+              "noise_evidence": "evidence content replaced by noise", "oracle_wrong": "wrong nodes (all outside the window)",
+              "no_mark_read": "reads do not mark nodes"}
 def plot_read_ablation(run_dir: str, out_dir: str) -> None:
     ref_path = os.path.join(run_dir, "read_full", "predictions.jsonl")
     if not os.path.exists(ref_path):
@@ -734,7 +783,8 @@ def plot_read_ablation(run_dir: str, out_dir: str) -> None:
         ax.set_xlabel("Δ vs full reader (95% CI over videos)")
     axes[0].set_yticks(range(len(order)), [READ_LABEL.get(n, n) for n in order], fontsize=8.5)
     axes[0].invert_yaxis()
-    handles = [Line2D([], [], marker="o", color=c, lw=1.6, label=g) for pre, g, c in READ_GROUPS if any(n.startswith(pre) for n in order)]
+    groups = dict.fromkeys((g, c) for pre, g, c in READ_GROUPS if any(n.startswith(pre) for n in order))
+    handles = [Line2D([], [], marker="o", color=c, lw=1.6, label=g) for g, c in groups]
     fig.legend(handles=handles, loc="upper right", ncol=len(handles), fontsize=8.5, frameon=False, bbox_to_anchor=(0.99, fig_legend_y(fig)))
     rd = ref_sum.get("read", {})
     suptitle(fig, f"Read-side and query-conditioning ablations · arm A, val QA, {ref_sum.get('streams')} streams, {len(ref)} questions",
@@ -866,7 +916,7 @@ def plot_run(run_dir: str, out_dir: str) -> None:
                 plot_eval_delay(evals, track, out_dir)
                 plot_eval_slices(evals, track, out_dir)
         steps.append((f"eval {track}", ev))
-    steps += [("budget", lambda: plot_budget(run_dir, out_dir)), ("q2", lambda: plot_q2(run_dir, out_dir)),
+    steps += [("seeds", lambda: plot_seeds(run_dir, out_dir)), ("budget", lambda: plot_budget(run_dir, out_dir)), ("q2", lambda: plot_q2(run_dir, out_dir)),
               ("ablate", lambda: plot_ablate(run_dir, out_dir)), ("read ablation", lambda: plot_read_ablation(run_dir, out_dir)),
               ("read offline", lambda: plot_ablate_read_offline(run_dir, out_dir))]
     for name, fn in steps:

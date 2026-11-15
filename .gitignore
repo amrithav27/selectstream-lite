@@ -8,7 +8,7 @@ scripts/demo.sbatch
 logs/
 # Feature/memory animations are large; they live on the HF Hub (runs/<run>/<stage>/figs/).
 outputs/**/*.gif
-# Only the final report is committed from docs/; plans, run logs and red-flag notes stay local.
+# Only the final report is committed from docs/; plans and run logs stay local.
 docs/*
 !docs/report.md
 !docs/report_overleaf/

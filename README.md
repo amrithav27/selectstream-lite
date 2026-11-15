@@ -54,19 +54,71 @@ python3 -I clean/build_clean.py && python3 -I clean/build_videos.py && python3 -
 
 The 1,686 annotated clips (`<clip_uid>.mp4`) go in `$VIDEO_DIR` (set in `scripts/ego4d_env.sh`).
 
-**3. Pipeline.** On a Slurm cluster (paths in `scripts/ego4d_env.sh`; adapt `SCRATCH`, `PY`, account and
-partition to yours):
+**3. Pipeline.** 
+
+## Running on Ada
+
+The reported run (`full_v3`) is three Slurm jobs on **one** 4 × RTX 2080 Ti node. All three must use the same
+node (`-w`): the frame-feature cache (194 GB) and the checkpoints live in that node's `/ssd_scratch`, which other
+nodes cannot see. Plan for ~400 GB free scratch (clips 148 GB, cache 194 GB, model 16 GB, checkpoints).
+
+**Set up once, on the login node** (`ssh <user>@ada.iiit.ac.in`; light work only there):
 
 ```bash
-RUN=full_v3 sbatch -w <node> scripts/ego4d_pipeline.sbatch     # feature cache -> scorer -> Stage R -> calibrate
-                                                                # -> Stage W (arms A-D) -> evals -> Q2
-RUN=full_v3 sbatch -w <node> scripts/ego4d_ablate_read.sbatch  # read-side ablations, 150 val QA streams
-RUN=full_v3 sbatch -w <node> scripts/ego4d_redflags.sbatch     # evidence controls, seeds 43/44, memory budget
-python scripts/collect_results.py outputs/full_v3 outputs/full_v3/collected_results.json
+git clone https://github.com/amrithav27/selectstream-lite.git ~/selectstream-lite && cd ~/selectstream-lite
+conda create -n venv python=3.11 -y                 # scripts use ~/miniforge3/envs/venv/bin/python (PY in scripts/ego4d_env.sh)
+~/miniforge3/envs/venv/bin/pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/cu118
+~/miniforge3/envs/venv/bin/pip install -r requirements.txt
+~/miniforge3/envs/venv/bin/python -c "from huggingface_hub import login; login()"   # token for the model download
+myallocation                                        # expect account research, QoS medium, partition u22
+mkdir -p ~/bin && cp /usr/bin/rclone ~/bin/         # compute nodes have no rclone; jobs use ~/bin/rclone
+rclone config                                       # once: add a Google Drive remote named "gdrive"
 ```
 
-Each stage writes `outputs/<RUN>/done.<stage>`; a resubmitted job skips finished stages. Run on the node that
-holds the feature cache (`-w`).
+Do not run `hf auth login` or upgrade `huggingface_hub`: version 2.x breaks `transformers` 5.5.4, and every job
+checks this at start. Build `dataset/clean/` as in step 2 (CPU, login node is fine). The clips are pulled from
+Google Drive with `rclone` (remote `gdrive:`, path `ego4d_nlq/clips`; both set in `scripts/ego4d_env.sh`).
+
+**Run** (pick a free 2080 Ti node, e.g. from `sinfo -N -p u22 -o "%N %t %f"`, and use it for every job):
+
+```bash
+NODE=gnode047
+export NODES=$NODE                                  # this node holds the data (default: gnode061 gnode044)
+sbatch -w $NODE scripts/ego4d_stage_all.sbatch      # 0. copy all clips from Drive into $NODE's scratch (CPU only)
+
+# 1. Main chain (~30 h): feature cache -> scorer -> Stage R -> calibrate -> Stage W per arm (A-D) -> evals -> Q2
+P=$(RUN=full_v3 sbatch --parsable -w $NODE scripts/ego4d_pipeline.sbatch)
+
+# 2. Read-side ablations on 150 val QA videos + offline write-side grid (~8 h)
+A=$(RUN=full_v3 sbatch --parsable -w $NODE --dependency=afterok:$P scripts/ego4d_ablate_read.sbatch)
+
+# 3. Follow-up controls (~8 h): checkpoint hash check, evidence controls, Stage W seeds 43/44 for A and B,
+#    memory size N = 64/128 on all QA videos, write-grid rerun, then collect_results.py
+RUN=full_v3 sbatch -w $NODE --dependency=afterok:$A scripts/ego4d_controls.sbatch
+
+squeue -u $USER                                     # watch the queue
+tail -f logs/ss_pipe-$P.out                         # logs: logs/ss_pipe-*, ss_ablate-*, ss_controls-*
+```
+
+**Figures and statistics** (CPU; regenerate after any job finishes):
+
+```bash
+srun -A research -p u22 -c 2 --mem=6G -t 01:00:00 \
+  ~/miniforge3/envs/venv/bin/python -m streamlite.cli.plot_ego4d --run_dir outputs/full_v3        # outputs/full_v3/figures/
+srun -A research -p u22 -c 2 --mem=6G -t 01:00:00 \
+  ~/miniforge3/envs/venv/bin/python scripts/collect_results.py outputs/full_v3 outputs/full_v3/collected_results.json
+```
+
+**Notes.**
+- Every stage writes `outputs/full_v3/done.<stage>`; resubmitting the same job to the same node skips finished
+  stages, so a job that hits the wall limit or fails is simply resubmitted.
+- Small results (summaries, predictions, logs, figures) land in `outputs/full_v3/` in the repo; weights stay in
+  scratch and are mirrored to `~/selectstream_ckpt/full_v3/`.
+- Node scratch is wiped after 7 days without access; jobs touch their files, but a long pause means re-staging.
+- The GPUs have no native bf16, so the backbone runs in fp16 (set in `configs/ego4d_qwen25vl7b.yaml`). Every job
+  logs which GPUs it got.
+- Seeds and settings of the reported run are the script defaults (`R_EPOCHS=2`, `W_STEPS=50`, seeds 42 / 43 / 44,
+  `READ_STREAMS=150`); no extra variables are needed.
 
 **Without retraining.** Checkpoints of the reported run are on the Hugging Face Hub:
 <https://huggingface.co/lma-project/selectstream-lite-ego4d> (`checkpoints/full_v3/{R_A,W_A,W_B,W_C}/weights.pt`;

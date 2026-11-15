@@ -34,7 +34,7 @@
   "sha256": "f845990fa07e328e939671149cf3f29053a11802022727f76051dcd6947123d6",
   "match": true
  },
- "RF11_W_B_latest_vs_final": {
+ "W_B_latest_vs_final": {
   "keys_common": 65,
   "only_latest": 0,
   "only_final": 0,

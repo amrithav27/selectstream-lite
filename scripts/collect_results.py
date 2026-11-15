@@ -160,7 +160,7 @@ def groups_for(names):
     ]
     # Memory budget N (AB-N1): every N run against the smallest N present.
     # eval_qa_A_N*: the original 9 long streams (N = 16 reference); budget_qa_A_N*: all val QA streams, and
-    # eval_qa_A is N = 16 on those (RF-18).
+    # eval_qa_A is N = 16 on those.
     ns = sorted((int(d[len("eval_qa_A_N"):]), d) for d in names if d.startswith("eval_qa_A_N") and d[len("eval_qa_A_N"):].isdigit())
     if len(ns) > 1:
         g.append((ns[0][1], [d for _, d in ns[1:]]))
@@ -210,7 +210,7 @@ def main(run_dir, out_path):
             out["diff"][f"{d} - {ref}"] = diff | {"same_prediction": same_prediction(a, b)}
         for es in fams.values():
             holm(es)
-    # RF-7 sensitivity: the main arm comparisons without the questions asked before their window ends.
+    # Sensitivity check: the main arm comparisons without the questions asked before their window ends.
     for ref, runs in (("eval_qa_A", ["eval_qa_B", "eval_qa_C", "eval_qa_D"]), ("eval_nlq_A", ["eval_nlq_B", "eval_nlq_C", "eval_nlq_D"])):
         a = get(ref) if ref in names else None
         if a is None:
@@ -258,7 +258,7 @@ def write_md(out, path):
     for d, o in out["overall"].items():
         L.append(f"| {d} | {o['n']} | {o['streams']} | " + " | ".join(fmt_ci(o.get(m)) for m in ("recall_at_m", "best_iou", "evidence_precision", "contains", "exact")) + " |")
     for title, key in (("Paired differences (b − a), 95% CI, p / p_holm", "diff"),
-                       ("Same, excluding `<0s` delay questions (RF-7)", "diff_excl_neg_delay")):
+                       ("Same, excluding `<0s` delay questions", "diff_excl_neg_delay")):
         L += ["", f"## {title}", "", "| comparison | n | ΔRecall@M | p | Δbest IoU | p | Δcontains | p | same pred. |", "|---|---|---|---|---|---|---|---|---|"]
         for name, dd in out[key].items():
             n = next((e["n"] for e in dd.values() if isinstance(e, dict)), "—")

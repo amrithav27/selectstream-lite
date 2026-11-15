@@ -84,7 +84,7 @@ fi
 find "$HF_HOME" -type f -exec touch {} +  # keep the 7-day scratch eviction away
 
 check_deps() {
-    # RF-10b: an interactive `hf auth login` upgraded huggingface_hub to 2.x under a running pipeline, and
+    # An interactive `hf auth login` upgraded huggingface_hub to 2.x under a running pipeline, and
     # transformers 5.5.4 refuses to import with it. Fail fast at job start instead of mid-pipeline.
     "$PY" - <<'EOF' || { echo "[env][ERROR] dependency check failed (see above); fix the venv before running"; return 1; }
 import sys

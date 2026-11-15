@@ -111,7 +111,7 @@ differences against a reference with a 95% CI and a p-value.
 | eval_qa_B_seed44 - eval_qa_A_seed44 | 3751 | -0.044 [-0.066, -0.021] | 0.0006 / 0.0006 * | -0.023 [-0.031, -0.016] | 0.0001 / 0.0001 * | +0.001 [-0.001, +0.002] | 0.7364 / 0.7364 | 99.4% |
 | eval_qa_B_seed44 - eval_qa_B | 3751 | +0.024 [+0.009, +0.039] | 0.0008 / 0.0008 * | +0.002 [-0.000, +0.004] | 0.0995 / 0.0995 | +0.000 [-0.001, +0.002] | 1.0000 / 1.0000 | 99.5% |
 
-## Same, excluding `<0s` delay questions (RF-7)
+## Same, excluding `<0s` delay questions
 
 | comparison | n | ΔRecall@M | p | Δbest IoU | p | Δcontains | p | same pred. |
 |---|---|---|---|---|---|---|---|---|
